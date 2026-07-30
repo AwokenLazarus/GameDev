@@ -1,0 +1,143 @@
+[gd_scene load_steps=2 format=3 uid="uid://ashwick_hub"]
+
+[ext_resource type="Script" path="res://scripts/hub/ashwick.gd" id="1_ashwick"]
+
+[node name="Ashwick" type="Node2D"]
+script = ExtResource("1_ashwick")
+
+[node name="BG" type="Polygon2D" parent="."]
+z_index = -2
+color = Color(0.14, 0.11, 0.1, 1)
+polygon = PackedVector2Array(-900, -500, 900, -500, 900, 500, -900, 500)
+
+[node name="Road" type="Polygon2D" parent="."]
+z_index = -1
+color = Color(0.2, 0.16, 0.13, 1)
+polygon = PackedVector2Array(-800, 40, 800, 40, 800, 120, -800, 120)
+
+[node name="Building1" type="Polygon2D" parent="."]
+color = Color(0.18, 0.14, 0.14, 1)
+position = Vector2(-220, -40)
+polygon = PackedVector2Array(-80, -100, 80, -100, 90, 80, -90, 80)
+
+[node name="Building2" type="Polygon2D" parent="."]
+color = Color(0.16, 0.13, 0.15, 1)
+position = Vector2(200, -20)
+polygon = PackedVector2Array(-70, -90, 70, -90, 80, 70, -80, 70)
+
+[node name="Chapel" type="Polygon2D" parent="."]
+color = Color(0.2, 0.17, 0.16, 1)
+position = Vector2(0, -160)
+polygon = PackedVector2Array(-50, -40, 50, -40, 60, 90, -60, 90)
+
+[node name="Steeple" type="Polygon2D" parent="."]
+color = Color(0.25, 0.2, 0.18, 1)
+position = Vector2(0, -230)
+polygon = PackedVector2Array(-12, 30, 12, 30, 0, -40)
+
+[node name="Camera2D" type="Camera2D" parent="."]
+position = Vector2(0, -20)
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="Root" type="Control" parent="UI"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Title" type="Label" parent="UI/Root"]
+layout_mode = 0
+offset_left = 32.0
+offset_top = 24.0
+offset_right = 480.0
+offset_bottom = 64.0
+theme_override_colors/font_color = Color(0.86, 0.78, 0.7, 1)
+theme_override_font_sizes/font_size = 32
+text = "Ashwick"
+
+[node name="Status" type="Label" parent="UI/Root"]
+layout_mode = 0
+offset_left = 32.0
+offset_top = 64.0
+offset_right = 720.0
+offset_bottom = 92.0
+theme_override_colors/font_color = Color(0.65, 0.58, 0.52, 1)
+text = "Ruined family town"
+
+[node name="Currencies" type="Label" parent="UI/Root"]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -420.0
+offset_top = 28.0
+offset_right = -32.0
+offset_bottom = 56.0
+grow_horizontal = 0
+theme_override_colors/font_color = Color(0.75, 0.68, 0.55, 1)
+text = "Blood 0   Ash 0   Tech 0"
+horizontal_alignment = 2
+
+[node name="Dialogue" type="Label" parent="UI/Root"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 32.0
+offset_top = -140.0
+offset_right = -32.0
+offset_bottom = -96.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_colors/font_color = Color(0.8, 0.75, 0.7, 1)
+theme_override_font_sizes/font_size = 16
+text = "Dust wind through broken rails. Your kin still keep a light on."
+autowrap_mode = 2
+
+[node name="Buttons" type="HBoxContainer" parent="UI/Root"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 32.0
+offset_top = -80.0
+offset_right = -32.0
+offset_bottom = -24.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_constants/separation = 10
+
+[node name="Raid" type="Button" parent="UI/Root/Buttons"]
+custom_minimum_size = Vector2(160, 48)
+layout_mode = 2
+text = "Raid Dust Meridian"
+
+[node name="Mayor" type="Button" parent="UI/Root/Buttons"]
+custom_minimum_size = Vector2(120, 48)
+layout_mode = 2
+text = "Mayor"
+
+[node name="Vendor" type="Button" parent="UI/Root/Buttons"]
+custom_minimum_size = Vector2(160, 48)
+layout_mode = 2
+text = "Dust Compact stall"
+
+[node name="Kin" type="Button" parent="UI/Root/Buttons"]
+custom_minimum_size = Vector2(100, 48)
+layout_mode = 2
+text = "Kin"
+
+[node name="BloodRite" type="Button" parent="UI/Root/Buttons"]
+custom_minimum_size = Vector2(120, 48)
+layout_mode = 2
+text = "Blood Rite"
+
+[node name="Menu" type="Button" parent="UI/Root/Buttons"]
+custom_minimum_size = Vector2(100, 48)
+layout_mode = 2
+text = "Menu"

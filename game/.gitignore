@@ -1,0 +1,13 @@
+.godot/
+*.translation
+export.cfg
+export_presets.cfg
+.import/
+*.apk
+*.aab
+*.zip
+*.pck
+*.exe
+*.x86_64
+*~
+~.DS_Store

@@ -1,0 +1,35 @@
+[gd_scene load_steps=3 format=3 uid="uid://enemy_basic"]
+
+[ext_resource type="Script" path="res://scripts/combat/enemy.gd" id="1_enemy"]
+[ext_resource type="Script" path="res://scripts/combat/health.gd" id="2_health"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
+size = Vector2(20, 24)
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_corpse"]
+radius = 20.0
+
+[node name="Enemy" type="CharacterBody2D"]
+collision_layer = 4
+collision_mask = 1
+script = ExtResource("1_enemy")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_body")
+
+[node name="Visual" type="Polygon2D" parent="."]
+color = Color(0.55, 0.2, 0.22, 1)
+polygon = PackedVector2Array(-10, -12, 10, -12, 12, 12, -12, 12)
+
+[node name="Health" type="Node" parent="."]
+script = ExtResource("2_health")
+max_hp = 40.0
+
+[node name="CorpseArea" type="Area2D" parent="."]
+collision_layer = 4
+collision_mask = 0
+monitoring = false
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="CorpseArea"]
+shape = SubResource("CircleShape2D_corpse")
