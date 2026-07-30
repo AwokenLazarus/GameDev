@@ -1,11 +1,12 @@
 extends Node
-## V0 boon definitions for Dust Compact + Red Petition (Dust Meridian slice).
+## Boon definitions for Dust Compact, Red Petition, House Veyra, and Church.
 
 var boons: Array[Dictionary] = []
 
 
 func _ready() -> void:
 	boons = [
+		## --- Dust Compact (6+) ---
 		{
 			"id": "dust_dash",
 			"patron": "dust_compact",
@@ -42,6 +43,26 @@ func _ready() -> void:
 			"theme": "dust",
 			"verb": "loot",
 		},
+		{
+			"id": "dust_sidestep",
+			"patron": "dust_compact",
+			"name": "Cinder Slip",
+			"desc": "+10% move speed. Harder to pin down.",
+			"move": 0.10,
+			"theme": "gunsmoke",
+			"verb": "dash",
+		},
+		{
+			"id": "dust_jacket",
+			"patron": "dust_compact",
+			"name": "Scrap Jacket",
+			"desc": "+12 max HP and +6% damage.",
+			"max_hp": 12.0,
+			"damage": 0.06,
+			"theme": "scrap",
+			"verb": "loot",
+		},
+		## --- Red Petition (6+) ---
 		{
 			"id": "petition_execute",
 			"patron": "red_petition",
@@ -80,6 +101,25 @@ func _ready() -> void:
 			"verb": "anti-elite",
 		},
 		{
+			"id": "petition_sabotage",
+			"patron": "red_petition",
+			"name": "Fuse Kiss",
+			"desc": "+14% attack speed. Sabotage tempo.",
+			"attack_speed": 0.14,
+			"theme": "sabotage",
+			"verb": "trap",
+		},
+		{
+			"id": "petition_cell",
+			"patron": "red_petition",
+			"name": "Cell Oath",
+			"desc": "+18 max HP. Hold the line for the cell.",
+			"max_hp": 18.0,
+			"theme": "rebellion",
+			"verb": "buff",
+		},
+		## --- House Veyra (6+) ---
+		{
 			"id": "veyra_crit",
 			"patron": "house_veyra",
 			"name": "Debt Edge",
@@ -98,6 +138,45 @@ func _ready() -> void:
 			"verb": "lifesteal",
 		},
 		{
+			"id": "veyra_shadowstep",
+			"patron": "house_veyra",
+			"name": "Ledger Step",
+			"desc": "+12% dodge distance. Vanish between debts.",
+			"dash": 0.12,
+			"theme": "elegance",
+			"verb": "shadowstep",
+		},
+		{
+			"id": "veyra_evolve",
+			"patron": "house_veyra",
+			"name": "Gilded Vein",
+			"desc": "+10% damage and +8% attack speed.",
+			"damage": 0.10,
+			"attack_speed": 0.08,
+			"theme": "blood-tech",
+			"verb": "evolve",
+		},
+		{
+			"id": "veyra_contract",
+			"patron": "house_veyra",
+			"name": "Blood Contract",
+			"desc": "+15 max HP and +5% lifesteal.",
+			"max_hp": 15.0,
+			"lifesteal": 0.05,
+			"theme": "debt",
+			"verb": "lifesteal",
+		},
+		{
+			"id": "veyra_pointe",
+			"patron": "house_veyra",
+			"name": "Pointe of Courtesy",
+			"desc": "+11% move speed. Courtly aggression.",
+			"move": 0.11,
+			"theme": "elegance",
+			"verb": "shadowstep",
+		},
+		## --- Church of the Pale Sun (6+) ---
+		{
 			"id": "church_smite",
 			"patron": "church",
 			"name": "Pale Decree",
@@ -115,32 +194,96 @@ func _ready() -> void:
 			"theme": "ward",
 			"verb": "aura",
 		},
+		{
+			"id": "church_cleanse",
+			"patron": "church",
+			"name": "Salt Cleanse",
+			"desc": "+10% attack speed. Ritual tempo.",
+			"attack_speed": 0.10,
+			"theme": "decree",
+			"verb": "cleanse",
+		},
+		{
+			"id": "church_cooldown",
+			"patron": "church",
+			"name": "Bell Interval",
+			"desc": "+12% dodge distance. Step between hymns.",
+			"dash": 0.12,
+			"theme": "hymn",
+			"verb": "cooldown",
+		},
+		{
+			"id": "church_judgment",
+			"patron": "church",
+			"name": "Judgment Flare",
+			"desc": "+10% damage and +10 max HP.",
+			"damage": 0.10,
+			"max_hp": 10.0,
+			"theme": "judgment-light",
+			"verb": "smite",
+		},
+		{
+			"id": "church_procession",
+			"patron": "church",
+			"name": "Pale Procession",
+			"desc": "+8% move speed and +6% lifesteal.",
+			"move": 0.08,
+			"lifesteal": 0.06,
+			"theme": "ward",
+			"verb": "aura",
+		},
 	]
 
 
+func _patron_weight(patron: String) -> float:
+	## Prefer SectorDB.patron_weights for RunState.sector_id when present.
+	if RunState != null:
+		var sector: Dictionary = SectorDB.get_sector(RunState.sector_id)
+		if not sector.is_empty():
+			var weights: Dictionary = sector.get("patron_weights", {})
+			if weights.has(patron):
+				return maxf(0.0, float(weights[patron]))
+		## Fallback: Dust Meridian V0 bias if sector data missing.
+		if RunState.sector_id == "dust_meridian":
+			if patron in ["house_veyra", "church"]:
+				return 0.35
+			return 1.2
+	return 1.0
+
+
 func get_choices(count: int = 3) -> Array[Dictionary]:
-	var pool: Array[Dictionary] = []
+	var weighted: Array[Dictionary] = []
 	for b in boons:
 		var patron: String = str(b.get("patron", ""))
 		if patron in RunState.blocked_patrons:
 			continue
-		## Dust Meridian V0 weights Compact + Petition higher.
-		if RunState.sector_id == "dust_meridian" and patron in ["house_veyra", "church"]:
-			if randf() > 0.25:
+		var w := _patron_weight(patron)
+		if w <= 0.0:
+			continue
+		## Soft reject by inverse weight so low-weight patrons appear less often.
+		if randf() > clampf(w / 1.5, 0.15, 1.0):
+			continue
+		weighted.append(b)
+
+	if weighted.is_empty():
+		## Safety: if weights filtered everything, fall back to unblocked pool.
+		for b in boons:
+			var patron: String = str(b.get("patron", ""))
+			if patron in RunState.blocked_patrons:
 				continue
-		pool.append(b)
-	pool.shuffle()
+			weighted.append(b)
+
+	weighted.shuffle()
 	var result: Array[Dictionary] = []
 	var seen: Dictionary = {}
-	for b in pool:
+	for b in weighted:
 		var id: String = str(b.get("id", ""))
 		if seen.has(id):
 			continue
-		## Prefer not repeating identical ids already owned too often.
 		seen[id] = true
 		result.append(b)
 		if result.size() >= count:
 			break
-	while result.size() < count and pool.size() > 0:
-		result.append(pool[result.size() % pool.size()])
+	while result.size() < count and weighted.size() > 0:
+		result.append(weighted[result.size() % weighted.size()])
 	return result

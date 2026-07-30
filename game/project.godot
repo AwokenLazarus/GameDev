@@ -15,6 +15,9 @@ config/icon="res://assets/icon.svg"
 
 GameState="*res://autoload/game_state.gd"
 RunState="*res://autoload/run_state.gd"
+CharacterDB="*res://autoload/character_db.gd"
+SectorDB="*res://autoload/sector_db.gd"
+MetaDB="*res://autoload/meta_db.gd"
 BoonDB="*res://autoload/boon_db.gd"
 
 [display]
