@@ -323,3 +323,4 @@ Prove in ~20–30 minutes of play:
 | Version | Date | Notes |
 |---------|------|-------|
 | v1.0 | 2026-07-30 | Concept bible compiled from creative director Q&A. |
+| v1.1 | 2026-07-30 | Mandate build playable in `game/` — full roster, sectors, hub, meta, NG+, local co-op. |
