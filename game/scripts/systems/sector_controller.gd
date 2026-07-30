@@ -1,4 +1,5 @@
 extends Node2D
+const BiomePresenterScript = preload("res://scripts/visuals/biome_presenter.gd")
 ## Generic sector runner: bursts → wild → kill-gated general → Ashwick.
 
 const PLAYER_SCENE := preload("res://scenes/entities/player.tscn")
@@ -20,6 +21,7 @@ var players: Array[CharacterBody2D] = []
 var _room_cleared: bool = false
 var _general_spawned: bool = false
 var _sector: Dictionary = {}
+var _biome: Node2D
 
 
 func _ready() -> void:
@@ -37,6 +39,11 @@ func _ready() -> void:
 	_sector = SectorDB.get_sector(sector_id)
 	director.enemy_scene = ENEMY_SCENE
 	boon_ui.chosen.connect(_on_boon_chosen)
+	world.y_sort_enabled = true
+	entities.y_sort_enabled = true
+	_biome = BiomePresenterScript.new()
+	_biome.z_index = -15
+	world.add_child(_biome)
 	_paint_biome()
 	_build_arena(Vector2(900, 600))
 	_spawn_party(party)
@@ -44,15 +51,18 @@ func _ready() -> void:
 
 
 func _paint_biome() -> void:
-	ground.color = _sector.get("ground_color", Color(0.22, 0.18, 0.14))
+	ground.visible = false
 	if accent_patch:
-		accent_patch.color = Color(_sector.get("accent", Color(0.3, 0.25, 0.2)), 0.45)
+		accent_patch.visible = false
+	if _biome:
+		_biome.present_sector(_sector, Vector2(900, 600))
 
 
 func _build_arena(size: Vector2) -> void:
 	ground.polygon = PackedVector2Array([
 		-size.x, -size.y, size.x, -size.y, size.x, size.y, -size.x, size.y
 	])
+	ground.visible = false
 	for c in walls.get_children():
 		c.queue_free()
 	_add_wall(Vector2(0, -size.y), Vector2(size.x * 2, 24))
@@ -62,6 +72,8 @@ func _build_arena(size: Vector2) -> void:
 	director.configure(Vector2.ZERO, size)
 	director.spawn_radius_min = minf(size.x, size.y) * 0.55
 	director.spawn_radius_max = minf(size.x, size.y) * 0.9
+	if _biome:
+		_biome.present_sector(_sector, size)
 
 
 func _add_wall(pos: Vector2, size: Vector2) -> void:
@@ -114,7 +126,6 @@ func _start_dungeon_burst() -> void:
 	var sname := str(_sector.get("name", "Sector"))
 	banner.text = "%s — Burst %d / %d" % [sname, RunState.dungeon_index + 1, RunState.dungeons_total]
 	_build_arena(Vector2(480, 320))
-	_paint_biome()
 	var lead := _lead()
 	if lead:
 		lead.global_position = Vector2.ZERO
@@ -176,7 +187,6 @@ func _start_wild() -> void:
 	if bool(_sector.get("nightmare", false)):
 		wild_size = Vector2(1200, 800)
 	_build_arena(wild_size)
-	_paint_biome()
 	var lead := _lead()
 	if lead:
 		lead.global_position = Vector2.ZERO

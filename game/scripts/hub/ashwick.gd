@@ -1,4 +1,5 @@
 extends Node2D
+const BiomePresenterScript = preload("res://scripts/visuals/biome_presenter.gd")
 ## Full Ashwick hub — factions, sector map, roster, meta, difficulty, co-op party.
 
 @onready var status: Label = $UI/Root/Status
@@ -19,6 +20,14 @@ extends Node2D
 func _ready() -> void:
 	RunState.timer_active = false
 	RunState.set_phase(RunState.Phase.HUB)
+	var biome := BiomePresenterScript.new()
+	add_child(biome)
+	biome.present_ashwick()
+	## Hide old flat polygons if present
+	for n in ["BG", "Road", "Building1", "Building2", "Chapel", "Steeple"]:
+		var node := get_node_or_null(n)
+		if node:
+			node.visible = false
 	_build_faction_buttons()
 	_build_sectors()
 	_build_roster()

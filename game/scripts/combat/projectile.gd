@@ -9,7 +9,7 @@ var pierce: int = 0
 var velocity: Vector2 = Vector2.RIGHT
 var owner_player: Node = null
 
-@onready var visual: Polygon2D = $Visual
+@onready var visual: CanvasItem = $Visual
 
 
 func _ready() -> void:
@@ -17,6 +17,10 @@ func _ready() -> void:
 	area_entered.connect(_on_area)
 	collision_layer = 8
 	collision_mask = 4
+	if visual is Sprite2D:
+		var path := "res://assets/textures/vfx/bolt.png"
+		if ResourceLoader.exists(path):
+			(visual as Sprite2D).texture = load(path)
 
 
 func setup(origin: Vector2, dir: Vector2, dmg: float, from: Node, seeking: bool = true, spd: float = 420.0) -> void:
@@ -27,6 +31,10 @@ func setup(origin: Vector2, dir: Vector2, dmg: float, from: Node, seeking: bool 
 	seek = seeking
 	speed = spd
 	rotation = dir.angle()
+	if visual is Sprite2D and (visual as Sprite2D).texture == null:
+		var path := "res://assets/textures/vfx/bolt.png"
+		if ResourceLoader.exists(path):
+			(visual as Sprite2D).texture = load(path)
 
 
 func make_hostile() -> void:

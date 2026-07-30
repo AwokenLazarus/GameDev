@@ -4,7 +4,7 @@ extends Area2D
 
 var item: Dictionary = {}
 
-@onready var visual: Polygon2D = $Visual
+@onready var visual: CanvasItem = $Visual
 @onready var label: Label = $Label
 
 
@@ -17,13 +17,20 @@ func _ready() -> void:
 func setup(data: Dictionary) -> void:
 	item = data
 	var rarity := str(data.get("rarity", "common"))
+	var col := Color(0.7, 0.65, 0.4)
 	match rarity:
 		"rare":
-			visual.color = Color(0.35, 0.55, 0.85)
+			col = Color(0.35, 0.55, 0.85)
 		"epic":
-			visual.color = Color(0.65, 0.35, 0.8)
-		_:
-			visual.color = Color(0.7, 0.65, 0.4)
+			col = Color(0.65, 0.35, 0.8)
+	if visual is Polygon2D:
+		(visual as Polygon2D).color = col
+	else:
+		visual.modulate = col
+	if visual is Sprite2D:
+		var path := "res://assets/textures/vfx/gear.png"
+		if ResourceLoader.exists(path):
+			(visual as Sprite2D).texture = load(path)
 	if label:
 		label.text = str(data.get("name", "Relic"))
 

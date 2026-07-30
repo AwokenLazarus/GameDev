@@ -10,10 +10,12 @@ signal defeated
 @export var color: Color = Color(0.45, 0.38, 0.32)
 @export var pattern: String = "charge" ## charge, barrage, leap, hymn, thorns, void, fleet, aurelian
 
-@onready var visual: Polygon2D = $Visual
+@onready var visual: CanvasItem = $Visual
 @onready var health: Health = $Health
-@onready var telegraph: Polygon2D = $Telegraph
-@onready var badge: Polygon2D = $Badge
+@onready var telegraph: CanvasItem = $Telegraph
+@onready var badge: CanvasItem = $Badge
+@onready var actor_visual: Node2D = $ActorVisual
+@onready var nameplate: Label = $Nameplate
 
 var _player: Node2D
 var _cd: float = 2.0
@@ -31,7 +33,16 @@ func _ready() -> void:
 	health.hp = health.max_hp
 	health.died.connect(_on_died)
 	telegraph.visible = false
-	visual.color = color
+	if telegraph is Sprite2D:
+		var tp := "res://assets/textures/vfx/telegraph.png"
+		if ResourceLoader.exists(tp):
+			(telegraph as Sprite2D).texture = load(tp)
+	if visual is Polygon2D:
+		(visual as Polygon2D).color = color
+	if actor_visual:
+		actor_visual.load_sprite("generals", general_id)
+	if nameplate:
+		nameplate.text = display_name
 
 
 func _apply_def() -> void:
@@ -51,7 +62,12 @@ func configure(gid: String) -> void:
 	general_id = gid
 	if is_node_ready():
 		_apply_def()
-		visual.color = color
+		if visual is Polygon2D:
+			(visual as Polygon2D).color = color
+		if actor_visual:
+			actor_visual.load_sprite("generals", general_id)
+		if nameplate:
+			nameplate.text = display_name
 		health.max_hp = max_hp * GameState.difficulty_enemy_mult()
 		health.hp = health.max_hp
 
@@ -65,6 +81,9 @@ func _physics_process(delta: float) -> void:
 			return
 	var dir := (_player.global_position - global_position).normalized()
 	velocity = dir * move_speed
+	if actor_visual:
+		actor_visual.set_moving(true)
+		actor_visual.set_facing_x(dir.x)
 	move_and_slide()
 	if _player.global_position.distance_to(global_position) < 32.0:
 		if _player.has_method("apply_hit"):
@@ -124,7 +143,7 @@ func _pat_barrage() -> void:
 		var p: Node = PROJ.instantiate()
 		get_parent().add_child(p)
 		p.setup(global_position, dir, 12.0 * GameState.difficulty_enemy_mult(), self, false, 360.0)
-		p.visual.color = Color(0.9, 0.4, 0.2)
+		p.visual.modulate = Color(0.9, 0.4, 0.2)
 		if p.has_method("make_hostile"):
 			p.make_hostile()
 		await get_tree().create_timer(0.08).timeout
@@ -148,6 +167,8 @@ func _pat_leap() -> void:
 
 func _pat_hymn() -> void:
 	_busy = true
+	if actor_visual:
+		actor_visual.flash(Color(1.2, 1.1, 0.8), 0.6)
 	visual.modulate = Color(1.2, 1.1, 0.8)
 	## Heal slightly + smite ring
 	health.heal(health.max_hp * 0.04)
@@ -166,7 +187,7 @@ func _pat_thorns() -> void:
 		var p: Node = PROJ.instantiate()
 		get_parent().add_child(p)
 		p.setup(global_position, Vector2(cos(a), sin(a)), 10.0, self, false, 280.0)
-		p.visual.color = Color(0.4, 0.7, 0.3)
+		p.visual.modulate = Color(0.4, 0.7, 0.3)
 		if p.has_method("make_hostile"):
 			p.make_hostile()
 	await get_tree().create_timer(0.4).timeout

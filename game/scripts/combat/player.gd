@@ -1,4 +1,5 @@
 extends CharacterBody2D
+const _VFX = preload("res://scripts/visuals/vfx.gd")
 ## Multi-kit dhampir controller. Kits: melee, hybrid_gun, orbit, maul, astral.
 
 signal died
@@ -9,14 +10,15 @@ const DODGE_SPEED := 520.0
 const DODGE_TIME := 0.18
 const DODGE_COOLDOWN := 0.55
 
-@onready var body_visual: Polygon2D = $BodyVisual
-@onready var blade_visual: Polygon2D = $BladeVisual
-@onready var accent: Polygon2D = $Accent
+@onready var body_visual: CanvasItem = $BodyVisual
+@onready var blade_visual: CanvasItem = $BladeVisual
+@onready var accent: CanvasItem = $Accent
 @onready var hitbox: Area2D = $AttackHitbox
 @onready var feed_area: Area2D = $FeedArea
 @onready var health: Health = $Health
 @onready var camera: Camera2D = $Camera2D
-@onready var spirit_visual: Polygon2D = $SpiritVisual
+@onready var spirit_visual: CanvasItem = $SpiritVisual
+@onready var actor_visual: Node2D = $ActorVisual
 
 var player_index: int = 0
 var device: int = -1 ## -1 keyboard, >=0 joypad
@@ -77,8 +79,10 @@ func _apply_character() -> void:
 	base_damage = float(data.get("damage", 14.0)) * 1.5
 	base_attack_cd = float(data.get("attack_cooldown", 0.4))
 	var col: Color = data.get("color", Color(0.7, 0.7, 0.75))
-	body_visual.color = Color(col.darkened(0.55))
-	accent.color = col
+	if body_visual is Polygon2D:
+		(body_visual as Polygon2D).color = Color(col.darkened(0.55))
+	if accent is Polygon2D:
+		(accent as Polygon2D).color = col
 	if alt_id != "" and CharacterDB:
 		for a in CharacterDB.get_alts(character_id):
 			if str(a.get("id", "")) == alt_id:
@@ -94,23 +98,34 @@ func _apply_character() -> void:
 	if player_index == 0:
 		health.hp = RunState.player_hp
 		health.max_hp = RunState.player_max_hp
+	if actor_visual:
+		actor_visual.load_sprite("characters", character_id)
 	_setup_kit_visuals()
 
 
 func _setup_kit_visuals() -> void:
 	blade_visual.visible = false
+	if blade_visual is Sprite2D:
+		var slash := "res://assets/textures/vfx/slash.png"
+		if ResourceLoader.exists(slash):
+			(blade_visual as Sprite2D).texture = load(slash)
+	if spirit_visual is Sprite2D:
+		var path := "res://assets/textures/characters/vesper.png"
+		if ResourceLoader.exists(path):
+			(spirit_visual as Sprite2D).texture = load(path)
+			(spirit_visual as Sprite2D).modulate = Color(0.75, 0.85, 1.0, 0.55)
 	match kit_type:
 		"melee":
-			blade_visual.color = Color(0.85, 0.85, 0.9)
+			pass
 		"hybrid_gun":
-			blade_visual.color = Color(0.9, 0.85, 0.45)
+			pass
 		"orbit":
 			_spawn_crescents()
 		"maul":
-			blade_visual.color = Color(0.55, 0.4, 0.35)
 			blade_visual.scale = Vector2(1.4, 1.6)
 		"astral":
-			spirit_visual.color = Color(0.75, 0.85, 1.0, 0.65)
+			if actor_visual:
+				actor_visual.set_ghost(false)
 
 
 func _spawn_crescents() -> void:
@@ -118,12 +133,15 @@ func _spawn_crescents() -> void:
 		if is_instance_valid(c):
 			c.queue_free()
 	_crescents.clear()
+	var tex_path := "res://assets/textures/vfx/crescent.png"
+	var tex: Texture2D = load(tex_path) if ResourceLoader.exists(tex_path) else null
 	for i in 2:
-		var poly := Polygon2D.new()
-		poly.color = Color(0.6, 0.8, 0.9)
-		poly.polygon = PackedVector2Array([-6, -2, 10, 0, -6, 2, -2, 0])
-		add_child(poly)
-		_crescents.append(poly)
+		var spr := Sprite2D.new()
+		spr.texture = tex
+		spr.modulate = Color(0.7, 0.9, 1.0, 0.95)
+		spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		add_child(spr)
+		_crescents.append(spr)
 
 
 func _physics_process(delta: float) -> void:
@@ -154,6 +172,9 @@ func _physics_process(delta: float) -> void:
 	if input_dir.length() > 0.1:
 		facing = input_dir.normalized()
 		blade_visual.rotation = facing.angle()
+	if actor_visual:
+		actor_visual.set_moving(input_dir.length() > 0.1)
+		actor_visual.set_facing_x(facing.x)
 
 	velocity = input_dir * move_speed * RunState.move_mult
 
@@ -231,6 +252,9 @@ func _start_dodge(dir: Vector2) -> void:
 	dodge_cd = DODGE_COOLDOWN / maxf(0.5, RunState.dash_mult)
 	velocity = dir * DODGE_SPEED * RunState.dash_mult
 	health.set_invuln(DODGE_TIME + 0.05)
+	_VFX.dust_puff(get_parent(), global_position)
+	if actor_visual:
+		actor_visual.flash(Color(0.85, 0.85, 1.0, 0.7), DODGE_TIME)
 	body_visual.modulate = Color(0.85, 0.85, 1.0, 0.55)
 	await get_tree().create_timer(DODGE_TIME).timeout
 	if is_instance_valid(body_visual):
@@ -274,6 +298,7 @@ func _attack_melee() -> void:
 	blade_visual.visible = true
 	blade_visual.rotation = facing.angle()
 	hitbox.rotation = facing.angle()
+	_VFX.slash(get_parent(), global_position + facing * 28.0, facing.angle())
 	## Peace-cord lunge
 	velocity = facing * 280.0
 	await get_tree().create_timer(0.14).timeout
@@ -411,7 +436,7 @@ func _update_astral(delta: float) -> void:
 			var p: Node = PROJ.instantiate()
 			get_parent().add_child(p)
 			p.setup(_spirit_pos, dir, _dmg() * 0.6, self, false, 500.0)
-			p.visual.color = Color(0.7, 0.85, 1.0)
+			p.visual.modulate = Color(0.7, 0.85, 1.0)
 		else:
 			set_meta("astral_acc", acc)
 	## Body is fragile — slight slow
@@ -496,6 +521,9 @@ func _feed(corpse: Node) -> void:
 		corpse.consume()
 	else:
 		corpse.queue_free()
+	if actor_visual:
+		actor_visual.flash(Color(0.9, 0.3, 0.35), 0.2)
+	_VFX.blood(get_parent(), global_position)
 	body_visual.modulate = Color(0.9, 0.3, 0.35)
 	await get_tree().create_timer(0.2).timeout
 	if is_instance_valid(body_visual):
@@ -512,6 +540,8 @@ func apply_hit(amount: float) -> void:
 func _on_damaged(_amount: float, remaining: float) -> void:
 	if player_index == 0:
 		RunState.player_hp = remaining
+	if actor_visual:
+		actor_visual.flash()
 	body_visual.modulate = Color(1.0, 0.4, 0.4)
 	await get_tree().create_timer(0.08).timeout
 	if is_instance_valid(body_visual) and not dead:

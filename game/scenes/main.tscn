@@ -27,7 +27,15 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.12, 0.05, 0.07, 0.55)
+color = Color(0.16, 0.06, 0.08, 0.55)
+
+[node name="Moon" type="Sprite2D" parent="."]
+position = Vector2(980, 140)
+scale = Vector2(0.55, 0.55)
+
+[node name="Hero" type="Sprite2D" parent="."]
+position = Vector2(980, 420)
+scale = Vector2(2.2, 2.2)
 
 [node name="Center" type="CenterContainer" parent="."]
 layout_mode = 1
@@ -58,7 +66,7 @@ horizontal_alignment = 1
 [node name="Subtitle" type="Label" parent="Center/VBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.65, 0.6, 0.55, 1)
-text = "V0 vertical slice"
+text = "2.5D mandate build"
 horizontal_alignment = 1
 
 [node name="Start" type="Button" parent="Center/VBox"]
