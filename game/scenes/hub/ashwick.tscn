@@ -50,20 +50,20 @@ grow_vertical = 2
 
 [node name="Title" type="Label" parent="UI/Root"]
 layout_mode = 0
-offset_left = 32.0
-offset_top = 24.0
-offset_right = 480.0
-offset_bottom = 64.0
+offset_left = 24.0
+offset_top = 12.0
+offset_right = 320.0
+offset_bottom = 48.0
 theme_override_colors/font_color = Color(0.86, 0.78, 0.7, 1)
-theme_override_font_sizes/font_size = 32
+theme_override_font_sizes/font_size = 28
 text = "Ashwick"
 
 [node name="Status" type="Label" parent="UI/Root"]
 layout_mode = 0
-offset_left = 32.0
-offset_top = 64.0
-offset_right = 720.0
-offset_bottom = 92.0
+offset_left = 24.0
+offset_top = 48.0
+offset_right = 700.0
+offset_bottom = 72.0
 theme_override_colors/font_color = Color(0.65, 0.58, 0.52, 1)
 text = "Ruined family town"
 
@@ -72,14 +72,100 @@ layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -420.0
-offset_top = 28.0
-offset_right = -32.0
-offset_bottom = 56.0
+offset_left = -480.0
+offset_top = 12.0
+offset_right = -24.0
+offset_bottom = 36.0
 grow_horizontal = 0
 theme_override_colors/font_color = Color(0.75, 0.68, 0.55, 1)
 text = "Blood 0   Ash 0   Tech 0"
 horizontal_alignment = 2
+
+[node name="NGLabel" type="Label" parent="UI/Root"]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -480.0
+offset_top = 36.0
+offset_right = -24.0
+offset_bottom = 60.0
+grow_horizontal = 0
+theme_override_colors/font_color = Color(0.7, 0.35, 0.35, 1)
+text = "NG+ 0"
+horizontal_alignment = 2
+
+[node name="PartyLabel" type="Label" parent="UI/Root"]
+layout_mode = 0
+offset_left = 24.0
+offset_top = 72.0
+offset_right = 520.0
+offset_bottom = 96.0
+theme_override_colors/font_color = Color(0.7, 0.75, 0.8, 1)
+text = "Party (1): P1:severin"
+
+[node name="DiffBtn" type="OptionButton" parent="UI/Root"]
+layout_mode = 0
+offset_left = 24.0
+offset_top = 100.0
+offset_right = 180.0
+offset_bottom = 132.0
+
+[node name="AddP2Btn" type="Button" parent="UI/Root"]
+layout_mode = 0
+offset_left = 192.0
+offset_top = 100.0
+offset_right = 360.0
+offset_bottom = 132.0
+text = "Add Co-op Sibling"
+
+[node name="RaidBtn" type="Button" parent="UI/Root"]
+layout_mode = 0
+offset_left = 372.0
+offset_top = 100.0
+offset_right = 620.0
+offset_bottom = 132.0
+text = "Raid Dust Meridian"
+
+[node name="MenuBtn" type="Button" parent="UI/Root"]
+layout_mode = 0
+offset_left = 632.0
+offset_top = 100.0
+offset_right = 740.0
+offset_bottom = 132.0
+text = "Menu"
+
+[node name="LeftButtons" type="VBoxContainer" parent="UI/Root"]
+layout_mode = 0
+offset_left = 24.0
+offset_top = 150.0
+offset_right = 260.0
+offset_bottom = 520.0
+theme_override_constants/separation = 6
+
+[node name="SectorBox" type="VBoxContainer" parent="UI/Root"]
+layout_mode = 0
+offset_left = 280.0
+offset_top = 150.0
+offset_right = 560.0
+offset_bottom = 520.0
+theme_override_constants/separation = 4
+
+[node name="RosterBox" type="VBoxContainer" parent="UI/Root"]
+layout_mode = 0
+offset_left = 580.0
+offset_top = 150.0
+offset_right = 860.0
+offset_bottom = 520.0
+theme_override_constants/separation = 3
+
+[node name="MetaBox" type="VBoxContainer" parent="UI/Root"]
+layout_mode = 0
+offset_left = 880.0
+offset_top = 150.0
+offset_right = 1260.0
+offset_bottom = 520.0
+theme_override_constants/separation = 3
 
 [node name="Dialogue" type="Label" parent="UI/Root"]
 layout_mode = 1
@@ -87,57 +173,13 @@ anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 32.0
-offset_top = -140.0
-offset_right = -32.0
-offset_bottom = -96.0
-grow_horizontal = 2
-grow_vertical = 0
-theme_override_colors/font_color = Color(0.8, 0.75, 0.7, 1)
-theme_override_font_sizes/font_size = 16
-text = "Dust wind through broken rails. Your kin still keep a light on."
-autowrap_mode = 2
-
-[node name="Buttons" type="HBoxContainer" parent="UI/Root"]
-layout_mode = 1
-anchors_preset = 12
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 32.0
+offset_left = 24.0
 offset_top = -80.0
-offset_right = -32.0
+offset_right = -24.0
 offset_bottom = -24.0
 grow_horizontal = 2
 grow_vertical = 0
-theme_override_constants/separation = 10
-
-[node name="Raid" type="Button" parent="UI/Root/Buttons"]
-custom_minimum_size = Vector2(160, 48)
-layout_mode = 2
-text = "Raid Dust Meridian"
-
-[node name="Mayor" type="Button" parent="UI/Root/Buttons"]
-custom_minimum_size = Vector2(120, 48)
-layout_mode = 2
-text = "Mayor"
-
-[node name="Vendor" type="Button" parent="UI/Root/Buttons"]
-custom_minimum_size = Vector2(160, 48)
-layout_mode = 2
-text = "Dust Compact stall"
-
-[node name="Kin" type="Button" parent="UI/Root/Buttons"]
-custom_minimum_size = Vector2(100, 48)
-layout_mode = 2
-text = "Kin"
-
-[node name="BloodRite" type="Button" parent="UI/Root/Buttons"]
-custom_minimum_size = Vector2(120, 48)
-layout_mode = 2
-text = "Blood Rite"
-
-[node name="Menu" type="Button" parent="UI/Root/Buttons"]
-custom_minimum_size = Vector2(100, 48)
-layout_mode = 2
-text = "Menu"
+theme_override_colors/font_color = Color(0.8, 0.75, 0.7, 1)
+theme_override_font_sizes/font_size = 15
+text = "Dust wind through broken rails."
+autowrap_mode = 2

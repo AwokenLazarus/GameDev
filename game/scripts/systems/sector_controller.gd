@@ -1,12 +1,14 @@
 extends Node2D
-## Dust Meridian V0: 5 dungeon bursts → wild → Marshal Hale.
+## Generic sector runner: bursts → wild → kill-gated general → Ashwick.
 
 const PLAYER_SCENE := preload("res://scenes/entities/player.tscn")
 const ENEMY_SCENE := preload("res://scenes/entities/enemy.tscn")
-const BOSS_SCENE := preload("res://scenes/entities/marshal_hale.tscn")
+const GENERAL_SCENE := preload("res://scenes/entities/general.tscn")
+const GEAR_SCENE := preload("res://scenes/entities/gear_drop.tscn")
 
 @onready var world: Node2D = $World
 @onready var ground: Polygon2D = $World/Ground
+@onready var accent_patch: Polygon2D = $World/DustPatch
 @onready var walls: StaticBody2D = $World/Walls
 @onready var entities: Node2D = $World/Entities
 @onready var director: Node = $Director
@@ -14,27 +16,43 @@ const BOSS_SCENE := preload("res://scenes/entities/marshal_hale.tscn")
 @onready var boon_ui: CanvasLayer = $BoonSelect
 @onready var banner: Label = $HUD/Root/Banner
 
-var player: CharacterBody2D
+var players: Array[CharacterBody2D] = []
 var _room_cleared: bool = false
 var _general_spawned: bool = false
-var _burst_kills_at_start: int = 0
+var _sector: Dictionary = {}
 
 
 func _ready() -> void:
-	RunState.start_run("severin", "dust_meridian")
+	var sector_id := GameState.selected_sector
+	var party: Array = GameState.party
+	if party.is_empty():
+		party = [{"character_id": "severin", "alt_id": "", "device": -1}]
+	var lead: Dictionary = party[0]
+	RunState.start_run(
+		str(lead.get("character_id", "severin")),
+		sector_id,
+		str(lead.get("alt_id", "")),
+		party.size()
+	)
+	_sector = SectorDB.get_sector(sector_id)
 	director.enemy_scene = ENEMY_SCENE
 	boon_ui.chosen.connect(_on_boon_chosen)
+	_paint_biome()
 	_build_arena(Vector2(900, 600))
-	_spawn_player(Vector2(0, 0))
+	_spawn_party(party)
 	_start_dungeon_burst()
+
+
+func _paint_biome() -> void:
+	ground.color = _sector.get("ground_color", Color(0.22, 0.18, 0.14))
+	if accent_patch:
+		accent_patch.color = Color(_sector.get("accent", Color(0.3, 0.25, 0.2)), 0.45)
 
 
 func _build_arena(size: Vector2) -> void:
 	ground.polygon = PackedVector2Array([
 		-size.x, -size.y, size.x, -size.y, size.x, size.y, -size.x, size.y
 	])
-	ground.color = Color(0.22, 0.18, 0.14)
-	## Clear old walls
 	for c in walls.get_children():
 		c.queue_free()
 	_add_wall(Vector2(0, -size.y), Vector2(size.x * 2, 24))
@@ -42,6 +60,8 @@ func _build_arena(size: Vector2) -> void:
 	_add_wall(Vector2(-size.x, 0), Vector2(24, size.y * 2))
 	_add_wall(Vector2(size.x, 0), Vector2(24, size.y * 2))
 	director.configure(Vector2.ZERO, size)
+	director.spawn_radius_min = minf(size.x, size.y) * 0.55
+	director.spawn_radius_max = minf(size.x, size.y) * 0.9
 
 
 func _add_wall(pos: Vector2, size: Vector2) -> void:
@@ -60,11 +80,24 @@ func _add_wall(pos: Vector2, size: Vector2) -> void:
 	walls.add_child(vis)
 
 
-func _spawn_player(pos: Vector2) -> void:
-	player = PLAYER_SCENE.instantiate()
-	player.global_position = pos
-	entities.add_child(player)
-	player.died.connect(_on_player_died)
+func _spawn_party(party: Array) -> void:
+	players.clear()
+	for i in party.size():
+		var slot: Dictionary = party[i]
+		var p: CharacterBody2D = PLAYER_SCENE.instantiate()
+		p.global_position = Vector2(i * 36.0 - (party.size() - 1) * 18.0, 0)
+		entities.add_child(p)
+		if p.has_method("configure"):
+			p.configure(i, str(slot.get("character_id", "severin")), str(slot.get("alt_id", "")), int(slot.get("device", -1)))
+		p.died.connect(_on_player_died.bind(p))
+		players.append(p)
+
+
+func _lead() -> CharacterBody2D:
+	for p in players:
+		if is_instance_valid(p) and not p.dead:
+			return p
+	return players[0] if players.size() else null
 
 
 func _clear_enemies() -> void:
@@ -78,16 +111,20 @@ func _start_dungeon_burst() -> void:
 	RunState.set_phase(RunState.Phase.DUNGEON)
 	_room_cleared = false
 	_general_spawned = false
-	banner.text = "Dust Meridian — Burst %d / %d" % [RunState.dungeon_index + 1, RunState.dungeons_total]
+	var sname := str(_sector.get("name", "Sector"))
+	banner.text = "%s — Burst %d / %d" % [sname, RunState.dungeon_index + 1, RunState.dungeons_total]
 	_build_arena(Vector2(480, 320))
-	player.global_position = Vector2.ZERO
+	_paint_biome()
+	var lead := _lead()
+	if lead:
+		lead.global_position = Vector2.ZERO
 	_clear_enemies()
 	director.stop()
-	## Authored small wave, not full director
 	var count := 4 + RunState.dungeon_index
+	if bool(_sector.get("nightmare", false)):
+		count += 3
 	for i in count:
 		_spawn_burst_enemy(i, count)
-	_burst_kills_at_start = _alive_enemies()
 
 
 func _spawn_burst_enemy(i: int, total: int) -> void:
@@ -95,9 +132,14 @@ func _spawn_burst_enemy(i: int, total: int) -> void:
 	var angle := TAU * float(i) / float(total)
 	e.global_position = Vector2(cos(angle), sin(angle)) * 220.0
 	entities.add_child(e)
-	var human := i % 3 == 0
-	var elite := RunState.run_time > 70.0 and i == 0
-	e.setup(player, human, elite)
+	var human_chance := float(_sector.get("enemy_human_chance", 0.3))
+	var human := randf() < human_chance
+	var elite := RunState.run_time > 70.0 and randf() < 0.15
+	var lead := _lead()
+	e.setup(lead, human, elite)
+	e.max_hp *= GameState.difficulty_enemy_mult()
+	e.health.max_hp = e.max_hp
+	e.health.hp = e.max_hp
 
 
 func _alive_enemies() -> int:
@@ -116,22 +158,30 @@ func _process(_delta: float) -> void:
 
 func _on_burst_cleared() -> void:
 	banner.text = "Burst cleared"
+	if randf() < 0.35:
+		_spawn_gear_drop(Vector2(randf_range(-80, 80), randf_range(-40, 40)))
 	await _offer_boon_if_needed()
 	RunState.dungeon_index += 1
 	if RunState.dungeon_index >= RunState.dungeons_total:
 		_start_wild()
 	else:
-		await get_tree().create_timer(0.6).timeout
+		await get_tree().create_timer(0.5).timeout
 		_start_dungeon_burst()
 
 
 func _start_wild() -> void:
 	RunState.set_phase(RunState.Phase.WILD)
-	banner.text = "Wild Stage — Dust Meridian"
-	_build_arena(Vector2(1100, 700))
-	player.global_position = Vector2.ZERO
+	banner.text = "Wild Stage — %s" % str(_sector.get("name", ""))
+	var wild_size := Vector2(1100, 700)
+	if bool(_sector.get("nightmare", false)):
+		wild_size = Vector2(1200, 800)
+	_build_arena(wild_size)
+	_paint_biome()
+	var lead := _lead()
+	if lead:
+		lead.global_position = Vector2.ZERO
+		director.start(lead)
 	_clear_enemies()
-	director.start(player)
 	await _offer_boon_if_needed()
 
 
@@ -139,10 +189,14 @@ func _spawn_general() -> void:
 	_general_spawned = true
 	director.stop()
 	RunState.set_phase(RunState.Phase.BOSS)
-	banner.text = "Marshal Corvin Hale"
-	var boss: Node = BOSS_SCENE.instantiate()
+	var gid := str(_sector.get("general_id", "marshal_hale"))
+	var gname := str(_sector.get("general_name", "General"))
+	banner.text = gname
+	var boss: Node = GENERAL_SCENE.instantiate()
 	boss.global_position = Vector2(0, -180)
 	entities.add_child(boss)
+	if boss.has_method("configure"):
+		boss.configure(gid)
 	boss.defeated.connect(_on_general_defeated)
 
 
@@ -151,17 +205,38 @@ func _on_general_defeated() -> void:
 	RunState.set_phase(RunState.Phase.VICTORY)
 	banner.text = "Sector seized — returning to Ashwick"
 	director.stop()
+	_spawn_gear_drop(Vector2.ZERO)
 	await _offer_boon_if_needed()
 	RunState.grant_run_rewards(true)
+	GameState.mark_sector_clear(RunState.sector_id)
 	await get_tree().create_timer(2.0).timeout
 	RunState.end_to_hub()
 	get_tree().change_scene_to_file("res://scenes/hub/ashwick.tscn")
 
 
+func _spawn_gear_drop(pos: Vector2) -> void:
+	var g: Node = GEAR_SCENE.instantiate()
+	entities.add_child(g)
+	g.global_position = pos
+	if g.has_method("setup"):
+		g.setup(_roll_gear())
+
+
+func _roll_gear() -> Dictionary:
+	var pool := [
+		{"slot": "charm", "name": "Dust Charm", "rarity": "common", "move": 0.06},
+		{"slot": "charm", "name": "Blood Bead", "rarity": "rare", "lifesteal": 0.05},
+		{"slot": "relic", "name": "Rail Spike", "rarity": "common", "damage": 0.08},
+		{"slot": "relic", "name": "Veyra Seal", "rarity": "epic", "damage": 0.12},
+		{"slot": "coat", "name": "Ash Coat", "rarity": "common", "max_hp": 15.0},
+		{"slot": "coat", "name": "Iron Mantle", "rarity": "rare", "max_hp": 25.0, "damage": 0.04},
+	]
+	return pool[randi() % pool.size()].duplicate()
+
+
 func _offer_boon_if_needed() -> void:
 	if RunState.boon_picks_done >= RunState.boon_picks_target:
 		return
-	## Offer after each burst and once entering wild / after boss — capped at 8.
 	RunState.awaiting_boon = true
 	boon_ui.open_choices()
 	await boon_ui.chosen
@@ -171,7 +246,16 @@ func _on_boon_chosen(_boon: Dictionary) -> void:
 	banner.text = "Pact taken"
 
 
-func _on_player_died() -> void:
+func _on_player_died(p: CharacterBody2D) -> void:
+	## Co-op: wipe only if all dead
+	var any_alive := false
+	for pl in players:
+		if is_instance_valid(pl) and not pl.dead:
+			any_alive = true
+			break
+	if any_alive:
+		banner.text = "%s falls — the brood fights on" % str(p.character_id).capitalize()
+		return
 	director.stop()
 	RunState.timer_active = false
 	RunState.set_phase(RunState.Phase.DEAD)

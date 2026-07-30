@@ -8,7 +8,7 @@ extends Control
 func _ready() -> void:
 	start_btn.pressed.connect(_on_start)
 	quit_btn.pressed.connect(func(): get_tree().quit())
-	subtitle.text = "V0 · Severin · Dust Meridian · Solo"
+	subtitle.text = "Full mandate build · 5 siblings · 7 sectors + Pale Spire · co-op"
 
 
 func _on_start() -> void:

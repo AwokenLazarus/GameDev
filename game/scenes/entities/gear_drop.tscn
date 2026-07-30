@@ -1,0 +1,27 @@
+[gd_scene load_steps=3 format=3 uid="uid://gear_drop"]
+
+[ext_resource type="Script" path="res://scripts/combat/gear_drop.gd" id="1_gear"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_g"]
+radius = 14.0
+
+[node name="GearDrop" type="Area2D"]
+collision_layer = 16
+collision_mask = 2
+script = ExtResource("1_gear")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_g")
+
+[node name="Visual" type="Polygon2D" parent="."]
+color = Color(0.7, 0.65, 0.4, 1)
+polygon = PackedVector2Array(0, -10, 10, 0, 0, 10, -10, 0)
+
+[node name="Label" type="Label" parent="."]
+offset_left = -40.0
+offset_top = -28.0
+offset_right = 40.0
+offset_bottom = -10.0
+theme_override_font_sizes/font_size = 10
+text = "Relic"
+horizontal_alignment = 1

@@ -1,0 +1,35 @@
+[gd_scene load_steps=5 format=3 uid="uid://sector_run"]
+
+[ext_resource type="Script" path="res://scripts/systems/sector_controller.gd" id="1_sector"]
+[ext_resource type="Script" path="res://scripts/systems/director.gd" id="2_director"]
+[ext_resource type="PackedScene" uid="uid://moonwake_hud" path="res://scenes/ui/hud.tscn" id="3_hud"]
+[ext_resource type="PackedScene" uid="uid://boon_select" path="res://scenes/ui/boon_select.tscn" id="4_boon"]
+
+[node name="SectorRun" type="Node2D"]
+script = ExtResource("1_sector")
+
+[node name="World" type="Node2D" parent="."]
+
+[node name="Ground" type="Polygon2D" parent="World"]
+z_index = -2
+color = Color(0.22, 0.18, 0.14, 1)
+polygon = PackedVector2Array(-500, -350, 500, -350, 500, 350, -500, 350)
+
+[node name="DustPatch" type="Polygon2D" parent="World"]
+z_index = -1
+color = Color(0.28, 0.22, 0.16, 0.5)
+position = Vector2(-120, 80)
+polygon = PackedVector2Array(-80, -40, 120, -20, 90, 60, -60, 40)
+
+[node name="Walls" type="StaticBody2D" parent="World"]
+collision_layer = 1
+collision_mask = 0
+
+[node name="Entities" type="Node2D" parent="World"]
+
+[node name="Director" type="Node" parent="."]
+script = ExtResource("2_director")
+
+[node name="HUD" parent="." instance=ExtResource("3_hud")]
+
+[node name="BoonSelect" parent="." instance=ExtResource("4_boon")]

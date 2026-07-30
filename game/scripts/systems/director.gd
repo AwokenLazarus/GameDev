@@ -64,8 +64,11 @@ func _spawn_one() -> void:
 	var elite_chance := clampf((t - 60.0) / 180.0, 0.02, 0.28)
 	if randf() < elite_chance:
 		elite = true
-	## Humans for feeding — common enough in Dust Meridian.
-	if randf() < 0.35:
+	var human_chance := 0.35
+	if SectorDB and RunState:
+		var s: Dictionary = SectorDB.get_sector(RunState.sector_id)
+		human_chance = float(s.get("enemy_human_chance", 0.35))
+	if randf() < human_chance:
 		human = true
 	get_parent().add_child(e)
 	if e.has_method("setup"):

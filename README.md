@@ -1,14 +1,14 @@
 # Moonwake
 
-Gothic frontier action roguelite (Godot). AI agent game studio workspace.
+Gothic frontier action roguelite (Godot 4.3). AI agent game studio workspace.
 
-## Play V0
+## Play
 
 ```bash
 godot --path game
 ```
 
-See [game/README.md](game/README.md) for controls and smoke test.
+See [game/README.md](game/README.md) for controls, systems checklist, and smoke test.
 
 ## Design docs
 

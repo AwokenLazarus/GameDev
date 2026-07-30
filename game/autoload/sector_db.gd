@@ -18,6 +18,10 @@ func _build_generals() -> void:
 			"title": "Human enforcer",
 			"sector_id": "dust_meridian",
 			"description": "Dominion rail marshal who keeps Dust Meridian under a hard badge and harder gallows.",
+			"max_hp": 520.0,
+			"move_speed": 130.0,
+			"pattern": "charge",
+			"color": Color(0.45, 0.38, 0.32),
 		},
 		"lady_sable": {
 			"id": "lady_sable",
@@ -25,6 +29,10 @@ func _build_generals() -> void:
 			"title": "Rival-house industrialist",
 			"sector_id": "cinder_barrens",
 			"description": "House Veyra industrialist who feeds the Barrens' furnaces with blood-tech contracts.",
+			"max_hp": 580.0,
+			"move_speed": 120.0,
+			"pattern": "barrage",
+			"color": Color(0.55, 0.2, 0.25),
 		},
 		"marrowfang": {
 			"id": "marrowfang",
@@ -32,6 +40,10 @@ func _build_generals() -> void:
 			"title": "Beast-blood loyalist general",
 			"sector_id": "gloampine",
 			"description": "Beast-blood war-general who hunts the fog redwoods for Aurelian's court.",
+			"max_hp": 640.0,
+			"move_speed": 160.0,
+			"pattern": "leap",
+			"color": Color(0.35, 0.45, 0.28),
 		},
 		"cantor_belis": {
 			"id": "cantor_belis",
@@ -39,6 +51,10 @@ func _build_generals() -> void:
 			"title": "Church execution-saint",
 			"sector_id": "salt_choir",
 			"description": "Pale Sun execution-saint whose hymns drown the salt flats in judgment light.",
+			"max_hp": 600.0,
+			"move_speed": 110.0,
+			"pattern": "hymn",
+			"color": Color(0.85, 0.8, 0.65),
 		},
 		"provost_rhea": {
 			"id": "provost_rhea",
@@ -46,6 +62,10 @@ func _build_generals() -> void:
 			"title": "Famine collaborator",
 			"sector_id": "iron_orchard",
 			"description": "Agri-dome overseer who trades famine quotas for Dominion favor.",
+			"max_hp": 620.0,
+			"move_speed": 115.0,
+			"pattern": "thorns",
+			"color": Color(0.4, 0.55, 0.3),
 		},
 		"duke_orlokis": {
 			"id": "duke_orlokis",
@@ -53,6 +73,10 @@ func _build_generals() -> void:
 			"title": "Court vampire rival-kin",
 			"sector_id": "noir_cathedral",
 			"description": "Chromegoth court duke and rival-kin who rules the shaded megacity.",
+			"max_hp": 700.0,
+			"move_speed": 140.0,
+			"pattern": "void",
+			"color": Color(0.25, 0.2, 0.35),
 		},
 		"admiral_drus": {
 			"id": "admiral_drus",
@@ -60,6 +84,10 @@ func _build_generals() -> void:
 			"title": "Fleet-warden",
 			"sector_id": "umbral_marches",
 			"description": "Orbital fleet-warden guarding the scrap-ring approaches to the Pale Spire.",
+			"max_hp": 750.0,
+			"move_speed": 150.0,
+			"pattern": "fleet",
+			"color": Color(0.3, 0.35, 0.45),
 		},
 		"aurelian": {
 			"id": "aurelian",
@@ -67,6 +95,10 @@ func _build_generals() -> void:
 			"title": "Galactic vampire tyrant",
 			"sector_id": "pale_spire",
 			"description": "Emperor of the moon-curse. Defeat opens NG+ heat and new generals.",
+			"max_hp": 1400.0,
+			"move_speed": 145.0,
+			"pattern": "aurelian",
+			"color": Color(0.7, 0.15, 0.18),
 		},
 	}
 

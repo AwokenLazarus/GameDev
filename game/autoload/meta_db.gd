@@ -50,6 +50,15 @@ func _build_nodes() -> void:
 		"max_rank": 4,
 		"effects": {"lifesteal_bonus": 0.02},
 	})
+	_add_node({
+		"id": "blood_earn",
+		"branch": "blood",
+		"name": "Moon Tithe",
+		"desc": "+10% Blood earned from raids per rank.",
+		"cost": {"blood": 20, "ash": 0, "tech": 0},
+		"max_rank": 3,
+		"effects": {"blood_earn": 0.10},
+	})
 
 	## Ash rebuild — Ashwick vendors / missions.
 	_add_node({
@@ -97,6 +106,24 @@ func _build_nodes() -> void:
 		"max_rank": 2,
 		"effects": {"boon_picks_bonus": 1},
 	})
+	_add_node({
+		"id": "ash_veyra_eyes",
+		"branch": "ash",
+		"name": "Veyra Safehouse",
+		"desc": "Rebuild House Veyra's spy nest in Ashwick.",
+		"cost": {"blood": 15, "ash": 55, "tech": 20},
+		"max_rank": 1,
+		"effects": {"vendor_veyra": true, "ashwick_vendor_veyra": true},
+	})
+	_add_node({
+		"id": "ash_earn",
+		"branch": "ash",
+		"name": "Tithe Pits",
+		"desc": "+10% Ash earned from raids per rank.",
+		"cost": {"blood": 0, "ash": 30, "tech": 0},
+		"max_rank": 3,
+		"effects": {"ash_earn": 0.10},
+	})
 
 	## Tech — salvaged Dominion tools / passives.
 	_add_node({
@@ -134,6 +161,15 @@ func _build_nodes() -> void:
 		"cost": {"blood": 0, "ash": 15, "tech": 40},
 		"max_rank": 3,
 		"effects": {"kill_gate_bonus": -2},
+	})
+	_add_node({
+		"id": "tech_earn",
+		"branch": "tech",
+		"name": "Salvage Rights",
+		"desc": "+10% Tech earned from raids per rank.",
+		"cost": {"blood": 0, "ash": 0, "tech": 25},
+		"max_rank": 3,
+		"effects": {"tech_earn": 0.10},
 	})
 
 
@@ -198,6 +234,10 @@ func apply_ranks_to_run(stats: Dictionary) -> Dictionary:
 		"ashwick_vendor_compact": false,
 		"unlock_mission_petition": false,
 		"ashwick_kin_hearth": false,
+		"vendor_veyra": false,
+		"blood_earn": 0.0,
+		"ash_earn": 0.0,
+		"tech_earn": 0.0,
 	}
 
 	for node_id in ranks.keys():
