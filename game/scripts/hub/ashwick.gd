@@ -1,6 +1,9 @@
 extends Node2D
 const BiomePresenterScript = preload("res://scripts/visuals/biome_presenter.gd")
+const HubNpcScript = preload("res://scripts/hub/hub_npc.gd")
 ## Full Ashwick hub — factions, sector map, roster, meta, difficulty, co-op party.
+
+var _npcs: Dictionary = {} ## id -> HubNpc
 
 @onready var status: Label = $UI/Root/Status
 @onready var dialogue: Label = $UI/Root/Dialogue
@@ -28,6 +31,7 @@ func _ready() -> void:
 		var node := get_node_or_null(n)
 		if node:
 			node.visible = false
+	_spawn_hub_npcs()
 	_build_faction_buttons()
 	_build_sectors()
 	_build_roster()
@@ -285,9 +289,33 @@ func _on_add_p2() -> void:
 	_refresh()
 
 
+func _spawn_hub_npcs() -> void:
+	var defs := [
+		{"id": "npc_mayor", "name": "Mayor", "pos": Vector2(40, 40)},
+		{"id": "npc_kin", "name": "Kin Elder", "pos": Vector2(-180, 60)},
+		{"id": "npc_dust_vendor", "name": "Dust Compact", "pos": Vector2(220, 90)},
+		{"id": "npc_church", "name": "Pale Acolyte", "pos": Vector2(-40, -160)},
+		{"id": "npc_petition", "name": "Red Petition", "pos": Vector2(260, -40)},
+		{"id": "npc_veyra", "name": "Veyra Eye", "pos": Vector2(-260, -20)},
+	]
+	for d in defs:
+		var npc: Node2D = HubNpcScript.new()
+		npc.npc_id = str(d["id"])
+		npc.display_name = str(d["name"])
+		npc.position = d["pos"]
+		add_child(npc)
+		_npcs[str(d["id"])] = npc
+
+
+func _talk_npc(id: String) -> void:
+	if _npcs.has(id) and _npcs[id] and _npcs[id].has_method("talk"):
+		_npcs[id].talk(2.4)
+
+
 func _on_mayor() -> void:
 	GameState.mayor_met = true
 	GameState.save_game()
+	_talk_npc("npc_mayor")
 	if RunState.reputation <= -5:
 		dialogue.text = "Mayor: \"Monster. Raid if you must—the Church is watching.\""
 	else:
@@ -297,12 +325,14 @@ func _on_mayor() -> void:
 func _on_kin() -> void:
 	GameState.kin_met = true
 	GameState.add_currency("ash", 2)
+	_talk_npc("npc_kin")
 	dialogue.text = "Kin: \"You look like him when the moon's wrong. Still—come home between hunts. (+2 Ash)\""
 	_refresh()
 
 
 func _on_vendor_dust() -> void:
 	var cost := 6 if RunState.reputation > -3 else 12
+	_talk_npc("npc_dust_vendor")
 	if RunState.reputation_label() == "Hated":
 		dialogue.text = "Smuggler won't open. You're hated this moon."
 		return
@@ -316,6 +346,7 @@ func _on_vendor_dust() -> void:
 
 func _on_church() -> void:
 	GameState.church_met = true
+	_talk_npc("npc_church")
 	if RunState.feed_count > 0 or RunState.reputation < 0:
 		dialogue.text = "Cantor's aide: \"We smell the feed on you. Tithe Blood or leave.\""
 		if GameState.spend("blood", 8):
@@ -330,6 +361,7 @@ func _on_church() -> void:
 
 func _on_petition() -> void:
 	GameState.petition_met = true
+	_talk_npc("npc_petition")
 	dialogue.text = "Red Petition: \"Hit a sector general. We'll tip Ash your way.\" (+5 Ash retainer)"
 	GameState.add_currency("ash", 5)
 	_refresh()
@@ -337,6 +369,7 @@ func _on_petition() -> void:
 
 func _on_veyra() -> void:
 	GameState.veyra_met = true
+	_talk_npc("npc_veyra")
 	if GameState.spend("tech", 8):
 		GameState.add_currency("blood", 6)
 		dialogue.text = "Veyra Eyes: \"Noble tech for imperial blood. Don't tell the Church.\" (-8 Tech, +6 Blood)"

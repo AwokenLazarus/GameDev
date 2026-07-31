@@ -84,6 +84,7 @@ func _physics_process(delta: float) -> void:
 	else:
 		velocity = Vector2.ZERO
 	if actor_visual:
+		actor_visual.set_running(velocity.length() > move_speed * 0.85)
 		actor_visual.set_moving(velocity.length() > 4.0)
 		actor_visual.set_facing_x(dir.x)
 	move_and_slide()
@@ -91,6 +92,8 @@ func _physics_process(delta: float) -> void:
 	_attack_cd -= delta
 	if dist < 28.0 and _attack_cd <= 0.0:
 		_attack_cd = 0.7
+		if actor_visual:
+			actor_visual.play_oneshot("attack", 12.0)
 		if _player.has_method("apply_hit"):
 			_player.apply_hit(contact_damage * (1.4 if is_elite else 1.0))
 

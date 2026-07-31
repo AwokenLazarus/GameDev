@@ -173,7 +173,9 @@ func _physics_process(delta: float) -> void:
 		facing = input_dir.normalized()
 		blade_visual.rotation = facing.angle()
 	if actor_visual:
-		actor_visual.set_moving(input_dir.length() > 0.1)
+		var moving := input_dir.length() > 0.1
+		actor_visual.set_running(input_dir.length() > 0.75)
+		actor_visual.set_moving(moving)
 		actor_visual.set_facing_x(facing.x)
 
 	velocity = input_dir * move_speed * RunState.move_mult
@@ -254,6 +256,7 @@ func _start_dodge(dir: Vector2) -> void:
 	health.set_invuln(DODGE_TIME + 0.05)
 	_VFX.dust_puff(get_parent(), global_position)
 	if actor_visual:
+		actor_visual.play_oneshot("dodge", 14.0)
 		actor_visual.flash(Color(0.85, 0.85, 1.0, 0.7), DODGE_TIME)
 	body_visual.modulate = Color(0.85, 0.85, 1.0, 0.55)
 	await get_tree().create_timer(DODGE_TIME).timeout
@@ -263,6 +266,8 @@ func _start_dodge(dir: Vector2) -> void:
 
 func _start_attack() -> void:
 	attack_cd = base_attack_cd / maxf(0.25, RunState.attack_speed_mult * RunState.cooldown_mult)
+	if actor_visual:
+		actor_visual.play_oneshot("attack", 14.0)
 	match kit_type:
 		"melee":
 			await _attack_melee()

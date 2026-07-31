@@ -37,15 +37,15 @@ godot --path game
 **Bloodlust-inspired** gothic-western cinematic art (original IP — no VHD character/plot copies):
 
 - Painterly cutout heroes: Severin, Mira, Cassian, Odette, Vesper (green-keyed)
-- 8 named generals including Aurelian (cutout sheets + walk frames)
+- **Full anim states** per actor: idle / walk / run / attack / dodge (heroes); idle / walk / attack (enemies & generals); idle / walk / talk (hub NPCs)
+- 8 named generals including Aurelian
 - Enemy cast (enforcers, zealots, grubs, elites, beasts, void wretches)
+- Ashwick hub NPCs: Mayor, Kin, Dust Compact, Church, Petition, Veyra Eye
 - Painterly props: chapel, crate, rail, ruin
 - Cinematic combat VFX: slash, blood, bolt, crescent, moon, telegraph, shadow rebirth
 - Full-bleed biome vistas for all sectors + Ashwick
-- Moon rebirth / menu presentation + gothic UI chrome
-- Color grade: dust ochre, dried crimson, cold moonlight, chromegoth violets
-- Runtime: `ActorVisual`, `BiomePresenter` (vista + floor + particles + lights + vignette)
-- Reprocess pipeline: `python3 game/tools/process_bloodlust_art.py`
+- Runtime: `ActorVisual` state machine, `BiomePresenter`, `HubNpc`
+- Pipelines: `process_bloodlust_art.py`, `process_anim_sheets.py`
 
 Showcase sources: `assets/art_showcase/`  
 Runtime sheets: `assets/textures/`

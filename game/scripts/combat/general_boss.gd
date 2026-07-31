@@ -82,6 +82,7 @@ func _physics_process(delta: float) -> void:
 	var dir := (_player.global_position - global_position).normalized()
 	velocity = dir * move_speed
 	if actor_visual:
+		actor_visual.set_running(true)
 		actor_visual.set_moving(true)
 		actor_visual.set_facing_x(dir.x)
 	move_and_slide()
@@ -95,6 +96,8 @@ func _physics_process(delta: float) -> void:
 
 
 func _use_pattern() -> void:
+	if actor_visual:
+		actor_visual.play_oneshot("attack", 12.0)
 	match pattern:
 		"barrage":
 			_pat_barrage()
