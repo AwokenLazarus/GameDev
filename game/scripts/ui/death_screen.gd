@@ -11,12 +11,20 @@ func _ready() -> void:
 	title.text = "Moonwake"
 	body.text = "The full moon pulls your shadow upright.\nBone from dust. Cape from night.\nAshwick waits — again."
 	continue_btn.pressed.connect(_on_continue)
+	## Cinematic death grade
+	var dim := ColorRect.new()
+	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dim.color = Color(0.08, 0.02, 0.04, 0.35)
+	dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(dim)
+	move_child(dim, 1)
 	if moon and ResourceLoader.exists("res://assets/textures/vfx/moon.png"):
 		moon.texture = load("res://assets/textures/vfx/moon.png")
-		moon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	if shadow_birth and ResourceLoader.exists("res://assets/textures/vfx/shadow_birth.png"):
-		shadow_birth.texture = load("res://assets/textures/vfx/shadow_birth.png")
-		shadow_birth.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		moon.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	if shadow_birth and ResourceLoader.exists("res://assets/textures/characters/severin.png"):
+		shadow_birth.texture = load("res://assets/textures/characters/severin.png")
+		shadow_birth.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+		shadow_birth.modulate = Color(0.15, 0.12, 0.2, 0.85)
 	modulate.a = 0.0
 	if moon:
 		moon.scale = Vector2(0.2, 0.2)

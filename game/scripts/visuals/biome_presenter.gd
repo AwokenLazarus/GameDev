@@ -19,6 +19,7 @@ func clear() -> void:
 func present_sector(sector: Dictionary, half_size: Vector2) -> void:
 	clear()
 	var sid := str(sector.get("id", "dust_meridian"))
+	_build_vista(sid)
 	_build_ground(sid, half_size)
 	_build_props(sid, half_size)
 	_build_atmosphere(sid, sector)
@@ -27,6 +28,7 @@ func present_sector(sector: Dictionary, half_size: Vector2) -> void:
 
 func present_ashwick() -> void:
 	clear()
+	_build_vista("ashwick")
 	_build_ground("ashwick", Vector2(700, 420))
 	_spawn_prop("chapel", Vector2(0, -180), 1.2)
 	_spawn_prop("ruin", Vector2(-260, -40), 1.0)
@@ -34,8 +36,38 @@ func present_ashwick() -> void:
 	_spawn_prop("rail", Vector2(0, 80), 2.5)
 	_spawn_prop("crate", Vector2(-120, 40), 1.0)
 	_spawn_prop("crate", Vector2(140, 60), 1.0)
-	_build_atmosphere("ashwick", {"accent": Color(0.5, 0.35, 0.3)})
+	_build_atmosphere("ashwick", {"accent": Color(0.55, 0.25, 0.28)})
 	_build_particles("ashwick")
+
+
+func _load_tex(path: String) -> Texture2D:
+	if ResourceLoader.exists(path):
+		var t: Texture2D = load(path) as Texture2D
+		if t:
+			return t
+	var img := Image.load_from_file(ProjectSettings.globalize_path(path))
+	if img:
+		return ImageTexture.create_from_image(img)
+	return null
+
+
+func _build_vista(sid: String) -> void:
+	## Full-bleed cinematic Bloodlust-inspired backdrop
+	var path := "res://assets/textures/tiles/%s_vista.png" % sid
+	if not ResourceLoader.exists(path):
+		path = "res://assets/textures/tiles/%s_ground.png" % sid
+	var tex := _load_tex(path)
+	if tex == null:
+		return
+	var vista := Sprite2D.new()
+	vista.texture = tex
+	vista.z_index = -30
+	vista.centered = true
+	vista.position = Vector2(0, -80)
+	var tex_size := tex.get_size()
+	vista.scale = Vector2(1600.0 / tex_size.x, 900.0 / tex_size.y)
+	vista.modulate = Color(0.92, 0.88, 0.9, 1.0)
+	add_child(vista)
 
 
 func _build_ground(sid: String, half_size: Vector2) -> void:
@@ -43,17 +75,14 @@ func _build_ground(sid: String, half_size: Vector2) -> void:
 	if not ResourceLoader.exists(path):
 		path = "res://assets/textures/tiles/dust_meridian_ground.png"
 	_ground = Sprite2D.new()
-	var tex: Texture2D = load(path) as Texture2D
-	if tex == null:
-		var img := Image.load_from_file(ProjectSettings.globalize_path(path))
-		if img:
-			tex = ImageTexture.create_from_image(img)
+	var tex: Texture2D = _load_tex(path)
 	if tex == null:
 		return
 	_ground.texture = tex
 	_ground.z_index = -20
 	_ground.centered = true
-	## Stretch to arena
+	## Playable floor plane — darkened for readability over vista
+	_ground.modulate = Color(0.55, 0.5, 0.52, 0.92)
 	var tex_size := _ground.texture.get_size()
 	_ground.scale = Vector2(half_size.x * 2.0 / tex_size.x, half_size.y * 2.0 / tex_size.y) * 1.05
 	add_child(_ground)
@@ -136,25 +165,26 @@ func _spawn_prop(kind: String, pos: Vector2, scl: float) -> void:
 
 func _build_atmosphere(sid: String, sector: Dictionary) -> void:
 	_modulate = CanvasModulate.new()
+	## Bloodlust-adjacent grade: dusty desat, cold moon, dried crimson
 	match sid:
 		"dust_meridian", "ashwick":
-			_modulate.color = Color(0.95, 0.88, 0.78)
+			_modulate.color = Color(0.92, 0.82, 0.72)
 		"cinder_barrens":
-			_modulate.color = Color(1.0, 0.75, 0.65)
+			_modulate.color = Color(0.95, 0.68, 0.58)
 		"gloampine":
-			_modulate.color = Color(0.7, 0.85, 0.7)
+			_modulate.color = Color(0.68, 0.78, 0.7)
 		"salt_choir":
-			_modulate.color = Color(0.92, 0.92, 0.88)
+			_modulate.color = Color(0.88, 0.86, 0.82)
 		"iron_orchard":
-			_modulate.color = Color(0.8, 0.9, 0.7)
+			_modulate.color = Color(0.78, 0.82, 0.65)
 		"noir_cathedral":
-			_modulate.color = Color(0.65, 0.6, 0.85)
+			_modulate.color = Color(0.62, 0.55, 0.78)
 		"umbral_marches":
-			_modulate.color = Color(0.7, 0.75, 0.9)
+			_modulate.color = Color(0.65, 0.7, 0.85)
 		"pale_spire":
-			_modulate.color = Color(0.85, 0.55, 0.55)
+			_modulate.color = Color(0.82, 0.48, 0.52)
 		_:
-			_modulate.color = Color(0.9, 0.85, 0.8)
+			_modulate.color = Color(0.88, 0.8, 0.76)
 	add_child(_modulate)
 
 	_light = PointLight2D.new()

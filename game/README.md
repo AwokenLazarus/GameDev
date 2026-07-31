@@ -30,6 +30,22 @@ godot --path game
 | NG+ after Aurelian (heats) | Yes |
 | Local co-op up to 4 | Yes (keyboard P2 + pads) |
 | Hybrid kits (melee/gun/orbit/maul/astral) | Yes |
+| **2.5D graphics pass** | Yes — sprites, biomes, VFX, lighting |
+
+## Graphics
+
+**Bloodlust-inspired** gothic-western cinematic art (original IP — no VHD character/plot copies):
+
+- Painterly hero sprites for Severin, Mira, Cassian, Odette, Vesper
+- 8 named generals including Aurelian
+- Enemy cast (thralls, enforcers, elites, beasts, void wretches)
+- Full-bleed biome vistas for all sectors + Ashwick
+- Moon rebirth / menu presentation
+- Color grade: dust ochre, dried crimson, cold moonlight, chromegoth violets
+- Runtime: `ActorVisual`, `BiomePresenter` (vista + floor + particles + lights + vignette)
+
+Showcase sources: `assets/art_showcase/`  
+Runtime sheets: `assets/textures/`
 
 ## Controls
 

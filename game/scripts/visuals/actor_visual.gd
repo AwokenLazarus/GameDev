@@ -28,7 +28,8 @@ func _ready() -> void:
 	_sprite = Sprite2D.new()
 	_sprite.centered = true
 	_sprite.position = Vector2(0, -8)
-	_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	## Painterly Bloodlust-inspired art — linear filter
+	_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	add_child(_sprite)
 	load_sprite(sprite_folder, sprite_name)
 
@@ -47,8 +48,19 @@ func load_sprite(folder: String, name: String) -> void:
 	if not _frames.is_empty():
 		_sprite.texture = _frames[0]
 		_shadow.texture = _frames[0]
-		_shadow.modulate = Color(0, 0, 0, 0.4)
-		_shadow.position = Vector2(0, 28)
+		_shadow.modulate = Color(0, 0, 0, 0.45)
+		_shadow.position = Vector2(0, 36)
+		## Scale painterly heroes to gameplay size
+		var target_h := 96.0
+		if sprite_folder == "generals":
+			target_h = 128.0
+		elif sprite_folder == "enemies":
+			target_h = 72.0
+		var tex_h := float(_sprite.texture.get_height())
+		if tex_h > 1.0:
+			var s := target_h / tex_h
+			_sprite.scale = Vector2(s, s)
+			_shadow.scale = Vector2(shadow_scale.x * s * 1.1, shadow_scale.y * s)
 
 
 func set_moving(moving: bool) -> void:
