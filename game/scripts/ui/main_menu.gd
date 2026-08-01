@@ -6,11 +6,28 @@ extends Control
 @onready var moon: Sprite2D = $Moon
 @onready var hero: Sprite2D = $Hero
 
+var _hub_btn: Button
+var _hint: Label
+
 
 func _ready() -> void:
-	start_btn.pressed.connect(_on_start)
+	start_btn.text = "PLAY RAID — Dust Meridian"
+	start_btn.custom_minimum_size = Vector2(360, 56)
+	start_btn.pressed.connect(_on_play_raid)
 	quit_btn.pressed.connect(func(): get_tree().quit())
-	subtitle.text = "Bloodlust-inspired gothic frontier · original brood"
+	subtitle.text = "Fight first. Town hub is optional."
+	_hub_btn = Button.new()
+	_hub_btn.text = "Ashwick Town Hub"
+	_hub_btn.custom_minimum_size = Vector2(360, 44)
+	_hub_btn.pressed.connect(_on_hub)
+	start_btn.get_parent().add_child(_hub_btn)
+	start_btn.get_parent().move_child(_hub_btn, start_btn.get_index() + 1)
+	_hint = Label.new()
+	_hint.text = "In raid: WASD move · J / Click attack · Space dodge · F feed corpses"
+	_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_hint.modulate = Color(0.75, 0.68, 0.6)
+	start_btn.get_parent().add_child(_hint)
+	start_btn.get_parent().move_child(_hint, _hub_btn.get_index() + 1)
 	## Cinematic backdrop
 	var vista_path := "res://assets/textures/tiles/ashwick_vista.png"
 	if ResourceLoader.exists(vista_path):
@@ -30,6 +47,7 @@ func _ready() -> void:
 	if hero and ResourceLoader.exists("res://assets/textures/characters/severin.png"):
 		hero.texture = load("res://assets/textures/characters/severin.png")
 		hero.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+		hero.modulate = Color(1.35, 1.25, 1.2)
 		hero.scale = Vector2(1.8, 1.8)
 	if moon:
 		var tw := create_tween().set_loops()
@@ -41,5 +59,16 @@ func _ready() -> void:
 		tw2.tween_property(hero, "position:y", hero.position.y + 4.0, 1.2)
 
 
-func _on_start() -> void:
+func _on_play_raid() -> void:
+	## Skip confusing hub — go straight into combat with defaults.
+	if GameState.party.is_empty():
+		GameState.party = [{"character_id": "severin", "alt_id": "", "device": -1}]
+	if GameState.selected_sector == "":
+		GameState.selected_sector = "dust_meridian"
+	get_tree().paused = false
+	get_tree().change_scene_to_file("res://scenes/sector/sector_run.tscn")
+
+
+func _on_hub() -> void:
+	get_tree().paused = false
 	get_tree().change_scene_to_file("res://scenes/hub/ashwick.tscn")

@@ -4,6 +4,9 @@ const HubNpcScript = preload("res://scripts/hub/hub_npc.gd")
 ## Full Ashwick hub — factions, sector map, roster, meta, difficulty, co-op party.
 
 var _npcs: Dictionary = {} ## id -> HubNpc
+var _prep_open: bool = false
+var _prep_btn: Button
+var _cta_label: Label
 
 @onready var status: Label = $UI/Root/Status
 @onready var dialogue: Label = $UI/Root/Dialogue
@@ -18,10 +21,12 @@ var _npcs: Dictionary = {} ## id -> HubNpc
 @onready var raid_btn: Button = $UI/Root/RaidBtn
 @onready var menu_btn: Button = $UI/Root/MenuBtn
 @onready var add_p2_btn: Button = $UI/Root/AddP2Btn
+@onready var ui_root: Control = $UI/Root
 
 
 func _ready() -> void:
 	RunState.timer_active = false
+	get_tree().paused = false
 	RunState.set_phase(RunState.Phase.HUB)
 	var biome := BiomePresenterScript.new()
 	add_child(biome)
@@ -37,13 +42,54 @@ func _ready() -> void:
 	_build_roster()
 	_build_meta()
 	_build_difficulty()
+	_setup_simple_hub_ui()
 	raid_btn.pressed.connect(_on_raid)
 	menu_btn.pressed.connect(func(): get_tree().change_scene_to_file("res://scenes/main.tscn"))
 	add_p2_btn.pressed.connect(_on_add_p2)
 	GameState.currencies_changed.connect(_refresh)
 	GameState.unlocks_changed.connect(_on_unlocks)
 	_refresh()
-	_apply_reputation_flavor()
+	dialogue.text = "Ashwick is the town hub — not the fight. Press START RAID to enter combat."
+
+
+func _setup_simple_hub_ui() -> void:
+	## Collapse the old 4-column wall; lead with a single raid CTA.
+	raid_btn.text = "START RAID"
+	raid_btn.custom_minimum_size = Vector2(280, 56)
+	raid_btn.position = Vector2(500, 300)
+	raid_btn.size = Vector2(280, 56)
+	raid_btn.z_index = 10
+	_cta_label = Label.new()
+	_cta_label.text = "↓ THIS STARTS GAMEPLAY ↓"
+	_cta_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_cta_label.position = Vector2(500, 268)
+	_cta_label.size = Vector2(280, 28)
+	_cta_label.modulate = Color(1.0, 0.85, 0.55)
+	ui_root.add_child(_cta_label)
+	_prep_btn = Button.new()
+	_prep_btn.text = "Prepare (roster / sectors / meta)"
+	_prep_btn.position = Vector2(500, 368)
+	_prep_btn.size = Vector2(280, 36)
+	_prep_btn.pressed.connect(_toggle_prep)
+	ui_root.add_child(_prep_btn)
+	## Keep top bar compact
+	diff_btn.visible = true
+	add_p2_btn.visible = true
+	menu_btn.visible = true
+	_set_prep_visible(false)
+
+
+func _toggle_prep() -> void:
+	_prep_open = not _prep_open
+	_set_prep_visible(_prep_open)
+	_prep_btn.text = "Hide prepare panels" if _prep_open else "Prepare (roster / sectors / meta)"
+
+
+func _set_prep_visible(on: bool) -> void:
+	buttons.visible = on
+	sector_box.visible = on
+	roster_box.visible = on
+	meta_box.visible = on
 
 
 func _on_unlocks() -> void:
@@ -261,7 +307,12 @@ func _unlock_alt(alt_id: String, cost: Dictionary) -> void:
 
 
 func _on_raid() -> void:
+	if GameState.party.is_empty():
+		GameState.party = [{"character_id": "severin", "alt_id": "", "device": -1}]
+	if str(GameState.selected_sector) == "":
+		GameState.selected_sector = "dust_meridian"
 	RunState.reputation = 0
+	get_tree().paused = false
 	get_tree().change_scene_to_file("res://scenes/sector/sector_run.tscn")
 
 

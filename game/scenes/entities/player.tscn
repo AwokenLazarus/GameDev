@@ -71,6 +71,6 @@ script = ExtResource("2_health")
 max_hp = 100.0
 
 [node name="Camera2D" type="Camera2D" parent="."]
-zoom = Vector2(1.05, 1.05)
+zoom = Vector2(0.85, 0.85)
 position_smoothing_enabled = true
 position_smoothing_speed = 8.0

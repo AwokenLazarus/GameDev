@@ -166,25 +166,26 @@ func _spawn_prop(kind: String, pos: Vector2, scl: float) -> void:
 func _build_atmosphere(sid: String, sector: Dictionary) -> void:
 	_modulate = CanvasModulate.new()
 	## Bloodlust-adjacent grade: dusty desat, cold moon, dried crimson
+	## Keep grade light enough that dark coats stay readable
 	match sid:
 		"dust_meridian", "ashwick":
-			_modulate.color = Color(0.92, 0.82, 0.72)
+			_modulate.color = Color(1.05, 0.95, 0.88)
 		"cinder_barrens":
-			_modulate.color = Color(0.95, 0.68, 0.58)
+			_modulate.color = Color(1.05, 0.82, 0.72)
 		"gloampine":
-			_modulate.color = Color(0.68, 0.78, 0.7)
+			_modulate.color = Color(0.85, 0.95, 0.88)
 		"salt_choir":
-			_modulate.color = Color(0.88, 0.86, 0.82)
+			_modulate.color = Color(1.0, 0.98, 0.95)
 		"iron_orchard":
-			_modulate.color = Color(0.78, 0.82, 0.65)
+			_modulate.color = Color(0.92, 0.96, 0.8)
 		"noir_cathedral":
-			_modulate.color = Color(0.62, 0.55, 0.78)
+			_modulate.color = Color(0.82, 0.75, 0.95)
 		"umbral_marches":
-			_modulate.color = Color(0.65, 0.7, 0.85)
+			_modulate.color = Color(0.82, 0.88, 1.0)
 		"pale_spire":
-			_modulate.color = Color(0.82, 0.48, 0.52)
+			_modulate.color = Color(1.0, 0.7, 0.72)
 		_:
-			_modulate.color = Color(0.88, 0.8, 0.76)
+			_modulate.color = Color(1.0, 0.94, 0.9)
 	add_child(_modulate)
 
 	_light = PointLight2D.new()

@@ -25,10 +25,15 @@ var _biome: Node2D
 
 
 func _ready() -> void:
+	get_tree().paused = false
 	var sector_id := GameState.selected_sector
+	if sector_id == "":
+		sector_id = "dust_meridian"
+		GameState.selected_sector = sector_id
 	var party: Array = GameState.party
 	if party.is_empty():
 		party = [{"character_id": "severin", "alt_id": "", "device": -1}]
+		GameState.party = party
 	var lead: Dictionary = party[0]
 	RunState.start_run(
 		str(lead.get("character_id", "severin")),
@@ -48,6 +53,9 @@ func _ready() -> void:
 	_build_arena(Vector2(900, 600))
 	_spawn_party(party)
 	_start_dungeon_burst()
+	banner.text = "FIGHT — %s · Burst 1/%d · red rings = you/enemies" % [
+		str(_sector.get("name", "Sector")), RunState.dungeons_total
+	]
 
 
 func _paint_biome() -> void:
@@ -141,7 +149,8 @@ func _start_dungeon_burst() -> void:
 func _spawn_burst_enemy(i: int, total: int) -> void:
 	var e: Node2D = ENEMY_SCENE.instantiate()
 	var angle := TAU * float(i) / float(total)
-	e.global_position = Vector2(cos(angle), sin(angle)) * 220.0
+	## Spawn closer so first fight is obviously on-screen
+	e.global_position = Vector2(cos(angle), sin(angle)) * 140.0
 	entities.add_child(e)
 	var human_chance := float(_sector.get("enemy_human_chance", 0.3))
 	var human := randf() < human_chance

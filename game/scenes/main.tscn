@@ -70,9 +70,9 @@ text = "2.5D mandate build"
 horizontal_alignment = 1
 
 [node name="Start" type="Button" parent="Center/VBox"]
-custom_minimum_size = Vector2(280, 48)
+custom_minimum_size = Vector2(360, 56)
 layout_mode = 2
-text = "Enter Ashwick"
+text = "PLAY RAID — Dust Meridian"
 
 [node name="Quit" type="Button" parent="Center/VBox"]
 custom_minimum_size = Vector2(280, 40)

@@ -6,9 +6,12 @@ class_name ActorVisual
 @export var sprite_name: String = "severin"
 @export var bob_amount: float = 1.2
 @export var shadow_scale: Vector2 = Vector2(1.0, 0.45)
+@export var show_marker: bool = true
 
 var _sprite: Sprite2D
+var _outline: Sprite2D
 var _shadow: Sprite2D
+var _marker: Polygon2D
 var _anims: Dictionary = {} ## String -> Array[Texture2D]
 var _anim: String = "idle"
 var _frames: Array[Texture2D] = []
@@ -21,19 +24,37 @@ var _running: bool = false
 var _facing_right: bool = true
 var _flash_t: float = 0.0
 var _fps: float = 8.0
+var _base_modulate: Color = Color(1.25, 1.18, 1.15, 1.0)
 
 
 func _ready() -> void:
 	z_as_relative = true
+	_marker = Polygon2D.new()
+	_marker.z_index = -2
+	_marker.color = Color(0.95, 0.35, 0.3, 0.55)
+	_marker.polygon = PackedVector2Array([
+		-22, 0, -16, 8, 16, 8, 22, 0, 16, -6, -16, -6
+	])
+	_marker.visible = show_marker
+	add_child(_marker)
 	_shadow = Sprite2D.new()
 	_shadow.z_index = -1
 	_shadow.modulate = Color(0, 0, 0, 0.45)
 	_shadow.scale = shadow_scale
 	add_child(_shadow)
+	_outline = Sprite2D.new()
+	_outline.centered = true
+	_outline.position = Vector2(0, -8)
+	_outline.z_index = 0
+	_outline.modulate = Color(1.0, 0.85, 0.75, 0.85)
+	_outline.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	add_child(_outline)
 	_sprite = Sprite2D.new()
 	_sprite.centered = true
 	_sprite.position = Vector2(0, -8)
+	_sprite.z_index = 1
 	_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	_sprite.modulate = _base_modulate
 	add_child(_sprite)
 	load_sprite(sprite_folder, sprite_name)
 
@@ -70,25 +91,45 @@ func load_sprite(folder: String, name: String) -> void:
 	_locked = false
 	_play_internal(_default_locomotion(), true)
 	_apply_scale()
+	## Marker color by role
+	if _marker:
+		match folder:
+			"characters":
+				_marker.color = Color(0.95, 0.4, 0.32, 0.65)
+				_marker.scale = Vector2(1.15, 0.7)
+			"enemies":
+				_marker.color = Color(0.85, 0.2, 0.55, 0.45)
+				_marker.scale = Vector2(0.85, 0.55)
+			"generals":
+				_marker.color = Color(1.0, 0.75, 0.25, 0.7)
+				_marker.scale = Vector2(1.6, 0.85)
+			"npcs":
+				_marker.color = Color(0.55, 0.75, 0.95, 0.5)
+				_marker.scale = Vector2(1.0, 0.6)
+			_:
+				_marker.color = Color(0.9, 0.9, 0.9, 0.4)
 
 
 func _apply_scale() -> void:
 	if _sprite.texture == null:
 		return
-	var target_h := 96.0
+	## Larger on-screen presence so painterly dark coats read in combat
+	var target_h := 128.0
 	if sprite_folder == "generals":
-		target_h = 128.0
+		target_h = 168.0
 	elif sprite_folder == "enemies":
-		target_h = 72.0
+		target_h = 96.0
 	elif sprite_folder == "npcs":
-		target_h = 88.0
+		target_h = 110.0
 	var tex_h := float(_sprite.texture.get_height())
 	if tex_h > 1.0:
 		var s := target_h / tex_h
 		_sprite.scale = Vector2(s, s)
-		_shadow.scale = Vector2(shadow_scale.x * s * 1.1, shadow_scale.y * s)
+		_outline.scale = Vector2(s * 1.06, s * 1.06)
+		_shadow.scale = Vector2(shadow_scale.x * s * 1.2, shadow_scale.y * s)
 		_shadow.texture = _sprite.texture
-		_shadow.position = Vector2(0, 36)
+		_outline.texture = _sprite.texture
+		_shadow.position = Vector2(0, 40)
 
 
 func _default_locomotion() -> String:
@@ -104,7 +145,6 @@ func play(anim: String, loop: bool = true, fps: float = -1.0) -> void:
 
 
 func play_oneshot(anim: String, fps: float = 12.0) -> void:
-	## Attack / dodge — locks until finished then returns to locomotion.
 	if not _anims.has(anim):
 		return
 	_locked = true
@@ -119,7 +159,7 @@ func _play_internal(anim: String, loop: bool = true, fps: float = -1.0) -> void:
 			anim = "walk"
 		else:
 			return
-	if anim == _anim and _frames == _anims[anim] and loop == _loop:
+	if anim == _anim and loop == _loop and not _frames.is_empty():
 		return
 	_anim = anim
 	_frames = _anims[anim]
@@ -146,6 +186,7 @@ func _play_internal(anim: String, loop: bool = true, fps: float = -1.0) -> void:
 				_fps = 8.0
 	if not _frames.is_empty():
 		_sprite.texture = _frames[0]
+		_outline.texture = _frames[0]
 		_shadow.texture = _frames[0]
 
 
@@ -169,6 +210,7 @@ func set_facing_x(dir_x: float) -> void:
 		return
 	_facing_right = dir_x >= 0.0
 	_sprite.flip_h = not _facing_right
+	_outline.flip_h = not _facing_right
 
 
 func flash(color: Color = Color(1.0, 0.4, 0.4), seconds: float = 0.1) -> void:
@@ -177,7 +219,7 @@ func flash(color: Color = Color(1.0, 0.4, 0.4), seconds: float = 0.1) -> void:
 
 
 func set_ghost(on: bool) -> void:
-	_sprite.modulate = Color(0.75, 0.85, 1.0, 0.65) if on else Color.WHITE
+	_sprite.modulate = Color(0.75, 0.85, 1.0, 0.65) if on else _base_modulate
 
 
 func current_anim() -> String:
@@ -188,7 +230,7 @@ func _process(delta: float) -> void:
 	if _flash_t > 0.0:
 		_flash_t -= delta
 		if _flash_t <= 0.0:
-			_sprite.modulate = Color.WHITE
+			_sprite.modulate = _base_modulate
 	if _frames.is_empty():
 		return
 	_frame_t += delta * _fps
@@ -204,9 +246,13 @@ func _process(delta: float) -> void:
 		else:
 			_frame_i += 1
 		_sprite.texture = _frames[_frame_i]
+		_outline.texture = _frames[_frame_i]
 		_shadow.texture = _frames[_frame_i]
 	var bob := sin(Time.get_ticks_msec() * 0.01 * (1.6 if _moving else 1.0)) * bob_amount
 	if _anim == "attack" or _anim == "dodge":
 		bob *= 0.25
 	_sprite.position.y = -8.0 + bob
+	_outline.position.y = -8.0 + bob
 	_shadow.scale.y = shadow_scale.y * _sprite.scale.y * (1.0 - bob * 0.01)
+	if _marker and show_marker:
+		_marker.rotation = Time.get_ticks_msec() * 0.001
