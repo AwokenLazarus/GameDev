@@ -1,0 +1,76 @@
+[gd_scene load_steps=5 format=3 uid="uid://player_severin"]
+
+[ext_resource type="Script" path="res://scripts/combat/player.gd" id="1_player"]
+[ext_resource type="Script" path="res://scripts/combat/health.gd" id="2_health"]
+[ext_resource type="Script" path="res://scripts/visuals/actor_visual.gd" id="3_vis"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
+size = Vector2(22, 28)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_atk"]
+size = Vector2(54, 28)
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_feed"]
+radius = 42.0
+
+[node name="Player" type="CharacterBody2D"]
+y_sort_enabled = true
+collision_layer = 2
+collision_mask = 1
+script = ExtResource("1_player")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, 8)
+shape = SubResource("RectangleShape2D_body")
+
+[node name="ActorVisual" type="Node2D" parent="."]
+script = ExtResource("3_vis")
+sprite_folder = "characters"
+sprite_name = "severin"
+
+[node name="BodyVisual" type="Polygon2D" parent="."]
+visible = false
+color = Color(0.18, 0.16, 0.2, 1)
+polygon = PackedVector2Array(-10, -16, 10, -16, 12, 14, -12, 14)
+
+[node name="Accent" type="Polygon2D" parent="."]
+visible = false
+color = Color(0.72, 0.78, 0.88, 1)
+polygon = PackedVector2Array(-6, -10, 6, -10, 4, -2, -4, -2)
+
+[node name="BladeVisual" type="Sprite2D" parent="."]
+visible = false
+position = Vector2(28, -8)
+texture_filter = 0
+
+[node name="SpiritVisual" type="Sprite2D" parent="."]
+visible = false
+modulate = Color(0.75, 0.85, 1, 0.65)
+z_index = 2
+texture_filter = 0
+
+[node name="AttackHitbox" type="Area2D" parent="."]
+collision_layer = 8
+collision_mask = 4
+monitoring = false
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="AttackHitbox"]
+position = Vector2(30, 0)
+shape = SubResource("RectangleShape2D_atk")
+
+[node name="FeedArea" type="Area2D" parent="."]
+collision_layer = 0
+collision_mask = 4
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="FeedArea"]
+shape = SubResource("CircleShape2D_feed")
+
+[node name="Health" type="Node" parent="."]
+script = ExtResource("2_health")
+max_hp = 100.0
+
+[node name="Camera2D" type="Camera2D" parent="."]
+zoom = Vector2(0.85, 0.85)
+position_smoothing_enabled = true
+position_smoothing_speed = 8.0

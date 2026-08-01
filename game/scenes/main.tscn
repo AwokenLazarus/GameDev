@@ -1,0 +1,80 @@
+[gd_scene load_steps=2 format=3 uid="uid://main_boot"]
+
+[ext_resource type="Script" path="res://scripts/ui/main_menu.gd" id="1_menu"]
+
+[node name="Main" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_menu")
+
+[node name="BG" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.08, 0.07, 0.09, 1)
+
+[node name="Gradient" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.16, 0.06, 0.08, 0.55)
+
+[node name="Moon" type="Sprite2D" parent="."]
+position = Vector2(980, 140)
+scale = Vector2(0.55, 0.55)
+
+[node name="Hero" type="Sprite2D" parent="."]
+position = Vector2(980, 420)
+scale = Vector2(2.2, 2.2)
+
+[node name="Center" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="Center"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="Title" type="Label" parent="Center/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.86, 0.78, 0.7, 1)
+theme_override_font_sizes/font_size = 64
+text = "MOONWAKE"
+horizontal_alignment = 1
+
+[node name="Tag" type="Label" parent="Center/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.2, 0.24, 1)
+theme_override_font_sizes/font_size = 18
+text = "cursed brood · gothic frontier · full moon rebirth"
+horizontal_alignment = 1
+
+[node name="Subtitle" type="Label" parent="Center/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.6, 0.55, 1)
+text = "2.5D mandate build"
+horizontal_alignment = 1
+
+[node name="Start" type="Button" parent="Center/VBox"]
+custom_minimum_size = Vector2(360, 56)
+layout_mode = 2
+text = "PLAY RAID — Dust Meridian"
+
+[node name="Quit" type="Button" parent="Center/VBox"]
+custom_minimum_size = Vector2(280, 40)
+layout_mode = 2
+text = "Quit"
