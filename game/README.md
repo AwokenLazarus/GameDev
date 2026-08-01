@@ -12,6 +12,13 @@ Playable implementation of the [Concept Bible](../docs/MOONWAKE_CONCEPT_BIBLE.md
 godot --path game
 ```
 
+**First play:** click **PLAY RAID — Dust Meridian** on the title screen (skips the town hub).  
+You should see Severin (red ring under feet) and enemies spawning around you.
+
+- Move WASD · Attack J / Click · Dodge Space · Feed F  
+- After a burst clears, a **PICK A BOON** panel pauses combat — click one choice to continue.  
+- **Ashwick Town Hub** is optional prep (roster / meta), not the fight.
+
 ## Contents
 
 | System | Status |
