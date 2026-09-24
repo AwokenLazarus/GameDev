@@ -50,33 +50,14 @@ func _process(delta: float) -> void:
 
 
 func _spawn_one() -> void:
-	var e: Node2D = enemy_scene.instantiate()
 	var angle := randf() * TAU
 	var dist := randf_range(spawn_radius_min, spawn_radius_max)
 	var pos := player.global_position + Vector2(cos(angle), sin(angle)) * dist
 	pos.x = clampf(pos.x, _arena_center.x - _arena_half.x + 40.0, _arena_center.x + _arena_half.x - 40.0)
 	pos.y = clampf(pos.y, _arena_center.y - _arena_half.y + 40.0, _arena_center.y + _arena_half.y - 40.0)
-	e.global_position = pos
-	var elite := false
-	var human := false
-	var t := RunState.run_time
-	## Elites rare early, common later.
-	var elite_chance := clampf((t - 60.0) / 180.0, 0.02, 0.28)
-	if randf() < elite_chance:
-		elite = true
-	var human_chance := 0.35
-	if SectorDB and RunState:
-		var s: Dictionary = SectorDB.get_sector(RunState.sector_id)
-		human_chance = float(s.get("enemy_human_chance", 0.35))
-	if randf() < human_chance:
-		human = true
-	get_parent().add_child(e)
-	if e.has_method("setup"):
-		e.setup(player, human, elite)
-	else:
-		e.is_human = human
-		e.is_elite = elite
-	## setup() applies GameState.difficulty_enemy_mult() and keeps elite ×1.6
-	if e.has_method("begin_spawn_telegraph"):
-		e.begin_spawn_telegraph(0.4)
+	var e: Node2D = MWEnemyFactory.spawn(get_parent(), pos, player, {
+		"elite": MWEnemyFactory.roll_elite(),
+		"telegraph": true,
+		"telegraph_s": 0.4,
+	})
 	spawned.emit(e)

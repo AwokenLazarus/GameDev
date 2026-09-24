@@ -123,6 +123,7 @@ func _build_sectors() -> void:
 			"church": 0.4,
 		},
 		"enemy_human_chance": 0.35,
+		"enemy_families": _families_dust(),
 		"description": "Bleached flats and rail wrecks under a hard Dominion badge.",
 		"unlock_hint": "Available from the first moon.",
 	})
@@ -144,6 +145,7 @@ func _build_sectors() -> void:
 			"church": 1.2,
 		},
 		"enemy_human_chance": 0.28,
+		"enemy_families": _families_cinder(),
 		"description": "Volcanic slag and mining pits owned by House Veyra industry.",
 		"unlock_hint": "Clear Dust Meridian, or spend Ash on the map petition.",
 	})
@@ -165,6 +167,7 @@ func _build_sectors() -> void:
 			"church": 0.7,
 		},
 		"enemy_human_chance": 0.18,
+		"enemy_families": _families_gloam(),
 		"description": "Fog redwoods, rope bridges, and beast-blood hunting grounds.",
 		"unlock_hint": "Unlock after Cinder Barrens or Kin trail leads.",
 	})
@@ -186,6 +189,7 @@ func _build_sectors() -> void:
 			"church": 0.3,
 		},
 		"enemy_human_chance": 0.40,
+		"enemy_families": _families_salt(),
 		"description": "Salt flats and drowned chapels under Pale Sun judgment.",
 		"unlock_hint": "Church pressure rises after Gloampine clears.",
 	})
@@ -207,6 +211,7 @@ func _build_sectors() -> void:
 			"church": 0.9,
 		},
 		"enemy_human_chance": 0.32,
+		"enemy_families": _families_orchard(),
 		"description": "Feral agri-domes and thorn trains under famine quotas.",
 		"unlock_hint": "Petition missions open after Salt Choir.",
 	})
@@ -228,6 +233,7 @@ func _build_sectors() -> void:
 			"church": 1.25,
 		},
 		"enemy_human_chance": 0.45,
+		"enemy_families": _families_noir(),
 		"description": "Chromegoth megacity under permanent shade and court intrigue.",
 		"unlock_hint": "Court access after Iron Orchard.",
 	})
@@ -249,6 +255,7 @@ func _build_sectors() -> void:
 			"church": 0.85,
 		},
 		"enemy_human_chance": 0.22,
+		"enemy_families": _families_umbral(),
 		"description": "Orbital scrap-rings on the climb toward the Pale Spire.",
 		"unlock_hint": "Open the Marches after Noir Cathedral.",
 	})
@@ -270,6 +277,7 @@ func _build_sectors() -> void:
 			"church": 1.0,
 		},
 		"enemy_human_chance": 0.25,
+		"enemy_families": _families_spire(),
 		"description": "Gothic castle fused to an orbital fortress. Scaled nightmare end raid.",
 		"unlock_hint": "Always raidable. Underbuilt runs die here.",
 	})
@@ -307,3 +315,135 @@ func all_raidable_sectors() -> Array[Dictionary]:
 
 func get_general(id: String) -> Dictionary:
 	return _generals.get(id, {}).duplicate(true)
+
+
+func _row(id: String, archetype: String, weight: float, sprite: String, human: bool) -> Dictionary:
+	return {
+		"id": id,
+		"archetype": archetype,
+		"weight": weight,
+		"sprite": sprite,
+		"human": human,
+	}
+
+
+func _families_dust() -> Array:
+	## Dust Meridian — rail badge, all four verbs on-stage.
+	return [
+		_row("rail_grub", "melee", 34.0, "dominion_grub", false),
+		_row("badge_rifle", "ranged", 24.0, "human_enforcer", true),
+		_row("gallows_brute", "charger", 22.0, "dominion_elite", false),
+		_row("dust_cantor", "caster", 20.0, "church_zealot", true),
+	]
+
+
+func _families_cinder() -> Array:
+	return [
+		_row("slag_grub", "melee", 20.0, "dominion_grub", false),
+		_row("contract_rifle", "ranged", 18.0, "human_enforcer", true),
+		_row("furnace_brute", "charger", 40.0, "dominion_elite", false),
+		_row("veyra_hex", "caster", 22.0, "void_wretch", false),
+	]
+
+
+func _families_gloam() -> Array:
+	return [
+		_row("pine_hound", "melee", 42.0, "beast_hound", false),
+		_row("kin_rifle", "ranged", 10.0, "human_enforcer", true),
+		_row("marrow_brute", "charger", 36.0, "beast_hound", false),
+		_row("fog_hex", "caster", 12.0, "void_wretch", false),
+	]
+
+
+func _families_salt() -> Array:
+	return [
+		_row("choir_zealot", "melee", 18.0, "church_zealot", true),
+		_row("psalm_rifle", "ranged", 22.0, "church_zealot", true),
+		_row("gavel_brute", "charger", 12.0, "dominion_elite", false),
+		_row("cantor_hex", "caster", 48.0, "church_zealot", true),
+	]
+
+
+func _families_orchard() -> Array:
+	return [
+		_row("briar_grub", "melee", 30.0, "beast_hound", false),
+		_row("quota_rifle", "ranged", 15.0, "human_enforcer", true),
+		_row("thorn_train", "charger", 40.0, "beast_hound", false),
+		_row("famine_hex", "caster", 15.0, "dominion_grub", false),
+	]
+
+
+func _families_noir() -> Array:
+	return [
+		_row("court_wretch", "melee", 15.0, "void_wretch", false),
+		_row("shade_rifle", "ranged", 35.0, "void_wretch", false),
+		_row("duke_brute", "charger", 15.0, "dominion_elite", false),
+		_row("orlok_hex", "caster", 35.0, "void_wretch", false),
+	]
+
+
+func _families_umbral() -> Array:
+	return [
+		_row("scrap_grub", "melee", 16.0, "dominion_grub", false),
+		_row("fleet_rifle", "ranged", 38.0, "human_enforcer", true),
+		_row("warden_brute", "charger", 32.0, "dominion_elite", false),
+		_row("orbit_hex", "caster", 14.0, "void_wretch", false),
+	]
+
+
+func _families_spire() -> Array:
+	return [
+		_row("pale_wretch", "melee", 25.0, "void_wretch", false),
+		_row("spire_zealot", "ranged", 25.0, "church_zealot", true),
+		_row("undying_brute", "charger", 25.0, "dominion_elite", false),
+		_row("moon_hex", "caster", 25.0, "void_wretch", false),
+	]
+
+
+func enemy_families(sector_id: String) -> Array:
+	var s: Dictionary = get_sector(sector_id)
+	var rows: Array = s.get("enemy_families", [])
+	if rows.is_empty():
+		return _families_dust()
+	return rows
+
+
+func family_signature(sector_id: String) -> String:
+	var parts: PackedStringArray = PackedStringArray()
+	for row in enemy_families(sector_id):
+		if typeof(row) != TYPE_DICTIONARY:
+			continue
+		var d: Dictionary = row
+		parts.append("%s:%.0f:%s" % [str(d.get("archetype", "")), float(d.get("weight", 0.0)), str(d.get("sprite", ""))])
+	return "|".join(parts)
+
+
+func roll_enemy_family(sector_id: String, force_archetype: String = "", avoid_archetypes: Array = []) -> Dictionary:
+	var rows: Array = enemy_families(sector_id)
+	var pool: Array = []
+	for row in rows:
+		if typeof(row) != TYPE_DICTIONARY:
+			continue
+		var d: Dictionary = row
+		var arch := str(d.get("archetype", "melee"))
+		if force_archetype != "" and arch != force_archetype:
+			continue
+		if force_archetype == "" and not avoid_archetypes.is_empty() and avoid_archetypes.has(arch):
+			continue
+		pool.append(d)
+	if pool.is_empty():
+		for row in rows:
+			if typeof(row) == TYPE_DICTIONARY:
+				pool.append(row)
+	if pool.is_empty():
+		return _row("rail_grub", "melee", 1.0, "dominion_grub", false)
+	var total := 0.0
+	for row in pool:
+		total += float((row as Dictionary).get("weight", 1.0))
+	var pick := randf() * maxf(total, 0.001)
+	var acc := 0.0
+	for row in pool:
+		acc += float((row as Dictionary).get("weight", 1.0))
+		if pick <= acc:
+			return (row as Dictionary).duplicate(true)
+	return (pool[pool.size() - 1] as Dictionary).duplicate(true)
