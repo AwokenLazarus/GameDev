@@ -10,6 +10,7 @@ extends CanvasLayer
 @onready var rep_label: Label = $Root/RepLabel
 @onready var feed_label: Label = $Root/FeedLabel
 @onready var hint_label: Label = $Root/HintLabel
+var kit_label: Label
 
 
 func _ready() -> void:
@@ -19,6 +20,10 @@ func _ready() -> void:
 	RunState.boons_changed.connect(_on_boons)
 	RunState.reputation_changed.connect(_on_rep)
 	RunState.feed_buff_changed.connect(_on_feed)
+	kit_label = Label.new()
+	kit_label.name = "KitLabel"
+	kit_label.position = Vector2(24.0, 192.0)
+	$Root.add_child(kit_label)
 	_refresh()
 
 
@@ -30,6 +35,8 @@ func _process(_delta: float) -> void:
 	hp_bar.max_value = RunState.player_max_hp
 	hp_bar.value = RunState.player_hp
 	hp_label.text = "%d / %d" % [int(RunState.player_hp), int(RunState.player_max_hp)]
+	var p := get_tree().get_first_node_in_group("player")
+	kit_label.text = p.slot_status() if p and p.has_method("slot_status") else ""
 
 
 func _refresh() -> void:
@@ -55,7 +62,7 @@ func _on_phase(phase: String) -> void:
 	phase_label.text = phase.capitalize()
 	match phase:
 		"dungeon":
-			hint_label.text = "YOU = red ring under feet · Kill all enemies · WASD · J/Click attack · Space dodge · F feed"
+			hint_label.text = "YOU = red ring under feet · WASD · J/LMB attack · K/RMB special · L/Q cast · Space dodge · F feed"
 		"wild":
 			hint_label.text = "Wild stage — keep killing until the general appears · watch the kill gate"
 		"boss":
