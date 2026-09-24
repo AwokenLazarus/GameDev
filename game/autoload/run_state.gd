@@ -64,6 +64,7 @@ var gear_slots: Dictionary = {
 var general_defeated: bool = false
 var awaiting_boon: bool = false
 var meta_mods: Dictionary = {}
+var max_hit_taken: float = 0.0
 
 
 func start_run(char_id: String = "severin", sector: String = "dust_meridian", alt: String = "", players: int = 1) -> void:
@@ -96,6 +97,7 @@ func start_run(char_id: String = "severin", sector: String = "dust_meridian", al
 	gear_slots = {"charm": {}, "relic": {}, "coat": {}}
 	general_defeated = false
 	awaiting_boon = false
+	max_hit_taken = 0.0
 
 	var sector_data: Dictionary = SectorDB.get_sector(sector_id) if SectorDB else {}
 	dungeons_total = int(sector_data.get("burst_count", 5))
@@ -297,17 +299,33 @@ func reputation_label() -> String:
 	return "Hated"
 
 
+func note_hit(amount: float) -> void:
+	if amount > max_hit_taken:
+		max_hit_taken = amount
+	print("MW022_HIT amount=%.1f max_hit=%.1f" % [amount, max_hit_taken])
+
+
 func equip_gear(slot: String, item: Dictionary) -> void:
 	if not gear_slots.has(slot):
 		return
+	var old: Dictionary = gear_slots[slot]
+	if not old.is_empty():
+		_apply_gear_stats(old, -1.0)
 	gear_slots[slot] = item
-	## Apply once as flat bonuses
-	damage_mult += float(item.get("damage", 0.0))
-	move_mult += float(item.get("move", 0.0))
-	lifesteal += float(item.get("lifesteal", 0.0))
-	player_max_hp += float(item.get("max_hp", 0.0))
-	player_hp = minf(player_hp + float(item.get("max_hp", 0.0)), player_max_hp)
+	_apply_gear_stats(item, 1.0)
 	gear_changed.emit()
+
+
+func _apply_gear_stats(item: Dictionary, sign: float) -> void:
+	damage_mult += sign * float(item.get("damage", 0.0))
+	move_mult += sign * float(item.get("move", 0.0))
+	lifesteal += sign * float(item.get("lifesteal", 0.0))
+	var hp_delta := sign * float(item.get("max_hp", 0.0))
+	player_max_hp = maxf(1.0, player_max_hp + hp_delta)
+	if sign > 0.0:
+		player_hp = minf(player_hp + hp_delta, player_max_hp)
+	else:
+		player_hp = clampf(player_hp, 1.0, player_max_hp)
 
 
 func grant_run_rewards(victory: bool) -> void:
