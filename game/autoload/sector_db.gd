@@ -147,7 +147,7 @@ func _build_sectors() -> void:
 		"accent": Color(0.55, 0.42, 0.28, 1.0),
 		"ground_color": Color(0.62, 0.54, 0.38, 1.0),
 		"burst_count": 5,
-		"kill_gate_base": 40,
+		"kill_gate_base": 1150,
 		"nightmare": false,
 		"patron_weights": {
 			"dust_compact": 1.4,
@@ -169,7 +169,7 @@ func _build_sectors() -> void:
 		"accent": Color(0.95, 0.55, 0.18, 1.0),
 		"ground_color": Color(0.35, 0.18, 0.14, 1.0),
 		"burst_count": 5,
-		"kill_gate_base": 40,
+		"kill_gate_base": 1150,
 		"nightmare": false,
 		"patron_weights": {
 			"dust_compact": 0.9,
@@ -191,7 +191,7 @@ func _build_sectors() -> void:
 		"accent": Color(0.55, 0.75, 0.45, 1.0),
 		"ground_color": Color(0.18, 0.26, 0.22, 1.0),
 		"burst_count": 5,
-		"kill_gate_base": 40,
+		"kill_gate_base": 1150,
 		"nightmare": false,
 		"patron_weights": {
 			"dust_compact": 1.1,
@@ -213,7 +213,7 @@ func _build_sectors() -> void:
 		"accent": Color(0.95, 0.88, 0.55, 1.0),
 		"ground_color": Color(0.70, 0.72, 0.74, 1.0),
 		"burst_count": 5,
-		"kill_gate_base": 40,
+		"kill_gate_base": 1150,
 		"nightmare": false,
 		"patron_weights": {
 			"dust_compact": 1.35,
@@ -235,7 +235,7 @@ func _build_sectors() -> void:
 		"accent": Color(0.70, 0.35, 0.25, 1.0),
 		"ground_color": Color(0.30, 0.38, 0.20, 1.0),
 		"burst_count": 5,
-		"kill_gate_base": 40,
+		"kill_gate_base": 1150,
 		"nightmare": false,
 		"patron_weights": {
 			"dust_compact": 0.8,
@@ -257,7 +257,7 @@ func _build_sectors() -> void:
 		"accent": Color(0.75, 0.25, 0.35, 1.0),
 		"ground_color": Color(0.12, 0.11, 0.16, 1.0),
 		"burst_count": 5,
-		"kill_gate_base": 40,
+		"kill_gate_base": 1150,
 		"nightmare": false,
 		"patron_weights": {
 			"dust_compact": 0.7,
@@ -279,7 +279,7 @@ func _build_sectors() -> void:
 		"accent": Color(0.45, 0.70, 0.90, 1.0),
 		"ground_color": Color(0.14, 0.15, 0.22, 1.0),
 		"burst_count": 5,
-		"kill_gate_base": 40,
+		"kill_gate_base": 1150,
 		"nightmare": false,
 		"patron_weights": {
 			"dust_compact": 1.2,
@@ -301,7 +301,7 @@ func _build_sectors() -> void:
 		"accent": Color(0.70, 0.15, 0.22, 1.0),
 		"ground_color": Color(0.55, 0.55, 0.62, 1.0),
 		"burst_count": 5,
-		"kill_gate_base": 80,
+		"kill_gate_base": 1500,
 		"nightmare": true,
 		"patron_weights": {
 			"dust_compact": 1.0,
