@@ -58,6 +58,7 @@ func _ready() -> void:
 	await _check_red_letter()
 	_scale = 1.0
 	Engine.time_scale = 1.0
+	Engine.physics_ticks_per_second = 60
 	OS.remove_logger(_errors)
 	if _errors.count > 0:
 		_fail("%d engine/script errors; first: %s" % [_errors.count, _errors.first])
@@ -262,7 +263,8 @@ func _check_kit(kit: String) -> void:
 		p.apply_hit(10.0, elite.global_position)
 		p.health.invuln_timer = 0.0
 		if id == "veyra_poise":
-			p.apply_hit(p.health.hp + 20.0, elite.global_position)
+			p.health.hp = 20.0 ## a single hit is capped at MAX_HIT, so bring HP into range
+			p.apply_hit(30.0, elite.global_position)
 			if p.dead or p.health.hp > 1.0 or p.debt <= 0.0:
 				_fail("%s: Noble Poise did not turn lethal damage into Debt" % kit)
 		p.fed.emit()
@@ -306,7 +308,7 @@ func _check_red_letter() -> void:
 		arena.add_child(p)
 		var g: Node = GENERAL.instantiate()
 		arena.add_child(g)
-		g.global_position = Vector2(60, 0)
+		g.global_position = Vector2(190, 0) ## the cleave lunges 150 px first
 		g.set_physics_process(false)
 		g.health.max_hp = DUMMY_HP ## big pool: normal hits can't finish 5%
 		g.health.hp = DUMMY_HP * 0.05
@@ -342,6 +344,9 @@ func _wait(seconds: float) -> void:
 	while left > 0.0:
 		if Engine.time_scale > 0.5 and not MWVFX._hitstopping:
 			Engine.time_scale = _scale
+		## Same physics step length at any scale, so fast shots don't tunnel.
+		Engine.physics_ticks_per_second = int(60.0 * _scale)
+		Engine.max_physics_steps_per_frame = int(8.0 * _scale)
 		var step := minf(left, 0.1)
 		await get_tree().create_timer(step).timeout
 		left -= step
