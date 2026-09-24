@@ -15,6 +15,7 @@ signal boon_replaced(old: Dictionary, new: Dictionary)
 signal pact_formed(patron_id: String)
 ## A burst room or the wild map began (per-room boons reset on this).
 signal room_started
+signal greed_used(kind: String)
 
 enum Phase { HUB, DUNGEON, WILD, BOSS, DEAD, VICTORY }
 
@@ -36,7 +37,16 @@ var player_count: int = 1
 var run_time: float = 0.0
 var timer_active: bool = false
 var kills: int = 0
-var kill_gate: int = 40
+## Kill gate counts wild-stage kills only (burst kills no longer leak into it).
+var wild_kills: int = 0
+var kill_gate: int = 1150
+## Moon altars push the director clock ahead without touching the sector timer.
+var clock_bonus: float = 0.0
+## Run-scoped chest haul, banked into meta currencies by grant_run_rewards.
+var cache_blood: int = 0
+var cache_ash: int = 0
+var cache_tech: int = 0
+var greed_log: Array[String] = []
 var dungeon_index: int = 0
 var dungeons_total: int = 5
 var boon_picks_done: int = 0
@@ -88,6 +98,12 @@ func start_run(char_id: String = "severin", sector: String = "dust_meridian", al
 	run_time = 0.0
 	timer_active = true
 	kills = 0
+	wild_kills = 0
+	clock_bonus = 0.0
+	cache_blood = 0
+	cache_ash = 0
+	cache_tech = 0
+	greed_log.clear()
 	dungeon_index = 0
 	boon_picks_done = 0
 	boon_picks_target = 8
@@ -115,7 +131,7 @@ func start_run(char_id: String = "severin", sector: String = "dust_meridian", al
 
 	var sector_data: Dictionary = SectorDB.get_sector(sector_id) if SectorDB else {}
 	dungeons_total = int(sector_data.get("burst_count", 5))
-	var gate_base := int(sector_data.get("kill_gate_base", 40))
+	var gate_base := int(sector_data.get("kill_gate_base", 1150))
 	kill_gate = _scaled_kill_gate(gate_base, player_count)
 
 	var char_data: Dictionary = CharacterDB.get_character(character_id) if CharacterDB else {}
@@ -127,7 +143,9 @@ func start_run(char_id: String = "severin", sector: String = "dust_meridian", al
 	attack_speed_mult += float(meta_mods.get("attack_speed_bonus", 0.0))
 	lifesteal += float(meta_mods.get("lifesteal_bonus", 0.0))
 	dash_mult += float(meta_mods.get("dash_bonus", 0.0))
-	kill_gate = maxi(15, kill_gate + int(meta_mods.get("kill_gate_bonus", 0)))
+	## Killgate Scanner rank = −2 in the old 40-kill scale; keep its share (5 %/rank).
+	var scanner := float(meta_mods.get("kill_gate_bonus", 0)) * 0.025
+	kill_gate = maxi(int(float(gate_base) * 0.4), int(float(kill_gate) * (1.0 + scanner)))
 	boon_picks_target += int(meta_mods.get("boon_picks_bonus", 0))
 	if alt_id != "" and CharacterDB:
 		var alts: Array = CharacterDB.get_alts(character_id)
@@ -140,12 +158,19 @@ func start_run(char_id: String = "severin", sector: String = "dust_meridian", al
 	player_hp = base_hp
 
 	phase_changed.emit("dungeon")
-	kills_changed.emit(kills, kill_gate)
+	kills_changed.emit(wild_kills, kill_gate)
 	gear_changed.emit()
 
 
+## Tuning (MW-025): ~30 min sector at a human kill rate (~1 kill / 1.2 s);
+## the wild stage is ~80 % of it. See game/README.md "Pacing".
+const CLOCK_FULL := 1500.0 ## director / enemy scaling reaches 1.0 at 25 min
+const GATE_PER_EXTRA_PLAYER := 0.35
+
+
 func _scaled_kill_gate(base: int, players: int) -> int:
-	var g: int = base + 12 * maxi(players - 1, 0)
+	## Co-op kills faster; the director also spawns more per player (see get_director_intensity).
+	var g: int = int(float(base) * (1.0 + GATE_PER_EXTRA_PLAYER * float(maxi(players - 1, 0))))
 	match GameState.selected_difficulty:
 		"blood":
 			g = int(float(g) * 1.15)
@@ -173,19 +198,43 @@ func _process(delta: float) -> void:
 func get_difficulty_label() -> String:
 	## In-run escalating label (RoR2-like), distinct from story difficulty select.
 	var prefix := GameState.difficulty_label()
-	if run_time < 90.0:
+	var c := difficulty_clock()
+	if c < 300.0:
 		return prefix
-	if run_time < 180.0:
+	if c < 720.0:
 		return prefix + "→Blood"
-	if run_time < 300.0:
+	if c < 1200.0:
 		return prefix + "→Eclipse"
 	return prefix + "→Pale"
 
 
+## Sector timer plus altar debt; drives the director, elites and enemy scaling.
+func difficulty_clock() -> float:
+	return run_time + clock_bonus
+
+
+## 0 at sector start → 1 at 25 min on the difficulty clock; keeps creeping past it.
+func difficulty_ramp() -> float:
+	var c := difficulty_clock()
+	if c <= CLOCK_FULL:
+		return c / CLOCK_FULL
+	return 1.0 + minf((c - CLOCK_FULL) / 1200.0, 0.5)
+
+
 func get_director_intensity() -> float:
-	var base := clampf(run_time / 240.0, 0.15, 1.8)
+	var base := 0.2 + 1.6 * difficulty_ramp()
 	base *= GameState.difficulty_enemy_mult() * 0.65 + 0.35
+	base *= 1.0 + 0.3 * float(maxi(player_count - 1, 0))
 	return base
+
+
+## Director spawns get tougher as the clock runs (burst rooms use it too).
+func enemy_hp_time_mult() -> float:
+	return 1.0 + 0.6 * difficulty_ramp()
+
+
+func enemy_damage_time_mult() -> float:
+	return 1.0 + 0.35 * difficulty_ramp()
 
 
 func set_phase(p: Phase) -> void:
@@ -203,11 +252,24 @@ func set_phase(p: Phase) -> void:
 
 func register_kill(_is_human: bool = false) -> void:
 	kills += 1
-	kills_changed.emit(kills, kill_gate)
+	if phase == Phase.WILD:
+		wild_kills += 1
+	kills_changed.emit(wild_kills, kill_gate)
 
 
 func can_spawn_general() -> bool:
-	return kills >= kill_gate and phase == Phase.WILD and not general_defeated
+	return wild_kills >= kill_gate and phase == Phase.WILD and not general_defeated
+
+
+func note_greed(kind: String) -> void:
+	greed_log.append(kind)
+	greed_used.emit(kind)
+
+
+func add_cache(blood: int, ash: int, tech: int) -> void:
+	cache_blood += blood
+	cache_ash += ash
+	cache_tech += tech
 
 
 func try_align(patron_id: String) -> bool:
@@ -382,9 +444,15 @@ func _apply_gear_stats(item: Dictionary, sign: float) -> void:
 
 
 func grant_run_rewards(victory: bool) -> void:
-	var blood_gain := 5 + kills / 5 + feed_count * 3
+	## Wild kills are now in the hundreds; keep the old ~8 Blood for a full gate.
+	var blood_gain := 5 + (kills - wild_kills) / 5 + wild_kills / 125 + feed_count * 3
+	## Chest haul survives death at half value.
+	var keep := 1.0 if victory else 0.5
+	blood_gain += int(float(cache_blood) * keep)
 	var ash_gain := 8 if victory else 3
 	var tech_gain := 4 if victory else 1
+	ash_gain += int(float(cache_ash) * keep)
+	tech_gain += int(float(cache_tech) * keep)
 	if victory:
 		blood_gain += 15
 		tech_gain += 6

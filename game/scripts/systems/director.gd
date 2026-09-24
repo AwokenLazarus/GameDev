@@ -6,7 +6,10 @@ signal spawned(enemy: Node)
 @export var enemy_scene: PackedScene
 @export var spawn_radius_min: float = 420.0
 @export var spawn_radius_max: float = 640.0
-@export var max_alive: int = 40
+## Alive cap grows with intensity so density keeps rising through ~25 min (MW-025).
+@export var max_alive_base: int = 14
+@export var max_alive_per_intensity: int = 20
+@export var max_alive_hard: int = 64
 
 var active: bool = false
 var _acc: float = 0.0
@@ -36,17 +39,23 @@ func _process(delta: float) -> void:
 	if player == null or not is_instance_valid(player):
 		return
 	var intensity := RunState.get_director_intensity()
-	var interval := clampf(1.4 - intensity * 0.7, 0.35, 1.4)
+	## ~0.7 spawns/s at sector start → ~4/s at 25 min (burst 1→3, interval 1.5→0.5 s).
+	var interval := clampf(1.6 - intensity * 0.6, 0.45, 1.6)
 	_acc += delta
 	if _acc < interval:
 		return
 	_acc = 0.0
 	var alive := get_tree().get_nodes_in_group("enemy").size()
-	if alive >= max_alive:
+	var cap := max_alive_cap(intensity)
+	if alive >= cap:
 		return
-	var burst := 1 + int(intensity * 2.0)
+	var burst := mini(1 + int(intensity * 1.25), cap - alive)
 	for i in burst:
 		_spawn_one()
+
+
+func max_alive_cap(intensity: float) -> int:
+	return mini(max_alive_hard, max_alive_base + int(float(max_alive_per_intensity) * intensity))
 
 
 func _spawn_one() -> void:

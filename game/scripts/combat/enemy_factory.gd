@@ -41,8 +41,9 @@ static func spawn(parent: Node, pos: Vector2, player: Node2D, opts: Dictionary =
 
 
 static func roll_elite() -> bool:
-	var t := RunState.run_time if RunState else 0.0
-	var elite_chance := clampf((t - 60.0) / 180.0, 0.02, 0.28)
+	## Elites rare → common over the 25 min difficulty clock (L4).
+	var t := RunState.difficulty_clock() if RunState else 0.0
+	var elite_chance := clampf(0.02 + 0.3 * (t - 120.0) / 1380.0, 0.02, 0.32)
 	return randf() < elite_chance
 
 

@@ -354,7 +354,7 @@ func execute(foe: Node) -> void:
 	var pos: Vector2 = (foe as Node2D).global_position
 	_ring(pos, 46.0, Color(0.55, 0.55, 0.6))
 	_ring(pos, 30.0, C_PETITION)
-	h.take_damage(h.hp + 1.0, true)
+	h.kill() ## ignores Armored incoming_mult
 	p.note_kill(foe, "execute", false)
 	print("MW006_EXECUTE foe=%s" % foe.name)
 	if has("petition_team"):

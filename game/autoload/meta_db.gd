@@ -157,7 +157,7 @@ func _build_nodes() -> void:
 		"id": "tech_scanner",
 		"branch": "tech",
 		"name": "Killgate Scanner",
-		"desc": "Reduce kill gate by 2 per rank (min floor applied by run logic).",
+		"desc": "Reduce the wild kill gate by 5% per rank (floor applied by run logic).",
 		"cost": {"blood": 0, "ash": 15, "tech": 40},
 		"max_rank": 3,
 		"effects": {"kill_gate_bonus": -2},

@@ -97,11 +97,23 @@ Autoplay args after `--`:
 
 | Arg | Values | Default |
 |-----|--------|---------|
-| `mode` | `kill` (bot + invuln) · `idle` (no input, reports time-to-death) · `human` (no bot) | `kill` |
+| `mode` | `kill` (fast bot: 1 kill / 0.4 s, random doors, invuln) · `human` (pacing estimate: 1 kill / 1.2 s, 4 s boon reads, walks to doors, 75 % Pact bias, invuln) · `idle` (no input, reports time-to-death) | `kill` |
 | `sectors` | `all` or comma ids (`dust_meridian,cinder_barrens`, …) | `all` |
 | `char` | character id | `severin` |
 | `seed` | integer (same seed → same RESULT lines) | `1` |
 
-Each sector prints one `RESULT …` line (outcome, run_time, phases, kills, gate, boons, feeds, dmg_taken, max_hit). The run ends with `AUTOPLAY_DONE`. **`mode=kill` exits 1** if any sector does not reach Ashwick.
+Each sector prints one `RESULT …` line (outcome, run_time, kills, wild_kills, gate, boons, feeds, greed, dmg_taken, max_hit, phase timestamps, `dur` = bursts/wild/boss seconds). The run ends with `AUTOPLAY_DONE`. **`mode=kill` exits 1** if any sector does not reach Ashwick. Both bots walk the lead to every wild greed interactable. `mode=kill sectors=all` takes ~4 min wall (each sector ~15 min simulated; the director, not the bot, sets the pace).
 
 `mode=idle` is the time-to-death probe (`outcome=DIED`, `run_time` ≈ seconds to wipe).
+
+## Pacing (MW-025)
+
+Target ~30 min per sector (charter L3/L4), ~8 boons.
+
+- **Kill gate** counts **wild-stage kills only** (`RunState.wild_kills`). `kill_gate_base` 1150 (Pale Spire 1500) × (1 + 0.35 per extra player) × difficulty/heat; Killgate Scanner −5 %/rank.
+- **Difficulty clock** = run time + Moon Altar debt. Ramp reaches 1.0 at 25 min (`RunState.CLOCK_FULL`) and creeps on after. Director intensity `0.2 + 1.6·ramp` (× difficulty, × 1 + 0.3 per extra player): spawn every 1.6→0.5 s, 1→3 per spawn, alive cap 14 + 20·intensity (max 64). Enemy HP ×(1 + 0.6·ramp), damage ×(1 + 0.35·ramp); elite chance 2 % → 32 % over the clock. Labels: →Blood 5 min, →Eclipse 12 min, →Pale 20 min.
+- **Bursts**: 6 + 2·index enemies (+3 nightmare) in waves of 5; the next wave lands when ≤ 1 remain.
+- **Wild greed** (`GreedShrine`, stand to channel): 3 strongboxes (Blood/Ash/Tech haul, 35 % gear; haul banked at run end, half on death) · Moon Altar (boon, director clock +90 s) · Blood Well (boon, costs your feed stacks if ≥ 2, else 25 % max HP).
+- **Boon offers**: burst 1 clear · Pact doors · wild entry (these stop at the soft target of 8) · Moon Altar · Blood Well · the general (always offer).
+- Measured (seed 1, Severin, Dust Meridian): `mode=human` 1562 s (26 min: bursts 99 s, wild 1468 s, boss 24 s), 8 boons; `mode=kill` 879 s, 6–8 boons.
+
