@@ -41,7 +41,7 @@ func _process(_delta: float) -> void:
 
 func _refresh() -> void:
 	_on_timer(RunState.run_time, RunState.get_difficulty_label())
-	_on_kills(RunState.kills, RunState.kill_gate)
+	_on_kills(RunState.wild_kills, RunState.kill_gate)
 	_on_boons()
 	_on_rep(RunState.reputation)
 	_on_feed(RunState.feed_buff_stacks)
@@ -55,7 +55,11 @@ func _on_timer(seconds: float, difficulty: String) -> void:
 
 
 func _on_kills(current: int, needed: int) -> void:
-	kills_label.text = "Kills %d / %d" % [current, needed]
+	## Only wild-stage kills feed the general's gate.
+	if RunState.phase == RunState.Phase.WILD or RunState.phase == RunState.Phase.BOSS:
+		kills_label.text = "Hunt %d / %d" % [current, needed]
+	else:
+		kills_label.text = "Kills %d · hunt opens in the wild" % RunState.kills
 
 
 func _on_phase(phase: String) -> void:
@@ -64,7 +68,8 @@ func _on_phase(phase: String) -> void:
 		"dungeon":
 			hint_label.text = "Clear the room · walk a door for Pact or Cache · J/LMB attack · K/RMB special · L/Q cast · Space dodge · F feed"
 		"wild":
-			hint_label.text = "Wild expanse — roam landmarks, keep killing until the general · camera follows you"
+			hint_label.text = "Wild expanse — hunt fills the general's gate · strongboxes, Moon Altar, Blood Well: stand to use · the clock keeps rising"
+			_on_kills(RunState.wild_kills, RunState.kill_gate)
 		"boss":
 			hint_label.text = "BOSS — gold ring · dodge telegraphs · keep attacking"
 		_:

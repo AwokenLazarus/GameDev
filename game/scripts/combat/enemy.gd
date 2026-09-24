@@ -95,7 +95,8 @@ func apply_affix_def(d: Dictionary) -> void:
 func _scaled_hp() -> float:
 	var elite_m := 1.6 if is_elite else 1.0
 	var diff := GameState.difficulty_enemy_mult() if GameState else 1.0
-	return max_hp * elite_m * diff
+	var clock_m := RunState.enemy_hp_time_mult() if RunState else 1.0
+	return max_hp * elite_m * diff * clock_m
 
 
 func begin_spawn_telegraph(seconds: float = 0.45) -> void:
@@ -204,7 +205,8 @@ func current_move_speed() -> float:
 
 func strike_damage() -> float:
 	var elite_m := 1.4 if is_elite else 1.0
-	return contact_damage * elite_m * affix_damage
+	var clock_m := RunState.enemy_damage_time_mult() if RunState else 1.0
+	return contact_damage * elite_m * affix_damage * clock_m
 
 
 func _physics_process(delta: float) -> void:

@@ -1,12 +1,15 @@
 extends RefCounted
 class_name StageLayout
 ## Burst room templates (Hades-like) and wild-map extents (RoR2-like).
-## Pacing / greed contents belong to later work; this only places rooms, doors, hooks.
+## Greed contents live in GreedShrine / SectorController (MW-025).
 
 const BURST_CAM_ZOOM := 0.82
 const WILD_CAM_ZOOM := 1.2
 const WILD_HALF := Vector2(2200, 1400)
 const WILD_HALF_NIGHTMARE := Vector2(2400, 1600)
+
+## Wild shrine hook i gets SHRINE_KINDS[i] (MW-025 greed).
+const SHRINE_KINDS: PackedStringArray = ["moon_altar", "blood_well"]
 
 const ROOM_ORDER: PackedStringArray = ["chamber", "long_hall", "crossroads", "gauntlet", "chapel"]
 
@@ -187,7 +190,7 @@ static func wild_landmarks(sector_id: String, half: Vector2) -> Array:
 
 
 static func greed_hooks(half: Vector2) -> Dictionary:
-	## Spawn points only — MW-025 fills chests / shrines.
+	## Chests (Blood/Ash/Tech or gear) + shrines (SHRINE_KINDS); SectorController fills them.
 	return {
 		"chest": [
 			Vector2(-half.x * 0.55, -half.y * 0.35),

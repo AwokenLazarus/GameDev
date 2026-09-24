@@ -3,9 +3,17 @@ extends Node
 ##   mode=kill|idle|human  sectors=all|id,id  char=severin  seed=N
 ## Always run with `--fixed-fps 60`. Prints one RESULT line per sector, then AUTOPLAY_DONE.
 ## kill mode exits 1 if any sector does not reach Ashwick.
+## Profiles (MW-025): kill = fast regression bot (1 kill / 0.4 s, random doors);
+## human = pacing estimate (1 kill / 1.2 s, reads boons, walks to doors, prefers Pact doors).
+## Both are invulnerable (HP refilled) and walk the wild greed interactables; idle does nothing.
 
 const KILL_EVERY := 0.4
-const SECTOR_TIMEOUT := 1800.0
+const HUMAN_KILL_EVERY := 1.2
+const HUMAN_BOON_READ_S := 4.0
+const HUMAN_DOOR_THINK_S := 2.0
+const HUMAN_PACT_BIAS := 0.75
+const HUMAN_FEED_EVERY := 15.0
+const SECTOR_TIMEOUT := 3600.0
 const SAVE_PATH := "user://moonwake_save.json"
 const SAVE_BAK := "user://moonwake_save.autoplay.bak"
 
@@ -27,6 +35,9 @@ var failed := false
 var hooked_health: Health
 var rng := RandomNumberGenerator.new()
 var save_had_file := false
+var boon_wait := 0.0
+var door_wait := -1.0
+var greed_target: Node2D = null
 
 
 func _ready() -> void:
@@ -128,6 +139,9 @@ func _start() -> void:
 	hp_prev = -1.0
 	kill_acc = 0.0
 	feed_acc = 0.0
+	boon_wait = 0.0
+	door_wait = -1.0
+	greed_target = null
 	hooked_health = null
 	get_tree().paused = false
 	get_tree().change_scene_to_file("res://scenes/sector/sector_run.tscn")
@@ -146,7 +160,7 @@ func _finish(outcome: String) -> void:
 	if not phase_t.has(outcome.to_lower()):
 		phase_t[outcome.to_lower()] = snappedf(t - run_start, 0.1)
 	var line := (
-		"RESULT sector=%s mode=%s char=%s seed=%d outcome=%s run_time=%.1f kills=%d gate=%d boons=%d feeds=%d dmg_taken=%.0f max_hit=%.1f phases=%s"
+		"RESULT sector=%s mode=%s char=%s seed=%d outcome=%s run_time=%.1f kills=%d wild_kills=%d gate=%d boons=%d feeds=%d greed=%d dmg_taken=%.0f max_hit=%.1f phases=%s dur=%s"
 		% [
 			sectors[si],
 			mode,
@@ -155,12 +169,15 @@ func _finish(outcome: String) -> void:
 			outcome,
 			RunState.run_time,
 			RunState.kills,
+			RunState.wild_kills,
 			RunState.kill_gate,
 			RunState.boon_picks_done,
 			RunState.feed_count,
+			RunState.greed_log.size(),
 			dmg_taken,
 			max_hit,
 			JSON.stringify(phase_t),
+			JSON.stringify(_durations()),
 		]
 	)
 	print(line)
@@ -172,6 +189,18 @@ func _finish(outcome: String) -> void:
 		return
 	await get_tree().create_timer(0.15).timeout
 	_start()
+
+
+## Phase lengths in simulated seconds (includes boon-pause time; run_time does not).
+func _durations() -> Dictionary:
+	var d := {}
+	if phase_t.has("wild"):
+		d["bursts"] = phase_t["wild"]
+		if phase_t.has("boss"):
+			d["wild"] = snappedf(float(phase_t["boss"]) - float(phase_t["wild"]), 0.1)
+			if phase_t.has("victory"):
+				d["boss"] = snappedf(float(phase_t["victory"]) - float(phase_t["boss"]), 0.1)
+	return d
 
 
 func _shutdown() -> void:
@@ -197,44 +226,92 @@ func _process(delta: float) -> void:
 	if path.ends_with("death_screen.tscn"):
 		_finish("DIED")
 		return
-	_try_pick_boon(sc)
-	_try_pick_door()
 	var pl := get_tree().get_first_node_in_group("player")
 	if pl:
 		_hook_player(pl)
 		_track_hp(pl)
-	if mode == "kill":
-		_kill_tick(delta)
-		_feed_tick(delta)
-
-
-func _try_pick_boon(sc: Node) -> void:
-	if mode == "human":
+	if mode == "idle":
 		return
+	_try_pick_boon(sc, delta)
+	if get_tree().paused:
+		return
+	_try_pick_door(pl, delta)
+	if pl:
+		_greed_walk(pl, delta)
+	_kill_tick(delta)
+	_feed_tick(delta)
+
+
+func _try_pick_boon(sc: Node, delta: float) -> void:
 	var bui := sc.get_node_or_null("BoonSelect")
 	if bui == null or not bui.visible:
+		boon_wait = 0.0
 		return
 	var choices: Array = bui._choices
 	if choices.is_empty():
 		return
+	if mode == "human":
+		boon_wait += delta
+		if boon_wait < HUMAN_BOON_READ_S:
+			return
+	boon_wait = 0.0
 	bui._pick(choices[rng.randi() % choices.size()])
 
 
-func _try_pick_door() -> void:
-	if mode == "human":
-		return
+func _try_pick_door(pl: Node2D, delta: float) -> void:
 	var doors := get_tree().get_nodes_in_group("exit_door")
-	if doors.is_empty():
-		return
 	var open: Array[Node] = []
 	for d in doors:
 		if d != null and is_instance_valid(d) and not bool(d.get("claimed")):
 			open.append(d)
 	if open.is_empty():
+		door_wait = -1.0
 		return
 	var pick: Node = open[rng.randi() % open.size()]
+	if mode == "human":
+		for d in open:
+			if str(d.get("reward")) == "boon" and rng.randf() < HUMAN_PACT_BIAS:
+				pick = d
+				break
+		if door_wait < 0.0:
+			## Think, then walk over (door choice happens in real time; the timer runs).
+			var dist := 0.0
+			if pl and pick is Node2D:
+				dist = pl.global_position.distance_to((pick as Node2D).global_position)
+			door_wait = HUMAN_DOOR_THINK_S + dist / _walk_speed(pl)
+		door_wait -= delta
+		if door_wait > 0.0:
+			return
+	door_wait = -1.0
 	if pick.has_method("choose"):
 		pick.choose()
+
+
+func _walk_speed(pl: Node) -> float:
+	var sp := 220.0
+	if pl and pl.get("move_speed") != null:
+		sp = float(pl.get("move_speed"))
+	return maxf(60.0, sp * RunState.move_mult)
+
+
+## Walk the lead to the nearest unused greed interactable (real movement; channel happens in-game).
+func _greed_walk(pl: Node2D, delta: float) -> void:
+	if RunState.phase != RunState.Phase.WILD:
+		greed_target = null
+		return
+	if greed_target == null or not is_instance_valid(greed_target) or bool(greed_target.get("used")):
+		greed_target = null
+		var best := INF
+		for g in get_tree().get_nodes_in_group("greed_shrine"):
+			if bool(g.get("used")):
+				continue
+			var dd := pl.global_position.distance_to((g as Node2D).global_position)
+			if dd < best:
+				best = dd
+				greed_target = g
+	if greed_target == null:
+		return
+	pl.global_position = pl.global_position.move_toward(greed_target.global_position, _walk_speed(pl) * delta)
 
 
 func _hook_player(pl: Node) -> void:
@@ -253,7 +330,7 @@ func _on_player_damaged(amount: float, _remaining: float) -> void:
 		dmg_taken += amount
 		if amount > max_hit:
 			max_hit = amount
-	if mode == "kill" and hooked_health and is_instance_valid(hooked_health):
+	if mode != "idle" and hooked_health and is_instance_valid(hooked_health):
 		## Restore before Health.take_damage emits died (it checks hp after this signal).
 		hooked_health.hp = hooked_health.max_hp
 		RunState.player_hp = hooked_health.hp
@@ -270,7 +347,7 @@ func _track_hp(pl: Node) -> void:
 			dmg_taken += hit
 			if hit > max_hit:
 				max_hit = hit
-	if mode == "kill":
+	if mode != "idle":
 		h.hp = h.max_hp
 		RunState.player_hp = h.hp
 	hp_prev = h.hp
@@ -278,7 +355,7 @@ func _track_hp(pl: Node) -> void:
 
 func _kill_tick(delta: float) -> void:
 	kill_acc += delta
-	if kill_acc < KILL_EVERY:
+	if kill_acc < (HUMAN_KILL_EVERY if mode == "human" else KILL_EVERY):
 		return
 	kill_acc = 0.0
 	var es := get_tree().get_nodes_in_group("enemy")
@@ -294,13 +371,14 @@ func _kill_tick(delta: float) -> void:
 
 func _feed_tick(delta: float) -> void:
 	feed_acc += delta
-	if feed_acc < 0.35:
+	## Humans feed now and then (it costs them a beat); the kill bot feeds greedily.
+	if feed_acc < (HUMAN_FEED_EVERY if mode == "human" else 0.35):
 		return
 	feed_acc = 0.0
 	var corpses := get_tree().get_nodes_in_group("feedable_corpse")
 	if corpses.is_empty():
 		return
-	if rng.randf() >= 0.5:
+	if mode != "human" and rng.randf() >= 0.5:
 		return
 	var c: Node = corpses[0]
 	RunState.feed_on_human()

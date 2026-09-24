@@ -1,6 +1,7 @@
 extends Node2D
 const BiomePresenterScript = preload("res://scripts/visuals/biome_presenter.gd")
 const ExitDoorScript = preload("res://scripts/systems/exit_door.gd")
+const GreedShrineScript = preload("res://scripts/systems/greed_shrine.gd")
 ## Generic sector runner: burst rooms → wild expanse → kill-gated general → Ashwick.
 
 const PLAYER_SCENE := preload("res://scenes/entities/player.tscn")
@@ -8,6 +9,11 @@ const ENEMY_SCENE := preload("res://scenes/entities/enemy.tscn")
 const GENERAL_SCENE := preload("res://scenes/entities/general.tscn")
 const GEAR_SCENE := preload("res://scenes/entities/gear_drop.tscn")
 const SECTOR_CLEAR_TARGET := 1800.0
+## Burst rooms come in waves (Hades-like); the next wave lands when ≤ WAVE_NEXT_AT remain.
+const WAVE_SIZE := 5
+const WAVE_NEXT_AT := 1
+const MOON_ALTAR_CLOCK := 90.0
+const BLOOD_WELL_BLEED := 0.25
 
 @onready var world: Node2D = $World
 @onready var ground: Polygon2D = $World/Ground
@@ -26,6 +32,8 @@ var _sector: Dictionary = {}
 var _biome: Node2D
 var _arena_half: Vector2 = Vector2(480, 320)
 var _pending_spawns: int = 0
+var _burst_left: int = 0
+var _burst_total: int = 0
 var _burst_archetypes: Array = []
 var _room: Dictionary = {}
 var _queued_room_id: String = "chamber"
@@ -195,21 +203,33 @@ func _start_dungeon_burst() -> void:
 	_place_party(_room.get("entry", Vector2.ZERO))
 	_clear_enemies()
 	director.stop()
-	var count := 4 + RunState.dungeon_index
+	var count := 6 + 2 * RunState.dungeon_index
 	if bool(_sector.get("nightmare", false)):
 		count += 3
-	_pending_spawns = count
+	_burst_total = count
+	_burst_left = count
+	_pending_spawns = 0
 	_burst_archetypes.clear()
 	print(
-		"STAGE_LAYOUT phase=dungeon room=%s half=%.0fx%.0f burst=%d/%d"
-		% [str(_room.get("id", "")), _arena_half.x, _arena_half.y, RunState.dungeon_index + 1, RunState.dungeons_total]
+		"STAGE_LAYOUT phase=dungeon room=%s half=%.0fx%.0f burst=%d/%d enemies=%d"
+		% [str(_room.get("id", "")), _arena_half.x, _arena_half.y, RunState.dungeon_index + 1, RunState.dungeons_total, count]
 	)
-	for i in count:
-		_kick_burst_spawn(i, count)
+	_spawn_burst_wave()
 
 
-func _kick_burst_spawn(i: int, total: int) -> void:
-	var delay := 0.0 if total <= 1 else 1.5 * float(i) / float(maxi(total - 1, 1))
+func _spawn_burst_wave() -> void:
+	var n := mini(WAVE_SIZE, _burst_left)
+	if n <= 0:
+		return
+	var offset := _burst_total - _burst_left
+	_burst_left -= n
+	_pending_spawns += n
+	for i in n:
+		_kick_burst_spawn(offset + i, n, i)
+
+
+func _kick_burst_spawn(i: int, total: int, slot: int) -> void:
+	var delay := 0.0 if total <= 1 else 1.5 * float(slot) / float(maxi(total - 1, 1))
 	if delay > 0.0:
 		await get_tree().create_timer(delay).timeout
 	if not is_inside_tree() or RunState.phase != RunState.Phase.DUNGEON:
@@ -264,9 +284,13 @@ func _alive_enemies() -> int:
 
 func _process(_delta: float) -> void:
 	if RunState.phase == RunState.Phase.DUNGEON and not _room_cleared:
-		if _pending_spawns <= 0 and _alive_enemies() == 0:
-			_room_cleared = true
-			_on_burst_cleared()
+		if _pending_spawns <= 0:
+			var alive := _alive_enemies()
+			if _burst_left > 0 and alive <= WAVE_NEXT_AT:
+				_spawn_burst_wave()
+			elif _burst_left <= 0 and alive == 0:
+				_room_cleared = true
+				_on_burst_cleared()
 	elif RunState.phase == RunState.Phase.WILD:
 		if RunState.can_spawn_general() and not _general_spawned:
 			_spawn_general()
@@ -276,6 +300,9 @@ func _on_burst_cleared() -> void:
 	banner.text = "Burst cleared — choose a door"
 	if randf() < 0.35:
 		_spawn_gear_drop(Vector2(randf_range(-80, 80), randf_range(-40, 40)))
+	if RunState.dungeon_index == 0:
+		## Hades-style opening boon: the first room always pays a pact.
+		await _offer_boon_if_needed()
 	_open_exit_doors()
 
 
@@ -315,6 +342,8 @@ func _on_exit_chosen(door: ExitDoor) -> void:
 func _apply_door_reward(reward: String, next_id: String) -> void:
 	if reward == "gear":
 		_spawn_gear_drop(Vector2(40, 0))
+		## Cache doors trade a boon for gear plus a small haul (banked at run end).
+		RunState.add_cache(3, 2, 1)
 	elif reward == "boon":
 		await _offer_boon_if_needed()
 	elif reward.begins_with("wild"):
@@ -364,28 +393,67 @@ func _place_greed_hooks(half: Vector2) -> void:
 	for p in hooks.get("shrine", []):
 		shrine_points.append(p)
 	for pos in chest_points:
-		_spawn_hook_marker(pos, "chest")
-	for pos in shrine_points:
-		_spawn_hook_marker(pos, "shrine")
+		_spawn_greed(pos, "chest")
+	var shrine_kinds: PackedStringArray = StageLayout.SHRINE_KINDS
+	for i in shrine_points.size():
+		_spawn_greed(shrine_points[i], shrine_kinds[i % shrine_kinds.size()])
 	print("WILD_GREED_HOOKS chests=%d shrines=%d" % [chest_points.size(), shrine_points.size()])
 
 
-func _spawn_hook_marker(pos: Vector2, kind: String) -> void:
-	var m := Node2D.new()
-	m.position = pos
-	m.add_to_group("greed_hook")
-	m.set_meta("kind", kind)
-	var post := Polygon2D.new()
-	post.color = Color(0.55, 0.42, 0.22, 0.55) if kind == "chest" else Color(0.45, 0.28, 0.4, 0.55)
-	post.polygon = PackedVector2Array([Vector2(-10, 12), Vector2(10, 12), Vector2(6, -14), Vector2(-6, -14)])
-	m.add_child(post)
-	var lab := Label.new()
-	lab.text = "chest?" if kind == "chest" else "shrine?"
-	lab.position = Vector2(-28, -30)
-	lab.modulate = Color(0.8, 0.75, 0.6, 0.7)
-	lab.add_theme_font_size_override("font_size", 11)
-	m.add_child(lab)
-	world.add_child(m)
+func _spawn_greed(pos: Vector2, kind: String) -> void:
+	var g: GreedShrine = GreedShrineScript.new()
+	g.setup(kind, pos)
+	entities.add_child(g)
+	g.activated.connect(_on_greed_activated)
+
+
+func _on_greed_activated(shrine: GreedShrine, who: Node) -> void:
+	var kind := shrine.kind
+	var detail := ""
+	match kind:
+		"chest":
+			if randf() < 0.35:
+				_spawn_gear_drop(shrine.global_position + Vector2(0, 28))
+				detail = "gear"
+			else:
+				var roll := randi() % 3
+				var amt := 6 + randi() % 5
+				match roll:
+					0:
+						RunState.add_cache(amt, 0, 0)
+						detail = "blood+%d" % amt
+					1:
+						RunState.add_cache(0, amt, 0)
+						detail = "ash+%d" % amt
+					_:
+						RunState.add_cache(0, 0, maxi(3, amt / 2))
+						detail = "tech+%d" % maxi(3, amt / 2)
+			banner.text = "Strongbox pried — %s" % detail
+		"moon_altar":
+			## Boon now; the director clock jumps ahead for the whole party.
+			RunState.clock_bonus += MOON_ALTAR_CLOCK
+			detail = "clock+%.0f" % MOON_ALTAR_CLOCK
+			banner.text = "The moon hurries — %s" % RunState.get_difficulty_label()
+		"blood_well":
+			## Feed-for-power: pour hunger (feed stacks earned on humans in combat) or bleed.
+			if RunState.feed_buff_stacks >= 2:
+				detail = "hunger-%d" % RunState.feed_buff_stacks
+				RunState.feed_buff_stacks = 0
+				RunState.feed_buff_timer = 0.0
+				RunState.feed_buff_changed.emit(0)
+			else:
+				var h: Health = who.get_node_or_null("Health") if who else null
+				if h:
+					var cost := h.max_hp * BLOOD_WELL_BLEED
+					h.hp = maxf(1.0, h.hp - cost)
+					if players.size() and who == players[0]:
+						RunState.player_hp = h.hp
+					detail = "bleed-%.0f" % cost
+			banner.text = "The well drinks — %s" % detail
+	RunState.note_greed(kind)
+	print("GREED_USED kind=%s detail=%s t=%.1f wild_kills=%d" % [kind, detail, RunState.run_time, RunState.wild_kills])
+	if kind != "chest":
+		await _offer_boon_if_needed(true)
 
 
 func _spawn_general() -> void:
@@ -419,7 +487,8 @@ func _on_general_defeated() -> void:
 		% [RunState.sector_id, RunState.run_time, SECTOR_CLEAR_TARGET]
 	)
 	_spawn_gear_drop(Vector2.ZERO if _lead() == null else _lead().global_position)
-	await _offer_boon_if_needed()
+	## The general always pays a pact, even past the soft target.
+	await _offer_boon_if_needed(true)
 	RunState.grant_run_rewards(true)
 	GameState.mark_sector_clear(RunState.sector_id)
 	await get_tree().create_timer(2.0).timeout
@@ -447,8 +516,11 @@ func _roll_gear() -> Dictionary:
 	return pool[randi() % pool.size()].duplicate()
 
 
-func _offer_boon_if_needed() -> void:
-	if RunState.boon_picks_done >= RunState.boon_picks_target:
+## Soft target (~8/sector): automatic offers stop at it; shrines and the general (force) do not.
+func _offer_boon_if_needed(force: bool = false) -> void:
+	if not force and RunState.boon_picks_done >= RunState.boon_picks_target:
+		return
+	if RunState.awaiting_boon:
 		return
 	RunState.awaiting_boon = true
 	boon_ui.open_choices()
