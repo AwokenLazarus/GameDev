@@ -688,7 +688,7 @@ func _on_died() -> void:
 		if is_instance_valid(a):
 			var h: Health = a.get_node_or_null("Health")
 			if h:
-				h.take_damage(h.hp + 1.0, true)
+				h.kill()
 	RunState.register_kill(true)
 	defeated.emit()
 	queue_free()
