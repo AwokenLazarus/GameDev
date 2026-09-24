@@ -16,14 +16,17 @@ func clear() -> void:
 		c.queue_free()
 
 
-func present_sector(sector: Dictionary, half_size: Vector2) -> void:
+func present_sector(sector: Dictionary, half_size: Vector2, mode: String = "room") -> void:
 	clear()
 	var sid := str(sector.get("id", "dust_meridian"))
 	_build_vista(sid)
 	_build_ground(sid, half_size)
-	_build_props(sid, half_size)
+	if mode == "wild":
+		_build_props_wild(sid, half_size)
+	else:
+		_build_props(sid, half_size)
 	_build_atmosphere(sid, sector)
-	_build_particles(sid)
+	_build_particles(sid, half_size)
 
 
 func present_ashwick() -> void:
@@ -94,8 +97,10 @@ func _build_ground(sid: String, half_size: Vector2) -> void:
 	if not ResourceLoader.exists(tile_path):
 		return
 	var tile_tex: Texture2D = load(tile_path)
-	for iy in range(-3, 4):
-		for ix in range(-4, 5):
+	var ny := mini(18, maxi(3, int(half_size.y / 70.0)))
+	var nx := mini(22, maxi(4, int(half_size.x / 90.0)))
+	for iy in range(-ny, ny + 1):
+		for ix in range(-nx, nx + 1):
 			var s := Sprite2D.new()
 			s.texture = tile_tex
 			s.modulate = Color(1, 1, 1, 0.18)
@@ -143,6 +148,29 @@ func _build_props(sid: String, half_size: Vector2) -> void:
 			_spawn_prop("ruin", Vector2(320, 40), 1.2)
 		_:
 			_spawn_prop("ruin", Vector2(-200, -80), 1.0)
+
+
+func _build_props_wild(sid: String, half_size: Vector2) -> void:
+	_props = Node2D.new()
+	_props.z_index = -5
+	_props.y_sort_enabled = true
+	add_child(_props)
+	for spec in StageLayout.wild_landmarks(sid, half_size):
+		if typeof(spec) != TYPE_DICTIONARY:
+			continue
+		_spawn_prop(str(spec.get("kind", "ruin")), spec.get("pos", Vector2.ZERO), float(spec.get("scale", 1.0)))
+
+
+func place_landmarks(landmarks: Array) -> void:
+	if _props == null:
+		_props = Node2D.new()
+		_props.z_index = -5
+		_props.y_sort_enabled = true
+		add_child(_props)
+	for spec in landmarks:
+		if typeof(spec) != TYPE_DICTIONARY:
+			continue
+		_spawn_prop(str(spec.get("kind", "ruin")), spec.get("pos", Vector2.ZERO), float(spec.get("scale", 1.0)))
 
 
 func _spawn_prop(kind: String, pos: Vector2, scl: float) -> void:
@@ -244,16 +272,16 @@ func _build_atmosphere(sid: String, sector: Dictionary) -> void:
 		layer.add_child(e)
 
 
-func _build_particles(sid: String) -> void:
+func _build_particles(sid: String, half_size: Vector2 = Vector2(600, 400)) -> void:
 	_particles = GPUParticles2D.new()
 	_particles.z_index = 8
-	_particles.amount = 48
+	_particles.amount = 48 if half_size.x < 800.0 else 80
 	_particles.lifetime = 3.5
 	_particles.preprocess = 1.0
 	_particles.emitting = true
 	var mat := ParticleProcessMaterial.new()
 	mat.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
-	mat.emission_box_extents = Vector3(600, 400, 1)
+	mat.emission_box_extents = Vector3(half_size.x, half_size.y, 1)
 	mat.direction = Vector3(0.2, -0.1, 0)
 	mat.spread = 40.0
 	mat.initial_velocity_min = 8.0

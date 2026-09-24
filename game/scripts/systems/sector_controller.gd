@@ -1,11 +1,13 @@
 extends Node2D
 const BiomePresenterScript = preload("res://scripts/visuals/biome_presenter.gd")
-## Generic sector runner: bursts → wild → kill-gated general → Ashwick.
+const ExitDoorScript = preload("res://scripts/systems/exit_door.gd")
+## Generic sector runner: burst rooms → wild expanse → kill-gated general → Ashwick.
 
 const PLAYER_SCENE := preload("res://scenes/entities/player.tscn")
 const ENEMY_SCENE := preload("res://scenes/entities/enemy.tscn")
 const GENERAL_SCENE := preload("res://scenes/entities/general.tscn")
 const GEAR_SCENE := preload("res://scenes/entities/gear_drop.tscn")
+const SECTOR_CLEAR_TARGET := 1800.0
 
 @onready var world: Node2D = $World
 @onready var ground: Polygon2D = $World/Ground
@@ -24,6 +26,13 @@ var _sector: Dictionary = {}
 var _biome: Node2D
 var _arena_half: Vector2 = Vector2(480, 320)
 var _pending_spawns: int = 0
+var _room: Dictionary = {}
+var _queued_room_id: String = "chamber"
+var _awaiting_exit: bool = false
+var _wild_start: Vector2 = Vector2.ZERO
+var _wild_reward: String = "wild_camp"
+var chest_points: Array[Vector2] = []
+var shrine_points: Array[Vector2] = []
 
 
 func _ready() -> void:
@@ -52,7 +61,7 @@ func _ready() -> void:
 	_biome.z_index = -15
 	world.add_child(_biome)
 	_paint_biome()
-	_build_arena(Vector2(900, 600))
+	_build_arena(Vector2(900, 600), [])
 	_spawn_party(party)
 	_start_dungeon_burst()
 	banner.text = "FIGHT — %s · Burst 1/%d · red rings = you/enemies" % [
@@ -65,10 +74,10 @@ func _paint_biome() -> void:
 	if accent_patch:
 		accent_patch.visible = false
 	if _biome:
-		_biome.present_sector(_sector, Vector2(900, 600))
+		_biome.present_sector(_sector, Vector2(900, 600), "room")
 
 
-func _build_arena(size: Vector2) -> void:
+func _build_arena(size: Vector2, inner_walls: Array = []) -> void:
 	_arena_half = size
 	ground.polygon = PackedVector2Array([
 		-size.x, -size.y, size.x, -size.y, size.x, size.y, -size.x, size.y
@@ -80,11 +89,28 @@ func _build_arena(size: Vector2) -> void:
 	_add_wall(Vector2(0, size.y), Vector2(size.x * 2, 24))
 	_add_wall(Vector2(-size.x, 0), Vector2(24, size.y * 2))
 	_add_wall(Vector2(size.x, 0), Vector2(24, size.y * 2))
+	for w in inner_walls:
+		if typeof(w) != TYPE_DICTIONARY:
+			continue
+		_add_wall(w.get("pos", Vector2.ZERO), w.get("size", Vector2(40, 40)))
 	director.configure(Vector2.ZERO, size)
-	director.spawn_radius_min = minf(size.x, size.y) * 0.55
-	director.spawn_radius_max = minf(size.x, size.y) * 0.9
+	if RunState.phase == RunState.Phase.WILD:
+		director.spawn_radius_min = 280.0
+		director.spawn_radius_max = 520.0
+	else:
+		director.spawn_radius_min = minf(size.x, size.y) * 0.55
+		director.spawn_radius_max = minf(size.x, size.y) * 0.9
 	if _biome:
-		_biome.present_sector(_sector, size)
+		var mode := "wild" if RunState.phase == RunState.Phase.WILD else "room"
+		_biome.present_sector(_sector, size, mode)
+	_apply_party_camera()
+
+
+func _apply_party_camera() -> void:
+	var zoom := StageLayout.WILD_CAM_ZOOM if RunState.phase == RunState.Phase.WILD else StageLayout.BURST_CAM_ZOOM
+	for p in players:
+		if is_instance_valid(p) and p.has_method("configure_stage_camera"):
+			p.configure_stage_camera(_arena_half, zoom)
 
 
 func _add_wall(pos: Vector2, size: Vector2) -> void:
@@ -114,6 +140,7 @@ func _spawn_party(party: Array) -> void:
 			p.configure(i, str(slot.get("character_id", "severin")), str(slot.get("alt_id", "")), int(slot.get("device", -1)))
 		p.died.connect(_on_player_died.bind(p))
 		players.append(p)
+	_apply_party_camera()
 
 
 func _lead() -> CharacterBody2D:
@@ -123,6 +150,13 @@ func _lead() -> CharacterBody2D:
 	return players[0] if players.size() else null
 
 
+func _place_party(at: Vector2) -> void:
+	for i in players.size():
+		var p: CharacterBody2D = players[i]
+		if is_instance_valid(p):
+			p.global_position = at + Vector2(i * 36.0 - (players.size() - 1) * 18.0, 0)
+
+
 func _clear_enemies() -> void:
 	for e in get_tree().get_nodes_in_group("enemy"):
 		e.queue_free()
@@ -130,22 +164,44 @@ func _clear_enemies() -> void:
 		c.queue_free()
 
 
+func _clear_exits() -> void:
+	for d in get_tree().get_nodes_in_group("exit_door"):
+		d.queue_free()
+	_awaiting_exit = false
+
+
+func _clear_hooks() -> void:
+	for n in get_tree().get_nodes_in_group("greed_hook"):
+		n.queue_free()
+	chest_points.clear()
+	shrine_points.clear()
+
+
 func _start_dungeon_burst() -> void:
 	RunState.set_phase(RunState.Phase.DUNGEON)
 	_room_cleared = false
 	_general_spawned = false
+	_awaiting_exit = false
+	_clear_exits()
+	_clear_hooks()
+	var rid := _queued_room_id if not _queued_room_id.is_empty() else StageLayout.room_id_for_index(RunState.dungeon_index)
+	_room = StageLayout.room(rid)
 	var sname := str(_sector.get("name", "Sector"))
-	banner.text = "%s — Burst %d / %d" % [sname, RunState.dungeon_index + 1, RunState.dungeons_total]
-	_build_arena(Vector2(480, 320))
-	var lead := _lead()
-	if lead:
-		lead.global_position = Vector2.ZERO
+	banner.text = "%s — Burst %d / %d · %s" % [
+		sname, RunState.dungeon_index + 1, RunState.dungeons_total, str(_room.get("id", "room"))
+	]
+	_build_arena(_room.get("half", Vector2(480, 320)), _room.get("inner_walls", []))
+	_place_party(_room.get("entry", Vector2.ZERO))
 	_clear_enemies()
 	director.stop()
 	var count := 4 + RunState.dungeon_index
 	if bool(_sector.get("nightmare", false)):
 		count += 3
 	_pending_spawns = count
+	print(
+		"STAGE_LAYOUT phase=dungeon room=%s half=%.0fx%.0f burst=%d/%d"
+		% [str(_room.get("id", "")), _arena_half.x, _arena_half.y, RunState.dungeon_index + 1, RunState.dungeons_total]
+	)
 	for i in count:
 		_kick_burst_spawn(i, count)
 
@@ -176,9 +232,17 @@ func _edge_spawn_pos() -> Vector2:
 			return Vector2(hx, randf_range(-hy, hy))
 
 
-func _spawn_burst_enemy(_i: int, _total: int) -> void:
+func _room_spawn_pos(i: int) -> Vector2:
+	var pts: Array = _room.get("spawn_points", [])
+	if pts.is_empty():
+		return _edge_spawn_pos()
+	var base: Vector2 = pts[i % pts.size()]
+	return base + Vector2(randf_range(-12.0, 12.0), randf_range(-12.0, 12.0))
+
+
+func _spawn_burst_enemy(i: int, _total: int) -> void:
 	var e: Node2D = ENEMY_SCENE.instantiate()
-	e.global_position = _edge_spawn_pos()
+	e.global_position = _room_spawn_pos(i)
 	entities.add_child(e)
 	var human_chance := float(_sector.get("enemy_human_chance", 0.3))
 	var human := randf() < human_chance
@@ -205,14 +269,61 @@ func _process(_delta: float) -> void:
 
 
 func _on_burst_cleared() -> void:
-	banner.text = "Burst cleared"
+	banner.text = "Burst cleared — choose a door"
 	if randf() < 0.35:
 		_spawn_gear_drop(Vector2(randf_range(-80, 80), randf_range(-40, 40)))
-	await _offer_boon_if_needed()
+	_open_exit_doors()
+
+
+func _open_exit_doors() -> void:
+	_clear_exits()
+	_awaiting_exit = true
+	var last := RunState.dungeon_index + 1 >= RunState.dungeons_total
+	var specs: Array = StageLayout.last_burst_doors(_arena_half) if last else _room.get("doors", [])
+	if specs.size() < 2:
+		specs = StageLayout.room("chamber").get("doors", [])
+	for spec in specs:
+		if typeof(spec) != TYPE_DICTIONARY:
+			continue
+		var door: ExitDoor = ExitDoorScript.new()
+		entities.add_child(door)
+		door.setup(
+			str(spec.get("reward", "boon")),
+			str(spec.get("label", "Door")),
+			str(spec.get("next", "")),
+			spec.get("pos", Vector2(_arena_half.x - 80.0, 0))
+		)
+		door.chosen.connect(_on_exit_chosen)
+	print("BURST_EXIT_DOORS count=%d last=%s" % [specs.size(), last])
+
+
+func _on_exit_chosen(door: ExitDoor) -> void:
+	if not _awaiting_exit:
+		return
+	_awaiting_exit = false
+	var reward := door.reward
+	var next_id := door.next_room
+	print("BURST_EXIT_CHOICE picked=%s next=%s" % [reward, next_id])
+	_clear_exits()
+	_apply_door_reward(reward, next_id)
+
+
+func _apply_door_reward(reward: String, next_id: String) -> void:
+	if reward == "gear":
+		_spawn_gear_drop(Vector2(40, 0))
+	elif reward == "boon":
+		await _offer_boon_if_needed()
+	elif reward.begins_with("wild"):
+		_wild_reward = reward
+		_wild_start = StageLayout.wild_start(reward, StageLayout.wild_half(bool(_sector.get("nightmare", false))))
 	RunState.dungeon_index += 1
 	if RunState.dungeon_index >= RunState.dungeons_total:
 		_start_wild()
 	else:
+		if not next_id.is_empty() and next_id != "wild":
+			_queued_room_id = next_id
+		else:
+			_queued_room_id = StageLayout.room_id_for_index(RunState.dungeon_index)
 		await get_tree().create_timer(0.5).timeout
 		_start_dungeon_burst()
 
@@ -220,16 +331,57 @@ func _on_burst_cleared() -> void:
 func _start_wild() -> void:
 	RunState.set_phase(RunState.Phase.WILD)
 	banner.text = "Wild Stage — %s" % str(_sector.get("name", ""))
-	var wild_size := Vector2(1100, 700)
-	if bool(_sector.get("nightmare", false)):
-		wild_size = Vector2(1200, 800)
-	_build_arena(wild_size)
+	var nightmare := bool(_sector.get("nightmare", false))
+	var wild_size := StageLayout.wild_half(nightmare)
+	_build_arena(wild_size, [])
+	_place_greed_hooks(wild_size)
+	if _wild_start == Vector2.ZERO:
+		_wild_start = StageLayout.wild_start(_wild_reward, wild_size)
+	_place_party(_wild_start)
 	var lead := _lead()
 	if lead:
-		lead.global_position = Vector2.ZERO
 		director.start(lead)
 	_clear_enemies()
+	var view := get_viewport().get_visible_rect().size / StageLayout.WILD_CAM_ZOOM
+	print(
+		"STAGE_LAYOUT phase=wild half=%.0fx%.0f zoom=%.2f view≈%.0fx%.0f travel=1 start=%s"
+		% [wild_size.x, wild_size.y, StageLayout.WILD_CAM_ZOOM, view.x, view.y, _wild_reward]
+	)
 	await _offer_boon_if_needed()
+
+
+func _place_greed_hooks(half: Vector2) -> void:
+	_clear_hooks()
+	var hooks: Dictionary = StageLayout.greed_hooks(half)
+	chest_points.clear()
+	shrine_points.clear()
+	for p in hooks.get("chest", []):
+		chest_points.append(p)
+	for p in hooks.get("shrine", []):
+		shrine_points.append(p)
+	for pos in chest_points:
+		_spawn_hook_marker(pos, "chest")
+	for pos in shrine_points:
+		_spawn_hook_marker(pos, "shrine")
+	print("WILD_GREED_HOOKS chests=%d shrines=%d" % [chest_points.size(), shrine_points.size()])
+
+
+func _spawn_hook_marker(pos: Vector2, kind: String) -> void:
+	var m := Node2D.new()
+	m.position = pos
+	m.add_to_group("greed_hook")
+	m.set_meta("kind", kind)
+	var post := Polygon2D.new()
+	post.color = Color(0.55, 0.42, 0.22, 0.55) if kind == "chest" else Color(0.45, 0.28, 0.4, 0.55)
+	post.polygon = PackedVector2Array([Vector2(-10, 12), Vector2(10, 12), Vector2(6, -14), Vector2(-6, -14)])
+	m.add_child(post)
+	var lab := Label.new()
+	lab.text = "chest?" if kind == "chest" else "shrine?"
+	lab.position = Vector2(-28, -30)
+	lab.modulate = Color(0.8, 0.75, 0.6, 0.7)
+	lab.add_theme_font_size_override("font_size", 11)
+	m.add_child(lab)
+	world.add_child(m)
 
 
 func _spawn_general() -> void:
@@ -240,7 +392,13 @@ func _spawn_general() -> void:
 	var gname := str(_sector.get("general_name", "General"))
 	banner.text = gname
 	var boss: Node = GENERAL_SCENE.instantiate()
-	boss.global_position = Vector2(0, -180)
+	var lead := _lead()
+	var at := Vector2(0, -180)
+	if lead:
+		at = lead.global_position + Vector2(0, -220)
+		at.x = clampf(at.x, -_arena_half.x + 80.0, _arena_half.x - 80.0)
+		at.y = clampf(at.y, -_arena_half.y + 80.0, _arena_half.y - 80.0)
+	boss.global_position = at
 	entities.add_child(boss)
 	if boss.has_method("configure"):
 		boss.configure(gid)
@@ -252,7 +410,11 @@ func _on_general_defeated() -> void:
 	RunState.set_phase(RunState.Phase.VICTORY)
 	banner.text = "Sector seized — returning to Ashwick"
 	director.stop()
-	_spawn_gear_drop(Vector2.ZERO)
+	print(
+		"SECTOR_CLEAR_TIME sector=%s seconds=%.1f target=%.1f"
+		% [RunState.sector_id, RunState.run_time, SECTOR_CLEAR_TARGET]
+	)
+	_spawn_gear_drop(Vector2.ZERO if _lead() == null else _lead().global_position)
 	await _offer_boon_if_needed()
 	RunState.grant_run_rewards(true)
 	GameState.mark_sector_clear(RunState.sector_id)

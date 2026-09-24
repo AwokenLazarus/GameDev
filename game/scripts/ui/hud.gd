@@ -55,9 +55,9 @@ func _on_phase(phase: String) -> void:
 	phase_label.text = phase.capitalize()
 	match phase:
 		"dungeon":
-			hint_label.text = "YOU = red ring under feet · Kill all enemies · WASD · J/Click attack · Space dodge · F feed"
+			hint_label.text = "Clear the room · walk a door for Pact or Cache · WASD · J/Click · Space dodge · F feed"
 		"wild":
-			hint_label.text = "Wild stage — keep killing until the general appears · watch the kill gate"
+			hint_label.text = "Wild expanse — roam landmarks, keep killing until the general · camera follows you"
 		"boss":
 			hint_label.text = "BOSS — gold ring · dodge telegraphs · keep attacking"
 		_:
