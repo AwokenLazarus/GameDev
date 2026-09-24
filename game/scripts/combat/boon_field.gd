@@ -17,6 +17,7 @@ var pickup: bool = false
 var enemy_once: bool = false
 var follow: Node2D = null
 var marker: bool = false ## small diamond instead of an ellipse (pickups, snares)
+var smoke: bool = false ## gunsmoke cloud (group "smoke_cloud"; the Dust pact dashes through it)
 
 var _t: float = 0.0
 var _players_in: Dictionary = {}
@@ -35,6 +36,8 @@ func setup(pos: Vector2, r: float, seconds: float, tint: Color) -> MWBoonField:
 func _ready() -> void:
 	z_index = -4
 	add_to_group("boon_field")
+	if smoke:
+		add_to_group("smoke_cloud")
 	var pts := PackedVector2Array()
 	if marker:
 		var m := minf(radius, 12.0)
@@ -90,6 +93,10 @@ func _physics_process(delta: float) -> void:
 		if enemy_once:
 			_finish()
 			return
+
+
+func contains(pos: Vector2, pad: float = 0.0) -> bool:
+	return not _done and _inside(pos, pad)
 
 
 func _inside(pos: Vector2, pad: float) -> bool:

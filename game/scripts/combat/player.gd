@@ -2,10 +2,12 @@ extends CharacterBody2D
 const _VFX = preload("res://scripts/visuals/vfx.gd")
 const _ZONE = preload("res://scripts/combat/kit_zone.gd")
 const _BOONS = preload("res://scripts/combat/boon_kit.gd")
+const _PACTS = preload("res://scripts/combat/pact_kit.gd")
 ## Multi-kit dhampir controller. Kits: melee, hybrid_gun, orbit, maul, astral.
 ## Every kit has four inputs — attack, special, cast, dash — and deals damage only in
 ## response to one of them (anti-pillar: not an AFK auto-survivor). Slot data lives in
 ## CharacterDB.KIT_SLOTS; boons hook the slot_used / slot_hit signals and slot_mods.
+## A deep pact (MWPactKit) rewrites kit moves through the `pacts.*` hooks below.
 
 signal died
 signal fed
@@ -69,6 +71,7 @@ var slot_mods: Dictionary = {}
 
 ## Boon verb state (MW-006). The BoonKit child runs the owned boons.
 var boons: MWBoonKit
+var pacts: MWPactKit
 var chambered: bool = false ## next Attack hits twice (echo 50%)
 var echo_armed: bool = false ## the Attack in flight is Chambered
 var wards: int = 0 ## each blocks one hit
@@ -88,10 +91,11 @@ var _mouse_aim: bool = false
 var _combo_step: int = 0
 var _combo_window: float = 0.0
 
-## Orbit kit: each crescent is {node, mode (home|out|back|burst), pos, dir, dist, hits}
+## Orbit kit: each crescent is {node, mode (home|out|back|burst|halo|drag), pos, dir, dist, hits}
 var _crescents: Array[Dictionary] = []
 var _orbit_angle: float = 0.0
 var _burst_t: float = 0.0
+var _halo_t: float = 0.0 ## Church pact: crescents hold a fixed, cutting halo
 
 ## Astral kit
 var _spirit_pos: Vector2 = Vector2.ZERO
@@ -110,6 +114,8 @@ func _ready() -> void:
 	spirit_visual.visible = false
 	boons = _BOONS.new(self)
 	add_child(boons)
+	pacts = _PACTS.new(self)
+	add_child(pacts)
 	_apply_character()
 	if player_index == 0:
 		camera.enabled = true
@@ -204,6 +210,21 @@ func _setup_kit_visuals() -> void:
 				actor_visual.set_ghost(false)
 			spirit_visual.visible = true
 			_spirit_pos = global_position + facing * float(_slot("attack").get("leash", 80.0))
+	if pacts:
+		pacts.refresh_fx()
+
+
+## Pact weapon colour on the blade, crescents and spirit (plain when there is no pact).
+func apply_weapon_tint() -> void:
+	var pact_on := pact() != ""
+	var tint: Color = pacts.color() if pact_on else Color.WHITE
+	blade_visual.modulate = tint
+	if kit_type == "melee":
+		blade_visual.scale = Vector2(pacts.melee_reach(), 1.0) ## the whip-blade reads longer
+	for c in _crescents:
+		if is_instance_valid(c.node):
+			c.node.modulate = Color(tint, 0.95) if pact_on else Color(0.7, 0.9, 1.0, 0.95)
+	spirit_visual.modulate = Color(tint, 0.7) if pact_on else Color(0.75, 0.85, 1.0, 0.55)
 
 
 func _spawn_crescents() -> void:
@@ -216,7 +237,7 @@ func _spawn_crescents() -> void:
 	for i in 2:
 		var spr := Sprite2D.new()
 		spr.texture = tex
-		spr.modulate = Color(0.7, 0.9, 1.0, 0.95)
+		spr.modulate = Color(pacts.color(), 0.95) if pact() != "" else Color(0.7, 0.9, 1.0, 0.95)
 		spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		add_child(spr)
 		_crescents.append({"node": spr, "mode": "home", "pos": Vector2.ZERO, "dir": Vector2.RIGHT, "dist": 0.0, "hits": {}})
@@ -531,25 +552,23 @@ func _start_dodge(dir: Vector2) -> void:
 		dash_ended.emit()
 
 
+## Deep pacts never scale this: they rewrite behaviour in MWPactKit (charter L6).
 func _dmg() -> float:
 	var d := base_damage * RunState.damage_mult * (1.0 + RunState.get_feed_damage_bonus())
-	if RunState.has_pact("dust_compact"):
-		d *= 1.15
-	if RunState.has_pact("red_petition"):
-		d *= 1.2
-	if RunState.has_pact("house_veyra"):
-		d *= 1.18
-	if RunState.has_pact("church"):
-		d *= 1.12
 	if RunState.crit_chance > 0.0 and randf() < RunState.crit_chance:
 		d *= 1.75
 	return d
 
 
+## The patron whose deep pact this sibling fights under ("" = none).
+func pact() -> String:
+	return RunState.pact_of(self)
+
+
 # --- Hit helpers -------------------------------------------------------------
 
 ## Enemies within `radius` of `center` and within `half_arc` radians of `dir`.
-func _enemies_in_arc(center: Vector2, radius: float, dir: Vector2, half_arc: float = PI) -> Array[Node2D]:
+func enemies_in_arc(center: Vector2, radius: float, dir: Vector2, half_arc: float = PI) -> Array[Node2D]:
 	var out: Array[Node2D] = []
 	for e in get_tree().get_nodes_in_group("enemy"):
 		if not is_instance_valid(e):
@@ -657,10 +676,59 @@ func spawn_boon_projectile(dir: Vector2, dmg: float, tag: String, tint: Color) -
 
 ## Smite pillar: telegraph ring for `fuse` seconds, then one hit in `radius`.
 func spawn_smite(pos: Vector2, radius: float, dmg: float, fuse: float, tint: Color) -> Node2D:
+	pacts.on_smite(pos, fuse)
 	return _spawn_zone(pos, radius, dmg, "smite", fuse, 1, 0.1, 0.0, tint)
 
 
+## A player shot for pact transforms; `life` < 0 keeps the default lifetime.
+func spawn_shot(origin: Vector2, dir: Vector2, dmg: float, slot: String, tag: String, speed: float,
+		pierce: int, tint: Color, life: float = -1.0) -> Node:
+	var shot := _spawn_projectile(origin, dir, dmg, slot, tag, false, speed, pierce, tint)
+	if life > 0.0:
+		shot.lifetime = life
+	return shot
+
+
+## Short committed step (the Guillotine Drop's leap).
+func lunge(dir: Vector2, speed: float, seconds: float) -> void:
+	velocity = dir * speed
+	_lunge_t = seconds
+
+
+## Body Swap (Veyra pact): the body blinks to `at`, the spirit to where the body stood.
+func spirit_swap(at: Vector2) -> void:
+	var from := global_position
+	global_position = at
+	_spirit_pos = from
+	_anchor_t = 0.4
+	health.set_invuln(0.2)
+
+
+## Church pact: the crescents hold a fixed halo at orbit radius that cuts on contact.
+func start_halo(seconds: float) -> void:
+	_halo_t = seconds
+	_busy = 0.1
+	for c in _crescents:
+		c.mode = "halo"
+		c.hits = {}
+		c.hit_t = 0.0
+
+
+## Dust pact recall: every saw-disc flies back to you through whatever is in the way.
+func start_drag() -> void:
+	_busy = 0.2
+	for i in _crescents.size():
+		var c: Dictionary = _crescents[i]
+		if c.mode == "home":
+			c.pos = global_position + facing.rotated(0.4 if i % 2 == 0 else -0.4) * 170.0
+		c.mode = "drag"
+		c.hits = {}
+
+
 func land_projectile_hit(p: Node, node: Node) -> void:
+	if str(p.tag).begins_with("pact_"):
+		pacts.projectile_hit(p, node)
+		return
 	match str(p.tag):
 		"shard":
 			land_slot_hit(node, p.damage, "boon", false, 60.0)
@@ -744,16 +812,19 @@ func _melee_combo(dir: Vector2) -> void:
 	_busy = minf(attack_cd, 0.16)
 	_combo_step = (i + 1) % 3
 	_combo_window = 0.0 if finisher else float(a.get("combo_window", 0.6))
-	var radius := float((a.get("combo_radius", [58.0, 58.0, 74.0]) as Array)[i])
+	var radius := float((a.get("combo_radius", [58.0, 58.0, 74.0]) as Array)[i]) * pacts.melee_reach()
 	var arc := float((a.get("combo_arc", [1.1, 1.1, 1.6]) as Array)[i])
 	var mult := float((a.get("combo_damage", [1.0, 1.0, 1.7]) as Array)[i])
+	if finisher and pacts.melee_finisher(dir, radius, arc, _slot_dmg("attack", mult)):
+		_flash_blade(dir, 0.12)
+		return
 	## Short step into the swing; the long peace-cord lunge is the special now.
 	velocity = dir * (220.0 if finisher else 120.0)
 	_lunge_t = 0.06
 	_VFX.slash(get_parent(), global_position + dir * 28.0, dir.angle())
 	if finisher:
 		_VFX.slash(get_parent(), global_position + dir * 40.0, dir.angle() + 0.5)
-	for e in _enemies_in_arc(global_position, radius, dir, arc):
+	for e in enemies_in_arc(global_position, radius, dir, arc):
 		land_slot_hit(e, _slot_dmg("attack", mult), "attack", finisher, 320.0 if finisher else 160.0)
 	_flash_blade(dir, 0.12)
 
@@ -771,8 +842,9 @@ func _melee_cleave(dir: Vector2) -> void:
 	velocity = Vector2.ZERO
 	for off in [-0.8, 0.0, 0.8]:
 		_VFX.slash(get_parent(), global_position + dir.rotated(off) * 44.0, dir.angle() + off)
-	for e in _enemies_in_arc(global_position, float(s.get("radius", 82.0)), dir, float(s.get("arc", 2.2))):
+	for e in enemies_in_arc(global_position, float(s.get("radius", 82.0)), dir, float(s.get("arc", 2.2))):
 		land_slot_hit(e, _slot_dmg("special", float(s.get("damage", 2.0))), "special", true, 360.0)
+	pacts.after_cleave(dir, float(s.get("radius", 82.0)), float(s.get("arc", 2.2)))
 	_flash_blade(dir, 0.16)
 
 
@@ -796,6 +868,8 @@ func _flash_blade(dir: Vector2, seconds: float) -> void:
 func _gun_rail(dir: Vector2) -> void:
 	var a := _slot("attack")
 	_busy = 0.08
+	if pacts.gun_rail(dir, _slot_dmg("attack", float(a.get("damage", 1.8))), a):
+		return
 	_spawn_projectile(global_position, dir, _slot_dmg("attack", float(a.get("damage", 1.8))), "attack", "rail",
 		false, float(a.get("speed", 780.0)), int(a.get("pierce", 1)), Color(1.0, 0.95, 0.75))
 
@@ -807,8 +881,9 @@ func _gun_volley(dir: Vector2) -> void:
 	for i in bolts:
 		if dead or not is_inside_tree():
 			return
-		_spawn_projectile(global_position, dir.rotated(randf_range(-0.5, 0.5)),
+		var bolt := _spawn_projectile(global_position, dir.rotated(randf_range(-0.5, 0.5)),
 			_slot_dmg("special", float(s.get("damage", 0.6))), "special", "", true, 420.0)
+		pacts.tag_bolt(bolt)
 		await get_tree().create_timer(float(s.get("interval", 0.045))).timeout
 
 
@@ -831,11 +906,13 @@ func _home_crescent() -> int:
 
 func _update_orbit(delta: float) -> void:
 	_orbit_angle += delta * 3.2
-	var home_r := 54.0 if RunState.has_pact("house_veyra") else 42.0
+	var home_r := pacts.orbit_radius(42.0)
 	var a := _slot("attack")
 	var speed := float(a.get("speed", 560.0))
 	if _burst_t > 0.0:
 		_burst_t -= delta
+	if _halo_t > 0.0:
+		_halo_t -= delta
 	var burst_time := float(_slot("special").get("time", 0.4))
 	for i in _crescents.size():
 		var c: Dictionary = _crescents[i]
@@ -868,6 +945,22 @@ func _update_orbit(delta: float) -> void:
 				_crescent_hits(c, c.pos, "attack", float(a.get("damage", 1.2)))
 				if c.pos.distance_to(global_position) < 16.0:
 					c.mode = "home"
+			"halo":
+				## Fixed halo at 70 px: cuts on contact, each foe at most every 0.3 s.
+				spr.position = Vector2(cos(ang * 1.6), sin(ang * 1.6)) * 70.0
+				c.hit_t = float(c.get("hit_t", 0.0)) - delta
+				if c.hit_t <= 0.0:
+					c.hit_t = 0.3
+					c.hits = {}
+				_crescent_hits(c, spr.global_position, "attack", float(a.get("damage", 1.2)))
+				if _halo_t <= 0.0:
+					c.mode = "home"
+			"drag":
+				c.pos = c.pos.move_toward(global_position, speed * 1.3 * delta)
+				spr.global_position = c.pos
+				_crescent_hits(c, c.pos, "special", float(_slot("special").get("damage", 1.3)))
+				if c.pos.distance_to(global_position) < 16.0:
+					c.mode = "home"
 		spr.rotation += delta * 14.0 if c.mode != "home" else 0.0
 
 
@@ -878,9 +971,12 @@ func _crescent_hits(c: Dictionary, pos: Vector2, slot: String, mult: float) -> v
 		if pos.distance_to(e.global_position) < 24.0:
 			c.hits[e.get_instance_id()] = true
 			land_slot_hit(e, _slot_dmg(slot, mult), slot, false, 120.0)
+			pacts.crescent_hit(c, e)
 
 
 func _orbit_throw(dir: Vector2) -> void:
+	if pacts.orbit_throw(dir):
+		return
 	var i := _home_crescent()
 	if i < 0:
 		return
@@ -895,6 +991,8 @@ func _orbit_throw(dir: Vector2) -> void:
 
 func _orbit_burst() -> void:
 	## Recall: thrown crescents snap home and every crescent spins out in a ring.
+	if pacts.orbit_recall():
+		return
 	_burst_t = float(_slot("special").get("time", 0.4))
 	_busy = _burst_t
 	for c in _crescents:
@@ -918,6 +1016,7 @@ func _maul_slam(dir: Vector2) -> void:
 	var a := _slot("attack")
 	var windup := float(a.get("windup", 0.18))
 	_busy = windup + 0.1
+	pacts.before_slam(dir)
 	blade_visual.visible = true
 	blade_visual.rotation = dir.angle()
 	var wave := Polygon2D.new()
@@ -933,13 +1032,16 @@ func _maul_slam(dir: Vector2) -> void:
 	if dead or not is_inside_tree():
 		return
 	_VFX.dust_puff(get_parent(), global_position + dir * 40.0)
-	for e in _enemies_in_arc(global_position, float(a.get("radius", 84.0)), dir, float(a.get("arc", 1.8))):
+	for e in enemies_in_arc(global_position, float(a.get("radius", 84.0)), dir, float(a.get("arc", 1.8))):
 		land_slot_hit(e, _slot_dmg("attack", float(a.get("damage", 1.35))), "attack", true, 300.0)
+	pacts.after_slam(global_position + dir * 40.0)
 
 
 func _maul_shockwave(dir: Vector2) -> void:
 	var s := _slot("special")
 	_busy = 0.22
+	if pacts.shockwave(dir):
+		return
 	var spacing := float(s.get("spacing", 58.0))
 	var interval := float(s.get("interval", 0.09))
 	for i in int(s.get("steps", 4)):
@@ -986,6 +1088,8 @@ func _astral_spike(dir: Vector2) -> void:
 	var target := _nearest_enemy_from(_spirit_pos)
 	if target and target.global_position.distance_to(_spirit_pos) <= float(a.get("seek_range", 280.0)):
 		aim = (target.global_position - _spirit_pos).normalized()
+	if pacts.spirit_spike(_spirit_pos, aim, _slot_dmg("attack", float(a.get("damage", 1.0))), a):
+		return
 	## Origin offset cancels _spawn_projectile's muzzle offset so the spike leaves the spirit.
 	_spawn_projectile(_spirit_pos - aim * 18.0, aim, _slot_dmg("attack", float(a.get("damage", 1.0))),
 		"attack", "", false, float(a.get("speed", 560.0)), int(a.get("pierce", 2)), Color(0.7, 0.85, 1.0))
@@ -995,7 +1099,8 @@ func _astral_collapse() -> void:
 	var s := _slot("special")
 	_busy = 0.15
 	var radius := float(s.get("radius", 100.0))
-	for e in _enemies_in_arc(_spirit_pos, radius, Vector2.RIGHT):
+	var at := _spirit_pos
+	for e in enemies_in_arc(_spirit_pos, radius, Vector2.RIGHT):
 		land_slot_hit(e, _slot_dmg("special", float(s.get("damage", 1.6))), "special", true, 260.0)
 	var flash := Polygon2D.new()
 	flash.color = Color(0.8, 0.9, 1.0, 0.4)
@@ -1006,6 +1111,7 @@ func _astral_collapse() -> void:
 	_spirit_pos = global_position
 	_anchor_t = 0.0
 	_project_t = 0.0
+	pacts.after_collapse(at, radius)
 	await get_tree().create_timer(0.15).timeout
 	if is_instance_valid(flash):
 		flash.queue_free()

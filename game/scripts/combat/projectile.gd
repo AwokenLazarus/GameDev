@@ -1,6 +1,9 @@
 extends Area2D
 ## Seeking / straight projectile for Mira and similar kits.
 
+## Lifetime ran out before the shot was spent (deep-pact notes and lances read `hits`).
+signal expired(shot: Node)
+
 var damage: float = 10.0
 var speed: float = 420.0
 var lifetime: float = 2.2
@@ -12,6 +15,8 @@ var owner_player: Node = null
 ## on hit (e.g. "stake", "hook"). Player-owned hits route through land_projectile_hit.
 var slot: String = "attack"
 var tag: String = ""
+## Foes this shot has struck so far.
+var hits: int = 0
 
 @onready var visual: CanvasItem = $Visual
 
@@ -51,6 +56,7 @@ func make_hostile() -> void:
 func _physics_process(delta: float) -> void:
 	lifetime -= delta
 	if lifetime <= 0.0:
+		expired.emit(self)
 		queue_free()
 		return
 	if seek:
@@ -94,6 +100,7 @@ func _hit(node: Node) -> void:
 		return
 	if not node.is_in_group("enemy"):
 		return
+	hits += 1
 	if is_instance_valid(owner_player) and owner_player.has_method("land_projectile_hit"):
 		owner_player.land_projectile_hit(self, node)
 		_spend_pierce()
