@@ -56,6 +56,7 @@ func _ready() -> void:
 	for id in KITS:
 		await _check_kit(id)
 	await _check_red_letter()
+	await _check_tally()
 	_scale = 1.0
 	Engine.time_scale = 1.0
 	Engine.physics_ticks_per_second = 60
@@ -324,6 +325,26 @@ func _check_red_letter() -> void:
 		arena.queue_free()
 		await _wait(0.05)
 	print("BOONS red letter ok")
+
+
+
+## Dead Man's Tally: capping Bleed at 5 through the player (the real source) must fire the Legendary.
+func _check_tally() -> void:
+	_equip(BoonDB.get_boon("dust_tally"))
+	var arena := Node2D.new()
+	add_child(arena)
+	var p: Node = PLAYER.instantiate()
+	p.configure(0, "severin")
+	arena.add_child(p)
+	var e := _dummy(arena, Vector2(60, 0), DUMMY_HP)
+	await _wait(0.05)
+	var st := MWBoonStatus.of(e)
+	st.add_bleed(5, p)
+	if st.bleed != 0:
+		_fail("Dead Man's Tally did not fire when Bleed capped (bleed=%d)" % st.bleed)
+	arena.queue_free()
+	await _wait(0.05)
+	print("BOONS tally ok")
 
 
 func _dummy(arena: Node, pos: Vector2, hp: float, elite: bool = false) -> Node:

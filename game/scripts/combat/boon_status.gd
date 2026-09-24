@@ -72,8 +72,11 @@ func add_bleed(stacks: int, src: Node) -> int:
 	bleed = mini(BLEED_MAX, bleed + stacks)
 	bleed_t = BLEED_TIME
 	bleed_src = src
-	if bleed == BLEED_MAX and before < BLEED_MAX and is_instance_valid(src) and src.has_method("on_bleed_capped"):
-		src.on_bleed_capped(get_parent())
+	if bleed == BLEED_MAX and before < BLEED_MAX and is_instance_valid(src):
+		## src is the player; its BoonKit owns the Dead Man's Tally hook.
+		var kit = src.get("boons") if "boons" in src else src
+		if kit != null and kit.has_method("on_bleed_capped"):
+			kit.on_bleed_capped(get_parent())
 	_refresh_label()
 	return bleed
 
