@@ -8,6 +8,10 @@ var seek: bool = true
 var pierce: int = 0
 var velocity: Vector2 = Vector2.RIGHT
 var owner_player: Node = null
+## Kit slot that fired this (attack/special/cast) and an effect tag the owner reads
+## on hit (e.g. "stake", "hook"). Player-owned hits route through land_projectile_hit.
+var slot: String = "attack"
+var tag: String = ""
 
 @onready var visual: CanvasItem = $Visual
 
@@ -89,6 +93,10 @@ func _hit(node: Node) -> void:
 		return
 	if not node.is_in_group("enemy"):
 		return
+	if is_instance_valid(owner_player) and owner_player.has_method("land_projectile_hit"):
+		owner_player.land_projectile_hit(self, node)
+		_spend_pierce()
+		return
 	var h: Health = node.get_node_or_null("Health")
 	if h:
 		h.take_damage(damage)
@@ -96,6 +104,10 @@ func _hit(node: Node) -> void:
 			owner_player.on_deal_damage(damage)
 	if node.has_method("apply_stagger"):
 		node.apply_stagger(global_position, 140.0)
+	_spend_pierce()
+
+
+func _spend_pierce() -> void:
 	if pierce > 0:
 		pierce -= 1
 	else:

@@ -23,7 +23,7 @@ func _ready() -> void:
 	start_btn.get_parent().add_child(_hub_btn)
 	start_btn.get_parent().move_child(_hub_btn, start_btn.get_index() + 1)
 	_hint = Label.new()
-	_hint.text = "In raid: WASD move · J / Click attack · Space dodge · F feed corpses"
+	_hint.text = "In raid: WASD move · J/LMB attack · K/RMB special · L/Q cast · Space dodge · F feed corpses"
 	_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_hint.modulate = Color(0.75, 0.68, 0.6)
 	start_btn.get_parent().add_child(_hint)

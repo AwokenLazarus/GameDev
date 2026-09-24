@@ -15,7 +15,7 @@ godot --path game
 **First play:** click **PLAY RAID — Dust Meridian** on the title screen (skips the town hub).  
 You should see Severin (red ring under feet) and enemies spawning around you.
 
-- Move WASD · Attack J / Click · Dodge Space · Feed F  
+- Move WASD · Attack J / Click · Special K / Right-click · Cast L / Q · Dodge Space · Feed F  
 - After a burst clears, a **PICK A BOON** panel pauses combat — click one choice to continue.  
 - **Ashwick Town Hub** is optional prep (roster / meta), not the fight.
 
@@ -63,10 +63,24 @@ Runtime sheets: `assets/textures/`
 |--|----|----|
 | Move | WASD | Arrows |
 | Attack | Click / J | Ctrl |
+| Special | Right-click / K | `/` |
+| Cast | Q / L | `.` |
 | Dodge | Space | Shift |
 | Feed | F | F |
 
-Gamepad: left stick move, X attack, A dodge, Y feed.
+Gamepad: left stick move, right stick aim, X attack, B special, RB cast, A dodge, Y feed.
+
+### Kits (attack · special · cast · dash)
+
+Slot data lives in `CharacterDB.KIT_SLOTS`. Nothing deals damage without an input.
+
+| Sibling | Attack | Special | Cast |
+|--|--|--|--|
+| Severin (melee) | 3-hit combo, wide finisher | Lunging Cleave | Blood Stake: marks, +30% damage from every hunter |
+| Mira (hybrid_gun) | Aimed piercing rail shot | Silverstorm Volley (seeking) | Silver Flare (fused AoE) |
+| Cassian (orbit) | Crescent throw, hits out and back | Recall Burst ring | Court Sigil (ticking zone) |
+| Odette (maul) | Frontal slam | Travelling shockwave | Grave Hook (pulls target in) |
+| Vesper (astral) | Spirit Spike from the spirit | Collapse (detonate spirit) | Projection (spirit dashes through foes, anchors) |
 
 ## Headless checks
 
