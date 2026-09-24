@@ -27,6 +27,7 @@ func _ready() -> void:
 	RunState.boons_changed.connect(_on_boons)
 	RunState.reputation_changed.connect(_on_rep)
 	RunState.feed_buff_changed.connect(_on_feed)
+	RunState.pact_formed.connect(_on_pact_formed)
 	kit_label = Label.new()
 	kit_label.name = "KitLabel"
 	kit_label.position = Vector2(24.0, 192.0)
@@ -162,10 +163,23 @@ func _on_phase(phase: String) -> void:
 			hint_label.text = ""
 
 
+## One-time "Deep Pact" banner: the pact's name and what it did to this sibling's weapon.
+func _on_pact_formed(patron: String) -> void:
+	var p := get_tree().get_first_node_in_group("player")
+	var kit: String = str(p.get("kit_type")) if p else ""
+	var transform: String = str((MWPactKit.TRANSFORMS.get(patron, {}) as Dictionary).get(kit, ""))
+	_show_card("DEEP PACT · %s\n%s" % [MWPactKit.PACT_NAMES.get(patron, patron),
+		transform if transform != "" else RunState.patron_display(patron)])
+	var tw := create_tween()
+	title_card.add_theme_color_override("font_color", MWPactKit.COLORS.get(patron, Color.WHITE))
+	tw.tween_interval(2.7)
+	tw.tween_callback(func() -> void: title_card.add_theme_color_override("font_color", Color(0.95, 0.85, 0.72)))
+
+
 func _on_boons() -> void:
 	var pact := ""
-	if RunState.has_pact(RunState.aligned_patron):
-		pact = " · PACT"
+	if RunState.pact_patron != "":
+		pact = " · PACT: %s" % MWPactKit.PACT_NAMES.get(RunState.pact_patron, "")
 	boon_label.text = "Boons %d/%d · %s%s" % [
 		RunState.boon_picks_done,
 		RunState.boon_picks_target,

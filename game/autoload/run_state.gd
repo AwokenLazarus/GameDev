@@ -11,7 +11,7 @@ signal feed_buff_changed(stacks: int)
 signal gear_changed
 ## A boon replaced another in the same slot (old may be empty).
 signal boon_replaced(old: Dictionary, new: Dictionary)
-## Deep pact reached (3rd boon from one patron). MW-005 hangs kit transforms here.
+## Deep pact reached (3rd boon from one patron). MWPactKit applies the passive + kit transform.
 signal pact_formed(patron_id: String)
 ## A burst room or the wild map began (per-room boons reset on this).
 signal room_started
@@ -360,14 +360,20 @@ func begin_room() -> void:
 
 
 func _apply_pact_transform(patron: String) -> void:
-	## Pact passive + kit transform land in MW-005 via pact_formed. The legacy damage
-	## multiplier in player._dmg() stays until then.
+	## Each sibling's MWPactKit hears this and rewrites its weapon (no damage multiplier).
 	pact_patron = patron
 	pact_formed.emit(patron)
 
 
 func has_pact(patron: String) -> bool:
 	return patron != "" and pact_patron == patron
+
+
+## The pact `player` fights under ("" = none). Every pact read goes through here. It is
+## party-wide today because the loadout is shared (MW-006); per-player pacts (MW-027 /
+## MW-011) only need to change this function.
+func pact_of(_player: Node) -> String:
+	return pact_patron
 
 
 func patron_display(patron: String) -> String:
