@@ -22,6 +22,8 @@ var _room_cleared: bool = false
 var _general_spawned: bool = false
 var _sector: Dictionary = {}
 var _biome: Node2D
+var _arena_half: Vector2 = Vector2(480, 320)
+var _pending_spawns: int = 0
 
 
 func _ready() -> void:
@@ -67,6 +69,7 @@ func _paint_biome() -> void:
 
 
 func _build_arena(size: Vector2) -> void:
+	_arena_half = size
 	ground.polygon = PackedVector2Array([
 		-size.x, -size.y, size.x, -size.y, size.x, size.y, -size.x, size.y
 	])
@@ -142,24 +145,49 @@ func _start_dungeon_burst() -> void:
 	var count := 4 + RunState.dungeon_index
 	if bool(_sector.get("nightmare", false)):
 		count += 3
+	_pending_spawns = count
 	for i in count:
-		_spawn_burst_enemy(i, count)
+		_kick_burst_spawn(i, count)
 
 
-func _spawn_burst_enemy(i: int, total: int) -> void:
+func _kick_burst_spawn(i: int, total: int) -> void:
+	var delay := 0.0 if total <= 1 else 1.5 * float(i) / float(maxi(total - 1, 1))
+	if delay > 0.0:
+		await get_tree().create_timer(delay).timeout
+	if not is_inside_tree() or RunState.phase != RunState.Phase.DUNGEON:
+		_pending_spawns = maxi(_pending_spawns - 1, 0)
+		return
+	_spawn_burst_enemy(i, total)
+	_pending_spawns = maxi(_pending_spawns - 1, 0)
+
+
+func _edge_spawn_pos() -> Vector2:
+	var inset := 52.0
+	var hx := maxf(40.0, _arena_half.x - inset)
+	var hy := maxf(40.0, _arena_half.y - inset)
+	match randi() % 4:
+		0:
+			return Vector2(randf_range(-hx, hx), -hy)
+		1:
+			return Vector2(randf_range(-hx, hx), hy)
+		2:
+			return Vector2(-hx, randf_range(-hy, hy))
+		_:
+			return Vector2(hx, randf_range(-hy, hy))
+
+
+func _spawn_burst_enemy(_i: int, _total: int) -> void:
 	var e: Node2D = ENEMY_SCENE.instantiate()
-	var angle := TAU * float(i) / float(total)
-	## Spawn closer so first fight is obviously on-screen
-	e.global_position = Vector2(cos(angle), sin(angle)) * 140.0
+	e.global_position = _edge_spawn_pos()
 	entities.add_child(e)
 	var human_chance := float(_sector.get("enemy_human_chance", 0.3))
 	var human := randf() < human_chance
 	var elite := RunState.run_time > 70.0 and randf() < 0.15
 	var lead := _lead()
 	e.setup(lead, human, elite)
-	e.max_hp *= GameState.difficulty_enemy_mult()
-	e.health.max_hp = e.max_hp
-	e.health.hp = e.max_hp
+	## setup() keeps elite ×1.6 and applies difficulty_enemy_mult()
+	if e.has_method("begin_spawn_telegraph"):
+		e.begin_spawn_telegraph(0.45)
 
 
 func _alive_enemies() -> int:
@@ -168,7 +196,7 @@ func _alive_enemies() -> int:
 
 func _process(_delta: float) -> void:
 	if RunState.phase == RunState.Phase.DUNGEON and not _room_cleared:
-		if _alive_enemies() == 0:
+		if _pending_spawns <= 0 and _alive_enemies() == 0:
 			_room_cleared = true
 			_on_burst_cleared()
 	elif RunState.phase == RunState.Phase.WILD:

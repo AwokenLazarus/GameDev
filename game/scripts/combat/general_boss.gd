@@ -17,10 +17,15 @@ signal defeated
 @onready var actor_visual: Node2D = $ActorVisual
 @onready var nameplate: Label = $Nameplate
 
+const CONTACT_DMG := 12.0
+const CONTACT_CD := 0.55
+const TELEGRAPH_MIN := 0.42
+
 var _player: Node2D
 var _cd: float = 2.0
 var _busy: bool = false
 var _alive: bool = true
+var _contact_cd: Dictionary = {} ## instance_id -> remaining
 
 const PROJ := preload("res://scenes/entities/projectile.tscn")
 
@@ -86,13 +91,56 @@ func _physics_process(delta: float) -> void:
 		actor_visual.set_moving(true)
 		actor_visual.set_facing_x(dir.x)
 	move_and_slide()
-	if _player.global_position.distance_to(global_position) < 32.0:
-		if _player.has_method("apply_hit"):
-			_player.apply_hit(12.0 * delta * 6.0)
+	_tick_contact(delta)
 	_cd -= delta
 	if _cd <= 0.0:
 		_cd = 2.6 - clampf(1.0 - health.hp / health.max_hp, 0.0, 1.0)
 		_use_pattern()
+
+
+func _tick_contact(delta: float) -> void:
+	for id in _contact_cd.keys():
+		_contact_cd[id] = float(_contact_cd[id]) - delta
+		if float(_contact_cd[id]) <= 0.0:
+			_contact_cd.erase(id)
+	for p in get_tree().get_nodes_in_group("player"):
+		if not is_instance_valid(p) or not p.has_method("apply_hit"):
+			continue
+		if global_position.distance_to(p.global_position) >= 32.0:
+			continue
+		var id := p.get_instance_id()
+		if _contact_cd.has(id):
+			continue
+		p.apply_hit(CONTACT_DMG, global_position)
+		_contact_cd[id] = CONTACT_CD
+
+
+func apply_stagger(from: Vector2, force: float = 90.0) -> void:
+	if not _alive or _busy:
+		return
+	var dir := (global_position - from).normalized()
+	if dir.length() < 0.1:
+		dir = Vector2.RIGHT
+	velocity = dir * force
+	if actor_visual:
+		actor_visual.flash(Color(1.3, 1.15, 0.85), 0.1)
+
+
+func _show_telegraph(seconds: float, scl: Vector2 = Vector2.ONE, world_pos: Vector2 = Vector2.ZERO) -> void:
+	if telegraph:
+		telegraph.visible = true
+		telegraph.scale = scl
+		if world_pos != Vector2.ZERO:
+			telegraph.global_position = world_pos
+		else:
+			telegraph.position = Vector2.ZERO
+	if actor_visual:
+		actor_visual.flash(Color(1.35, 0.55, 0.3), seconds)
+	await get_tree().create_timer(seconds).timeout
+	if telegraph:
+		telegraph.visible = false
+		telegraph.position = Vector2.ZERO
+		telegraph.scale = Vector2.ONE
 
 
 func _use_pattern() -> void:
@@ -119,19 +167,33 @@ func _use_pattern() -> void:
 
 func _pat_charge() -> void:
 	_busy = true
+	var hit_ids: Dictionary = {}
 	var dir := (_player.global_position - global_position).normalized()
-	telegraph.visible = true
-	telegraph.rotation = dir.angle()
+	if telegraph:
+		telegraph.visible = true
+		telegraph.rotation = dir.angle()
+		telegraph.position = Vector2.ZERO
+	if actor_visual:
+		actor_visual.flash(Color(1.4, 0.45, 0.25), 0.45)
 	await get_tree().create_timer(0.45).timeout
 	if not _alive:
+		_busy = false
 		return
-	telegraph.visible = false
+	if telegraph:
+		telegraph.visible = false
 	velocity = dir * 380.0
 	var t := 0.0
 	while t < 0.55 and _alive:
 		move_and_slide()
-		if _player and _player.global_position.distance_to(global_position) < 30.0:
-			_player.apply_hit(22.0)
+		for p in get_tree().get_nodes_in_group("player"):
+			if not is_instance_valid(p) or not p.has_method("apply_hit"):
+				continue
+			var id := p.get_instance_id()
+			if hit_ids.has(id):
+				continue
+			if p.global_position.distance_to(global_position) < 30.0:
+				hit_ids[id] = true
+				p.apply_hit(22.0, global_position)
 		t += get_process_delta_time()
 		await get_tree().process_frame
 	_busy = false
@@ -139,6 +201,7 @@ func _pat_charge() -> void:
 
 func _pat_barrage() -> void:
 	_busy = true
+	await _show_telegraph(TELEGRAPH_MIN, Vector2(1.4, 1.4))
 	for i in 8:
 		if not _alive or _player == null:
 			break
@@ -155,36 +218,36 @@ func _pat_barrage() -> void:
 
 func _pat_leap() -> void:
 	_busy = true
-	telegraph.visible = true
-	telegraph.global_position = _player.global_position
-	await get_tree().create_timer(0.5).timeout
+	var land := _player.global_position if _player else global_position
+	await _show_telegraph(0.5, Vector2(1.6, 1.6), land)
 	if _alive:
-		global_position = telegraph.global_position
+		global_position = land
 		for e in get_tree().get_nodes_in_group("player"):
 			if global_position.distance_to(e.global_position) < 70.0 and e.has_method("apply_hit"):
-				e.apply_hit(28.0)
-	telegraph.visible = false
-	telegraph.position = Vector2.ZERO
+				e.apply_hit(28.0, global_position)
 	_busy = false
 
 
 func _pat_hymn() -> void:
 	_busy = true
-	if actor_visual:
-		actor_visual.flash(Color(1.2, 1.1, 0.8), 0.6)
 	visual.modulate = Color(1.2, 1.1, 0.8)
-	## Heal slightly + smite ring
-	health.heal(health.max_hp * 0.04)
-	for e in get_tree().get_nodes_in_group("player"):
-		if global_position.distance_to(e.global_position) < 140.0 and e.has_method("apply_hit"):
-			e.apply_hit(18.0)
-	await get_tree().create_timer(0.6).timeout
+	await _show_telegraph(TELEGRAPH_MIN, Vector2(2.2, 2.2))
+	if _alive:
+		health.heal(health.max_hp * 0.04)
+		for e in get_tree().get_nodes_in_group("player"):
+			if global_position.distance_to(e.global_position) < 140.0 and e.has_method("apply_hit"):
+				e.apply_hit(18.0, global_position)
+	await get_tree().create_timer(0.2).timeout
 	visual.modulate = Color.WHITE
 	_busy = false
 
 
 func _pat_thorns() -> void:
 	_busy = true
+	await _show_telegraph(TELEGRAPH_MIN, Vector2(1.8, 1.8))
+	if not _alive:
+		_busy = false
+		return
 	for i in 12:
 		var a := TAU * float(i) / 12.0
 		var p: Node = PROJ.instantiate()
@@ -193,20 +256,23 @@ func _pat_thorns() -> void:
 		p.visual.modulate = Color(0.4, 0.7, 0.3)
 		if p.has_method("make_hostile"):
 			p.make_hostile()
-	await get_tree().create_timer(0.4).timeout
+	await get_tree().create_timer(0.2).timeout
 	_busy = false
 
 
 func _pat_void() -> void:
 	_busy = true
-	## Pull players inward then spike
+	await _show_telegraph(TELEGRAPH_MIN, Vector2(2.0, 2.0))
+	if not _alive:
+		_busy = false
+		return
 	for e in get_tree().get_nodes_in_group("player"):
 		var pull: Vector2 = (global_position - (e as Node2D).global_position).normalized() * 90.0
 		(e as Node2D).global_position += pull
-	await get_tree().create_timer(0.35).timeout
+	await get_tree().create_timer(0.2).timeout
 	for e in get_tree().get_nodes_in_group("player"):
 		if global_position.distance_to(e.global_position) < 100.0 and e.has_method("apply_hit"):
-			e.apply_hit(26.0)
+			e.apply_hit(26.0, global_position)
 	_busy = false
 
 

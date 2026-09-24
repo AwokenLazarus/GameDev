@@ -9,6 +9,10 @@ const PROJ := preload("res://scenes/entities/projectile.tscn")
 const DODGE_SPEED := 520.0
 const DODGE_TIME := 0.18
 const DODGE_COOLDOWN := 0.55
+const HIT_IFRAME := 0.5
+const HIT_KNOCK := 260.0
+const HIT_KNOCK_TIME := 0.16
+const MAX_HIT := 35.0
 
 @onready var body_visual: CanvasItem = $BodyVisual
 @onready var blade_visual: CanvasItem = $BladeVisual
@@ -33,6 +37,7 @@ var attack_cd: float = 0.0
 var attacking: bool = false
 var dead: bool = false
 var _hit_ids: Dictionary = {}
+var _kb_timer: float = 0.0
 
 var move_speed: float = 220.0
 var base_damage: float = 22.0
@@ -178,7 +183,12 @@ func _physics_process(delta: float) -> void:
 		actor_visual.set_moving(moving)
 		actor_visual.set_facing_x(facing.x)
 
-	velocity = input_dir * move_speed * RunState.move_mult
+	var wish := input_dir * move_speed * RunState.move_mult
+	if _kb_timer > 0.0:
+		_kb_timer -= delta
+		velocity = velocity.move_toward(wish, 1400.0 * delta)
+	else:
+		velocity = wish
 
 	if _just_pressed("dodge") and dodge_cd <= 0.0 and input_dir.length() > 0.1:
 		_start_dodge(input_dir.normalized())
@@ -410,10 +420,7 @@ func _attack_maul() -> void:
 	## AOE damage
 	for e in get_tree().get_nodes_in_group("enemy"):
 		if global_position.distance_to(e.global_position) < 90.0:
-			var h: Health = e.get_node_or_null("Health")
-			if h:
-				h.take_damage(_dmg() * 1.35)
-				on_deal_damage(_dmg() * 1.35)
+			_land_hit(e, _dmg() * 1.35, true)
 	hitbox.monitoring = false
 	hitbox.scale = Vector2.ONE
 	blade_visual.visible = false
@@ -452,10 +459,7 @@ func _attack_astral_detonate() -> void:
 	attacking = true
 	for e in get_tree().get_nodes_in_group("enemy"):
 		if _spirit_pos.distance_to(e.global_position) < 100.0:
-			var h: Health = e.get_node_or_null("Health")
-			if h:
-				h.take_damage(_dmg() * 1.6)
-				on_deal_damage(_dmg() * 1.6)
+			_land_hit(e, _dmg() * 1.6, true)
 	var flash := Polygon2D.new()
 	flash.color = Color(0.8, 0.9, 1.0, 0.4)
 	flash.polygon = PackedVector2Array([-80, -80, 80, -80, 80, 80, -80, 80])
@@ -500,11 +504,7 @@ func _try_damage_target(node: Node) -> void:
 	if _hit_ids.has(id):
 		return
 	_hit_ids[id] = true
-	var h: Health = node.get_node_or_null("Health")
-	if h:
-		var d := _dmg()
-		h.take_damage(d)
-		on_deal_damage(d)
+	_land_hit(node, _dmg(), true)
 
 
 func _try_feed() -> void:
@@ -535,20 +535,44 @@ func _feed(corpse: Node) -> void:
 		body_visual.modulate = Color.WHITE
 
 
-func apply_hit(amount: float) -> void:
-	## Astral body is fragile
+func _land_hit(node: Node, dmg: float, do_hitstop: bool = false) -> void:
+	var h: Health = node.get_node_or_null("Health")
+	if h:
+		h.take_damage(dmg)
+		on_deal_damage(dmg)
+	if node.has_method("apply_stagger"):
+		node.apply_stagger(global_position)
+	if do_hitstop:
+		_VFX.hitstop(get_tree())
+
+
+func apply_hit(amount: float, from: Vector2 = Vector2.ZERO) -> void:
+	if dead:
+		return
+	if health.invuln_timer > 0.0:
+		return
 	if kit_type == "astral":
 		amount *= 1.25
+	amount = minf(amount, MAX_HIT)
+	if amount <= 0.0:
+		return
 	health.take_damage(amount)
+	health.set_invuln(HIT_IFRAME)
+	RunState.note_hit(amount)
+	var kb_dir := (global_position - from).normalized() if from != Vector2.ZERO else -facing
+	if kb_dir.length() < 0.1:
+		kb_dir = Vector2.RIGHT
+	velocity = kb_dir * HIT_KNOCK
+	_kb_timer = HIT_KNOCK_TIME
 
 
 func _on_damaged(_amount: float, remaining: float) -> void:
 	if player_index == 0:
 		RunState.player_hp = remaining
 	if actor_visual:
-		actor_visual.flash()
-	body_visual.modulate = Color(1.0, 0.4, 0.4)
-	await get_tree().create_timer(0.08).timeout
+		actor_visual.flash(Color(1.55, 0.45, 0.4), HIT_IFRAME)
+	body_visual.modulate = Color(1.6, 0.45, 0.4)
+	await get_tree().create_timer(HIT_IFRAME).timeout
 	if is_instance_valid(body_visual) and not dead:
 		body_visual.modulate = Color.WHITE
 

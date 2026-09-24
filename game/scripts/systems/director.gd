@@ -76,4 +76,7 @@ func _spawn_one() -> void:
 	else:
 		e.is_human = human
 		e.is_elite = elite
+	## setup() applies GameState.difficulty_enemy_mult() and keeps elite ×1.6
+	if e.has_method("begin_spawn_telegraph"):
+		e.begin_spawn_telegraph(0.4)
 	spawned.emit(e)

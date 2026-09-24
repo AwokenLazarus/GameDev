@@ -16,18 +16,28 @@ signal killed(is_human: bool)
 @onready var corpse_area: Area2D = $CorpseArea
 @onready var actor_visual: Node2D = $ActorVisual
 
+const WINDUP := 0.38
+const ATTACK_RANGE := 28.0
+const STRIKE_RANGE := 34.0
+
 var _player: Node2D
 var _alive: bool = true
 var _corpse: bool = false
 var _attack_cd: float = 0.0
 var enemy_sprite: String = "dominion_grub"
+var _winding: bool = false
+var _windup: float = 0.0
+var _wind_t: float = 0.0
+var _stagger: float = 0.0
+var _knock: Vector2 = Vector2.ZERO
+var _spawn_lock: float = 0.0
+var _base_scale: Vector2 = Vector2.ONE
 
 
 func _ready() -> void:
 	add_to_group("enemy")
-	health.max_hp = max_hp * (1.6 if is_elite else 1.0)
-	health.hp = health.max_hp
 	health.died.connect(_on_died)
+	health.damaged.connect(_on_damaged)
 	corpse_area.monitoring = false
 	corpse_area.monitorable = false
 	_apply_role_visuals()
@@ -41,11 +51,40 @@ func setup(player: Node2D, human: bool = false, elite: bool = false) -> void:
 		_apply_role_visuals()
 
 
+func _scaled_hp() -> float:
+	var elite_m := 1.6 if is_elite else 1.0
+	var diff := GameState.difficulty_enemy_mult() if GameState else 1.0
+	return max_hp * elite_m * diff
+
+
+func begin_spawn_telegraph(seconds: float = 0.45) -> void:
+	_spawn_lock = seconds
+	modulate.a = 0.5
+	if actor_visual:
+		actor_visual.flash(Color(1.7, 0.75, 0.3), seconds)
+	_VFX.telegraph_mark(get_parent(), global_position, seconds, Vector2(1.1, 1.1))
+
+
+func apply_stagger(from: Vector2, force: float = 200.0) -> void:
+	if not _alive:
+		return
+	_winding = false
+	_windup = 0.0
+	_stagger = 0.22
+	var dir := (global_position - from).normalized()
+	if dir.length() < 0.1:
+		dir = Vector2.RIGHT
+	_knock = dir * force
+	if actor_visual:
+		actor_visual.flash(Color(1.4, 1.2, 0.9), 0.12)
+
+
 func _apply_role_visuals() -> void:
-	var hp := max_hp * (1.6 if is_elite else 1.0)
+	var hp := _scaled_hp()
 	health.max_hp = hp
 	health.hp = hp
-	scale = Vector2(1.35, 1.35) if is_elite else Vector2.ONE
+	_base_scale = Vector2(1.35, 1.35) if is_elite else Vector2.ONE
+	scale = _base_scale
 	## Pick sprite by role + sector flavor
 	if is_elite:
 		enemy_sprite = "dominion_elite"
@@ -73,12 +112,41 @@ func _apply_role_visuals() -> void:
 func _physics_process(delta: float) -> void:
 	if not _alive:
 		return
+	if _spawn_lock > 0.0:
+		_spawn_lock -= delta
+		if _spawn_lock <= 0.0:
+			modulate.a = 1.0
+		velocity = Vector2.ZERO
+		move_and_slide()
+		return
+	if _stagger > 0.0:
+		_stagger -= delta
+		velocity = _knock
+		_knock = _knock.move_toward(Vector2.ZERO, 900.0 * delta)
+		scale = _base_scale
+		move_and_slide()
+		return
 	if _player == null or not is_instance_valid(_player):
 		_player = get_tree().get_first_node_in_group("player") as Node2D
 		if _player == null:
 			return
 	var dir := (_player.global_position - global_position)
 	var dist := dir.length()
+	if _winding:
+		_windup -= delta
+		_wind_t += delta
+		scale = _base_scale * (1.0 + 0.14 * sin(_wind_t * 20.0))
+		velocity = Vector2.ZERO
+		move_and_slide()
+		if _windup <= 0.0:
+			_winding = false
+			scale = _base_scale
+			_attack_cd = 0.7
+			if dist < STRIKE_RANGE and _player.has_method("apply_hit"):
+				if actor_visual:
+					actor_visual.play_oneshot("attack", 12.0)
+				_player.apply_hit(contact_damage * (1.4 if is_elite else 1.0), global_position)
+		return
 	if dist > 4.0:
 		velocity = dir.normalized() * move_speed * (0.85 if is_human else 1.0)
 	else:
@@ -90,12 +158,22 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 
 	_attack_cd -= delta
-	if dist < 28.0 and _attack_cd <= 0.0:
-		_attack_cd = 0.7
-		if actor_visual:
-			actor_visual.play_oneshot("attack", 12.0)
-		if _player.has_method("apply_hit"):
-			_player.apply_hit(contact_damage * (1.4 if is_elite else 1.0))
+	if dist < ATTACK_RANGE and _attack_cd <= 0.0:
+		_start_windup()
+
+
+func _start_windup() -> void:
+	_winding = true
+	_windup = WINDUP
+	_wind_t = 0.0
+	if actor_visual:
+		actor_visual.flash(Color(1.55, 0.55, 0.25), WINDUP)
+	_VFX.telegraph_mark(get_parent(), global_position + Vector2(0, 18), WINDUP, Vector2(0.85, 0.55))
+
+
+func _on_damaged(_amount: float, _remaining: float) -> void:
+	if actor_visual:
+		actor_visual.flash(Color(1.3, 1.1, 0.9), 0.08)
 
 
 func _on_died() -> void:

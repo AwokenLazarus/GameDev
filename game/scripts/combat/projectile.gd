@@ -84,7 +84,7 @@ func _hit(node: Node) -> void:
 	var hostile: bool = bool(get_meta("hostile", false))
 	if hostile:
 		if node.is_in_group("player") and node.has_method("apply_hit"):
-			node.apply_hit(damage)
+			node.apply_hit(damage, global_position)
 			queue_free()
 		return
 	if not node.is_in_group("enemy"):
@@ -94,6 +94,8 @@ func _hit(node: Node) -> void:
 		h.take_damage(damage)
 		if owner_player and owner_player.has_method("on_deal_damage"):
 			owner_player.on_deal_damage(damage)
+	if node.has_method("apply_stagger"):
+		node.apply_stagger(global_position, 140.0)
 	if pierce > 0:
 		pierce -= 1
 	else:
