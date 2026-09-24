@@ -43,6 +43,7 @@ func setup(origin: Vector2, dir: Vector2, dmg: float, from: Node, seeking: bool 
 
 func make_hostile() -> void:
 	set_meta("hostile", true)
+	add_to_group("hostile_projectile")
 	collision_mask = 2 ## player layer
 	seek = false
 

@@ -1,6 +1,7 @@
 extends CharacterBody2D
 const _VFX = preload("res://scripts/visuals/vfx.gd")
 const _ZONE = preload("res://scripts/combat/kit_zone.gd")
+const _BOONS = preload("res://scripts/combat/boon_kit.gd")
 ## Multi-kit dhampir controller. Kits: melee, hybrid_gun, orbit, maul, astral.
 ## Every kit has four inputs — attack, special, cast, dash — and deals damage only in
 ## response to one of them (anti-pillar: not an AFK auto-survivor). Slot data lives in
@@ -11,6 +12,11 @@ signal fed
 ## Boon hooks (MW-006). `slot` is one of CharacterDB.SLOT_NAMES.
 signal slot_used(slot: String)
 signal slot_hit(slot: String, target: Node, damage: float)
+signal dash_started(dir: Vector2)
+signal dash_ended
+## A foe this sibling hit died. `slot` is what finished it (attack/…/bleed/smite/execute).
+signal enemy_killed(target: Node, slot: String)
+signal hurt(amount: float)
 
 const PROJ := preload("res://scenes/entities/projectile.tscn")
 const DODGE_SPEED := 520.0
@@ -47,6 +53,8 @@ var attack_cd: float = 0.0
 var special_cd: float = 0.0
 var cast_charges: int = 0
 var cast_max: int = 0
+var _cast_base: int = 0
+var _cast_bonus: int = 0
 var dead: bool = false
 var _kb_timer: float = 0.0
 
@@ -58,6 +66,14 @@ var base_attack_cd: float = 0.38
 var slots: Dictionary = {}
 ## Per-slot multipliers boons may write: {"attack": {"damage": 1.0, "cooldown": 1.0}, ...}.
 var slot_mods: Dictionary = {}
+
+## Boon verb state (MW-006). The BoonKit child runs the owned boons.
+var boons: MWBoonKit
+var chambered: bool = false ## next Attack hits twice (echo 50%)
+var echo_armed: bool = false ## the Attack in flight is Chambered
+var wards: int = 0 ## each blocks one hit
+var debt: float = 0.0 ## borrowed HP; drains after a grace period
+var debt_cast: bool = false ## the Cast in flight was paid with Debt
 
 var _busy: float = 0.0 ## commit lock: no new attack/special/cast until it runs out
 var _lunge_t: float = 0.0
@@ -92,6 +108,8 @@ func _ready() -> void:
 	health.died.connect(_on_died)
 	health.damaged.connect(_on_damaged)
 	spirit_visual.visible = false
+	boons = _BOONS.new(self)
+	add_child(boons)
 	_apply_character()
 	if player_index == 0:
 		camera.enabled = true
@@ -152,7 +170,8 @@ func _apply_character() -> void:
 	for s in ["attack", "special", "cast", "dash"]:
 		if not slot_mods.has(s):
 			slot_mods[s] = {"damage": 1.0, "cooldown": 1.0}
-	cast_max = int(_slot("cast").get("charges", 1))
+	_cast_base = int(_slot("cast").get("charges", 1))
+	cast_max = _cast_base + _cast_bonus
 	cast_charges = cast_max
 	health.max_hp = RunState.player_max_hp if player_index == 0 else float(data.get("base_hp", 100.0))
 	health.hp = health.max_hp
@@ -408,7 +427,9 @@ func can_use_slot(slot: String) -> bool:
 		"special":
 			return special_cd <= 0.0 and _busy <= 0.0
 		"cast":
-			return cast_charges > 0 and _busy <= 0.0
+			if _busy > 0.0:
+				return false
+			return cast_charges > 0 or (boons != null and boons.can_debt_cast())
 	return false
 
 
@@ -433,9 +454,13 @@ func use_slot(slot: String) -> bool:
 			if actor_visual:
 				actor_visual.play_oneshot("attack", 16.0)
 		"cast":
-			if cast_charges == cast_max:
-				_cast_recharge = _cd("cast", float(_slot("cast").get("recharge", 4.0)))
-			cast_charges -= 1
+			debt_cast = cast_charges <= 0
+			if debt_cast:
+				boons.add_debt(8.0) ## Blood Contract: cast on credit
+			else:
+				if cast_charges == cast_max:
+					_cast_recharge = _cd("cast", float(_slot("cast").get("recharge", 4.0)))
+				cast_charges -= 1
 	slot_used.emit(slot)
 	match kit_type + ":" + slot:
 		"melee:attack":
@@ -476,7 +501,14 @@ func slot_status() -> String:
 	var sp: String = str(_slot("special").get("name", "Special"))
 	var ca: String = str(_slot("cast").get("name", "Cast"))
 	var sp_state := "ready" if special_cd <= 0.0 else "%.1fs" % special_cd
-	return "%s %s · %s %d/%d" % [sp, sp_state, ca, cast_charges, cast_max]
+	var line := "%s %s · %s %d/%d" % [sp, sp_state, ca, cast_charges, cast_max]
+	if chambered:
+		line += " · CHAMBERED"
+	if wards > 0:
+		line += " · Ward %d" % wards
+	if debt > 0.0:
+		line += " · Debt %d" % int(ceilf(debt))
+	return line
 
 
 func _start_dodge(dir: Vector2) -> void:
@@ -486,6 +518,7 @@ func _start_dodge(dir: Vector2) -> void:
 	_lunge_t = 0.0
 	health.set_invuln(DODGE_TIME + 0.05)
 	slot_used.emit("dash")
+	dash_started.emit(dir)
 	_VFX.dust_puff(get_parent(), global_position)
 	if actor_visual:
 		actor_visual.play_oneshot("dodge", 14.0)
@@ -494,6 +527,8 @@ func _start_dodge(dir: Vector2) -> void:
 	await get_tree().create_timer(DODGE_TIME).timeout
 	if is_instance_valid(body_visual):
 		body_visual.modulate = Color.WHITE
+	if not dead and is_inside_tree():
+		dash_ended.emit()
 
 
 func _dmg() -> float:
@@ -529,24 +564,108 @@ func _enemies_in_arc(center: Vector2, radius: float, dir: Vector2, half_arc: flo
 
 
 ## Every player-caused hit lands here: blood marks, lifesteal, stagger and boon hooks.
+## `slot` is a kit slot (attack/special/cast) or a boon source: echo (Chambered repeat),
+## bleed, smite, boon. Heavy hits (finisher, slam, detonate…) are the hitstop ones.
 func land_slot_hit(node: Node, dmg: float, slot: String, do_hitstop: bool = false, knock: float = 200.0) -> void:
 	if node == null or not is_instance_valid(node):
 		return
 	var h: Health = node.get_node_or_null("Health")
 	if h == null or not h.is_alive():
 		return
-	var d := dmg * (1.0 + mark_bonus(node))
-	h.take_damage(d)
+	var mod: Dictionary = boons.before_hit(node, dmg, slot)
+	var crit: bool = mod["crit"]
+	var d: float = float(mod["dmg"]) * (1.0 + mark_bonus(node))
+	h.take_damage(d, slot in ["bleed", "smite", "boon"])
 	on_deal_damage(d)
 	if knock > 0.0 and node.has_method("apply_stagger"):
 		node.apply_stagger(global_position, knock)
 	slot_hit.emit(slot, node, d)
+	boons.after_hit(node, d, slot, do_hitstop, crit)
+	if slot == "attack" and echo_armed and is_instance_valid(node):
+		_echo_hit(node, dmg * 0.5)
+	if is_instance_valid(node) and not h.is_alive():
+		note_kill(node, slot, crit)
 	if do_hitstop:
 		_VFX.hitstop(get_tree())
 
 
+## Chambered: the Attack lands again at half damage a beat later.
+func _echo_hit(node: Node, dmg: float) -> void:
+	await get_tree().create_timer(0.1).timeout
+	if is_instance_valid(node) and not dead:
+		_VFX.slash(get_parent(), (node as Node2D).global_position, facing.angle() + 1.2)
+		land_slot_hit(node, dmg, "echo", false, 80.0)
+
+
+## Credits one kill per foe to this sibling (boon on-kill hooks).
+func note_kill(node: Node, slot: String, crit: bool) -> void:
+	if node.has_meta("mw_kill_noted"):
+		return
+	node.set_meta("mw_kill_noted", true)
+	boons.on_kill(node, slot, crit)
+	enemy_killed.emit(node, slot)
+
+
+# --- Boon API (called by MWBoonKit) ------------------------------------------------
+
+func slot_data(slot: String) -> Dictionary:
+	return _slot(slot)
+
+
+func slot_hit_damage(slot: String, mult: float) -> float:
+	return _slot_dmg(slot, mult)
+
+
+## Damage of a boon effect: `mult` × this sibling's base hit.
+func base_hit(mult: float) -> float:
+	return _dmg() * mult
+
+
+func set_cast_bonus(bonus: int) -> void:
+	var gained := bonus - _cast_bonus
+	_cast_bonus = bonus
+	cast_max = _cast_base + _cast_bonus
+	cast_charges = clampi(cast_charges + maxi(gained, 0), 0, cast_max)
+
+
+func refund_cast(n: int = 1) -> void:
+	cast_charges = mini(cast_max, cast_charges + n)
+
+
+## Heals, paying Debt first.
+func heal_hp(amount: float) -> void:
+	if amount <= 0.0:
+		return
+	if debt > 0.0:
+		var pay := minf(debt, amount)
+		debt -= pay
+		amount -= pay
+	if amount > 0.0:
+		health.heal(amount)
+
+
+## Clears your debuffs (knockback, slows) — Salt Cleanse, consecrated ground.
+func cleanse() -> void:
+	_kb_timer = 0.0
+	if actor_visual:
+		actor_visual.flash(Color(1.4, 1.4, 1.2), 0.12)
+
+
+func spawn_boon_projectile(dir: Vector2, dmg: float, tag: String, tint: Color) -> Node:
+	return _spawn_projectile(global_position, dir, dmg, "boon", tag, false, 520.0, 0, tint)
+
+
+## Smite pillar: telegraph ring for `fuse` seconds, then one hit in `radius`.
+func spawn_smite(pos: Vector2, radius: float, dmg: float, fuse: float, tint: Color) -> Node2D:
+	return _spawn_zone(pos, radius, dmg, "smite", fuse, 1, 0.1, 0.0, tint)
+
+
 func land_projectile_hit(p: Node, node: Node) -> void:
 	match str(p.tag):
+		"shard":
+			land_slot_hit(node, p.damage, "boon", false, 60.0)
+			if is_instance_valid(node) and boons.has("dust_buckshot"):
+				MWBoonStatus.of(node).add_bleed(1, self)
 		"stake":
 			land_slot_hit(node, p.damage, p.slot, false, 120.0)
 			var c := _slot("cast")
@@ -918,7 +1037,7 @@ func _nearest_enemy_from(pos: Vector2) -> Node2D:
 func on_deal_damage(amount: float) -> void:
 	var ls := RunState.lifesteal + RunState.get_feed_lifesteal_bonus()
 	if ls > 0.0:
-		health.heal(amount * ls)
+		heal_hp(amount * ls)
 
 
 # --- Feed / damage taken -----------------------------------------------------
@@ -959,11 +1078,18 @@ func apply_hit(amount: float, from: Vector2 = Vector2.ZERO) -> void:
 	if kit_type == "astral":
 		amount *= 1.25
 	amount = minf(amount, MAX_HIT)
+	amount = boons.before_hurt(amount, from)
 	if amount <= 0.0:
+		health.set_invuln(HIT_IFRAME) ## a Ward or the Duel guard ate it
+		return
+	if amount >= health.hp and boons.try_lethal(amount):
+		health.set_invuln(HIT_IFRAME)
 		return
 	health.take_damage(amount)
 	health.set_invuln(HIT_IFRAME)
 	RunState.note_hit(amount)
+	hurt.emit(amount)
+	boons.after_hurt(amount)
 	var kb_dir := (global_position - from).normalized() if from != Vector2.ZERO else -facing
 	if kb_dir.length() < 0.1:
 		kb_dir = Vector2.RIGHT

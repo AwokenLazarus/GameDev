@@ -215,6 +215,7 @@ func _start_dungeon_burst() -> void:
 		% [str(_room.get("id", "")), _arena_half.x, _arena_half.y, RunState.dungeon_index + 1, RunState.dungeons_total, count]
 	)
 	_spawn_burst_wave()
+	RunState.begin_room()
 
 
 func _spawn_burst_wave() -> void:
@@ -381,6 +382,7 @@ func _start_wild() -> void:
 		% [wild_size.x, wild_size.y, StageLayout.WILD_CAM_ZOOM, view.x, view.y, _wild_reward]
 	)
 	await _offer_boon_if_needed()
+	RunState.begin_room()
 
 
 func _place_greed_hooks(half: Vector2) -> void:
