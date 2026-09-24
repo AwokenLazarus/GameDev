@@ -21,6 +21,10 @@ func _build_generals() -> void:
 			"max_hp": 520.0,
 			"move_speed": 130.0,
 			"pattern": "charge",
+			"phases": [
+				{"title": "The Hard Badge", "moves": ["charge", "volley", "slam"]},
+				{"at": 0.5, "title": "Posse and Gallows", "moves": ["gallows", "charge_chain", "volley", "slam"], "cd": 0.85, "speed": 1.1, "adds": {"count": 3, "archetypes": ["melee", "ranged", "charger"], "every": 12.0, "cap": 3}},
+			],
 			"color": Color(0.45, 0.38, 0.32),
 		},
 		"lady_sable": {
@@ -32,6 +36,10 @@ func _build_generals() -> void:
 			"max_hp": 580.0,
 			"move_speed": 120.0,
 			"pattern": "barrage",
+			"phases": [
+				{"title": "Contract Terms", "moves": ["barrage", "volley", "slam"]},
+				{"at": 0.5, "title": "Furnace Clause", "moves": ["furnace_lines", "barrage", "volley"], "cd": 0.85, "adds": {"count": 2, "archetypes": ["ranged", "caster"], "every": 14.0, "cap": 3}},
+			],
 			"color": Color(0.55, 0.2, 0.25),
 		},
 		"marrowfang": {
@@ -43,6 +51,10 @@ func _build_generals() -> void:
 			"max_hp": 640.0,
 			"move_speed": 160.0,
 			"pattern": "leap",
+			"phases": [
+				{"title": "The Hunt", "moves": ["leap", "charge", "slam"]},
+				{"at": 0.5, "title": "Pack Howl", "moves": ["pack_pounce", "leap", "charge"], "cd": 0.85, "speed": 1.15, "adds": {"count": 3, "archetypes": ["charger", "melee"], "every": 12.0, "cap": 3}},
+			],
 			"color": Color(0.35, 0.45, 0.28),
 		},
 		"cantor_belis": {
@@ -54,6 +66,10 @@ func _build_generals() -> void:
 			"max_hp": 600.0,
 			"move_speed": 110.0,
 			"pattern": "hymn",
+			"phases": [
+				{"title": "First Verse", "moves": ["hymn", "volley", "slam"]},
+				{"at": 0.5, "title": "Judgment Chorus", "moves": ["judgment_pillars", "hymn", "volley"], "cd": 0.85, "hazard": {"kind": "void", "every": 8.0, "count": 2, "life": 3.5, "dmg": 7.0}},
+			],
 			"color": Color(0.85, 0.8, 0.65),
 		},
 		"provost_rhea": {
@@ -65,6 +81,10 @@ func _build_generals() -> void:
 			"max_hp": 620.0,
 			"move_speed": 115.0,
 			"pattern": "thorns",
+			"phases": [
+				{"title": "Quota", "moves": ["thorns", "charge", "slam"]},
+				{"at": 0.5, "title": "Blight Harvest", "moves": ["blight_bloom", "thorns", "charge"], "cd": 0.9, "adds": {"count": 2, "archetypes": ["melee", "caster"], "every": 14.0, "cap": 3}},
+			],
 			"color": Color(0.4, 0.55, 0.3),
 		},
 		"duke_orlokis": {
@@ -76,6 +96,10 @@ func _build_generals() -> void:
 			"max_hp": 700.0,
 			"move_speed": 140.0,
 			"pattern": "void",
+			"phases": [
+				{"title": "Court Manners", "moves": ["void", "leap", "barrage"]},
+				{"at": 0.5, "title": "Eclipse Waltz", "moves": ["eclipse_step", "void", "barrage"], "cd": 0.85, "hazard": {"kind": "void", "every": 7.0, "count": 2, "life": 3.5, "dmg": 8.0}},
+			],
 			"color": Color(0.25, 0.2, 0.35),
 		},
 		"admiral_drus": {
@@ -87,6 +111,10 @@ func _build_generals() -> void:
 			"max_hp": 750.0,
 			"move_speed": 150.0,
 			"pattern": "fleet",
+			"phases": [
+				{"title": "Picket Line", "moves": ["fleet", "volley", "slam"]},
+				{"at": 0.5, "title": "Broadside", "moves": ["broadside", "fleet", "volley"], "cd": 0.85, "adds": {"count": 2, "archetypes": ["ranged", "charger"], "every": 13.0, "cap": 3}},
+			],
 			"color": Color(0.3, 0.35, 0.45),
 		},
 		"aurelian": {
@@ -98,6 +126,11 @@ func _build_generals() -> void:
 			"max_hp": 1400.0,
 			"move_speed": 145.0,
 			"pattern": "aurelian",
+			"phases": [
+				{"title": "The Undying Court", "moves": ["sun_lance", "hymn", "void", "barrage"]},
+				{"at": 0.66, "title": "Imperial Guard", "moves": ["eclipse_step", "sun_lance", "barrage", "void"], "cd": 0.9, "speed": 1.1, "adds": {"count": 2, "archetypes": ["melee", "ranged", "caster"], "every": 12.0, "cap": 3, "elite": true}},
+				{"at": 0.33, "title": "Moonfall", "moves": ["moonfall", "gallows", "furnace_lines", "judgment_pillars", "broadside", "eclipse_step"], "cd": 0.75, "speed": 1.15, "hazard": {"kind": "void", "every": 7.0, "count": 3, "life": 3.5, "dmg": 8.0}},
+			],
 			"color": Color(0.7, 0.15, 0.18),
 		},
 	}
