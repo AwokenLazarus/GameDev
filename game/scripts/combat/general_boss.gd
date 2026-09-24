@@ -41,6 +41,8 @@ var _contact_cd: Dictionary = {} ## instance_id -> remaining
 var _move_i: int = 0
 var _adds_cd: float = 0.0
 var _hazard_cd: float = 0.0
+var _winding: bool = false
+var _sabotaged: bool = false ## Sabotage Manifest: the current move lands nothing
 
 const PROJ := preload("res://scenes/entities/projectile.tscn")
 
@@ -123,7 +125,8 @@ func _physics_process(delta: float) -> void:
 		if _player == null:
 			return
 	var dir := (_player.global_position - global_position).normalized()
-	velocity = dir * move_speed * float(_phase().get("speed", 1.0))
+	var st := MWBoonStatus.peek(self)
+	velocity = dir * move_speed * float(_phase().get("speed", 1.0)) * (st.move_mult() if st else 1.0)
 	if actor_visual:
 		actor_visual.set_running(true)
 		actor_visual.set_moving(true)
@@ -268,6 +271,9 @@ func _use_next_move() -> void:
 	_busy = true
 	await _run_move(id)
 	_busy = false
+	if _sabotaged:
+		_sabotaged = false
+		_cd = maxf(_cd, 1.2)
 
 
 func _run_move(id: String) -> void:
@@ -372,6 +378,8 @@ func _players() -> Array:
 
 
 func _hit_circle(pos: Vector2, radius: float, dmg: float, hit_ids: Dictionary = {}) -> void:
+	if _sabotaged:
+		return
 	for p in _players():
 		var id: int = p.get_instance_id()
 		if hit_ids.has(id) or pos.distance_to(p.global_position) > radius:
@@ -381,6 +389,8 @@ func _hit_circle(pos: Vector2, radius: float, dmg: float, hit_ids: Dictionary = 
 
 
 func _hit_lane(from: Vector2, dir: Vector2, length: float, width: float, dmg: float, hit_ids: Dictionary = {}) -> void:
+	if _sabotaged:
+		return
 	for p in _players():
 		var id: int = p.get_instance_id()
 		if hit_ids.has(id):
@@ -396,7 +406,22 @@ func _hit_lane(from: Vector2, dir: Vector2, length: float, width: float, dmg: fl
 func _windup(seconds: float) -> void:
 	if actor_visual:
 		actor_visual.flash(Color(1.4, 0.45, 0.25), seconds)
+	_winding = true
 	await get_tree().create_timer(maxf(seconds, TELEGRAPH_MIN)).timeout
+	_winding = false
+
+
+func is_winding() -> bool:
+	return _alive and _winding
+
+
+## Sabotage Manifest (MW-006): a hit mid wind-up cancels the telegraphed move's damage.
+func sabotage(_seconds: float) -> void:
+	if not is_winding():
+		return
+	_sabotaged = true
+	if actor_visual:
+		actor_visual.flash(Color(1.6, 0.55, 0.35), 0.3)
 
 
 func _target_pos() -> Vector2:
@@ -406,6 +431,8 @@ func _target_pos() -> Vector2:
 
 
 func _shoot(dir: Vector2, dmg: float, spd: float, tint: Color) -> void:
+	if _sabotaged:
+		return
 	var p: Node = PROJ.instantiate()
 	get_parent().add_child(p)
 	p.setup(global_position, dir, dmg * GameState.difficulty_enemy_mult(), self, false, spd)

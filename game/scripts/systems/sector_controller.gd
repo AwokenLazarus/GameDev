@@ -206,6 +206,7 @@ func _start_dungeon_burst() -> void:
 	)
 	for i in count:
 		_kick_burst_spawn(i, count)
+	RunState.begin_room()
 
 
 func _kick_burst_spawn(i: int, total: int) -> void:
@@ -352,6 +353,7 @@ func _start_wild() -> void:
 		% [wild_size.x, wild_size.y, StageLayout.WILD_CAM_ZOOM, view.x, view.y, _wild_reward]
 	)
 	await _offer_boon_if_needed()
+	RunState.begin_room()
 
 
 func _place_greed_hooks(half: Vector2) -> void:

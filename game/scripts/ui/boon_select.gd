@@ -35,12 +35,8 @@ func open_choices() -> void:
 		_subtitle.text = "Combat is paused (%d picks left this run). Click one pact to continue fighting." % left
 	for boon in _choices:
 		var btn := Button.new()
-		btn.text = "%s — %s\n%s" % [
-			RunState.patron_display(str(boon.get("patron", ""))),
-			str(boon.get("name", "")),
-			str(boon.get("desc", "")),
-		]
-		btn.custom_minimum_size = Vector2(560, 78)
+		btn.text = _label_for(boon)
+		btn.custom_minimum_size = Vector2(620, 96)
 		btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		var captured := boon
 		btn.pressed.connect(func(): _pick(captured))
@@ -55,3 +51,27 @@ func _pick(boon: Dictionary) -> void:
 	get_tree().paused = false
 	RunState.awaiting_boon = false
 	chosen.emit(boon)
+
+
+## "Patron — Name [Slot · Rarity]" + desc; slot boons say what they replace (one per slot).
+func _label_for(boon: Dictionary) -> String:
+	if bool(boon.get("is_fallback", false)):
+		return "%s\n%s" % [str(boon.get("name", "")), str(boon.get("desc", ""))]
+	var slot := str(boon.get("slot", "trigger"))
+	var head := "%s — %s  [%s · %s · %s]" % [
+		RunState.patron_display(str(boon.get("patron", ""))),
+		str(boon.get("name", "")),
+		slot.capitalize(),
+		str(boon.get("verb", "")),
+		str(boon.get("rarity", "common")).capitalize(),
+	]
+	var old := RunState.boon_in_slot(slot)
+	if not old.is_empty():
+		head += "\nReplaces %s" % str(old.get("name", ""))
+	var patron := str(boon.get("patron", ""))
+	if RunState.aligned_patron == "" and not RunState.PATRON_RIVALS.get(patron, []).is_empty():
+		var rivals: Array[String] = []
+		for r in RunState.PATRON_RIVALS[patron]:
+			rivals.append(RunState.patron_display(str(r)))
+		head += "\nAligning blocks: %s (whole party)" % ", ".join(rivals)
+	return "%s\n%s" % [head, str(boon.get("desc", ""))]

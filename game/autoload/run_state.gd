@@ -9,14 +9,22 @@ signal reputation_changed(value: int)
 signal phase_changed(phase: String)
 signal feed_buff_changed(stacks: int)
 signal gear_changed
+## A boon replaced another in the same slot (old may be empty).
+signal boon_replaced(old: Dictionary, new: Dictionary)
+## Deep pact reached (3rd boon from one patron). MW-005 hangs kit transforms here.
+signal pact_formed(patron_id: String)
+## A burst room or the wild map began (per-room boons reset on this).
+signal room_started
 
 enum Phase { HUB, DUNGEON, WILD, BOSS, DEAD, VICTORY }
 
+## Rival map option C (MW-018, approved; closes MW-007). Symmetric. Dust is the broker
+## patron, Church stands alone.
 const PATRON_RIVALS := {
 	"dust_compact": ["church"],
-	"red_petition": ["mayor"],
-	"house_veyra": ["church"],
-	"church": ["dust_compact", "house_veyra"],
+	"red_petition": ["church", "house_veyra"],
+	"house_veyra": ["church", "red_petition"],
+	"church": ["dust_compact", "red_petition", "house_veyra"],
 }
 
 var phase: Phase = Phase.HUB
@@ -38,6 +46,10 @@ var aligned_patron: String = ""
 var blocked_patrons: Array[String] = []
 var owned_boons: Array[Dictionary] = []
 var patron_counts: Dictionary = {}
+## One boon per slot (attack/special/cast/dash): slot -> boon id. Trigger boons have no cap.
+var slot_boons: Dictionary = {}
+## First patron to reach 3 boons; one pact per raid (it stays even if a boon is replaced).
+var pact_patron: String = ""
 
 var feed_count: int = 0
 var reputation: int = 0
@@ -83,6 +95,8 @@ func start_run(char_id: String = "severin", sector: String = "dust_meridian", al
 	blocked_patrons.clear()
 	owned_boons.clear()
 	patron_counts.clear()
+	slot_boons.clear()
+	pact_patron = ""
 	feed_count = 0
 	reputation = 0
 	feed_buff_stacks = 0
@@ -213,46 +227,85 @@ func try_align(patron_id: String) -> bool:
 
 
 func add_boon(boon: Dictionary) -> void:
+	if bool(boon.get("is_fallback", false)):
+		## Thin-pool heal: counts as a pick, doesn't align.
+		boon_picks_done += 1
+		player_hp = minf(player_hp + float(boon.get("heal", 0.0)), player_max_hp)
+		for p in get_tree().get_nodes_in_group("player"):
+			var h: Health = p.get_node_or_null("Health")
+			if h:
+				h.heal(float(boon.get("heal", 0.0)))
+		boons_changed.emit()
+		return
 	var patron: String = str(boon.get("patron", ""))
+	var id := str(boon.get("id", ""))
+	if has_boon(id):
+		return
 	if not try_align(patron):
 		return
+	var slot := str(boon.get("slot", "trigger"))
+	var old: Dictionary = {}
+	if slot in ["attack", "special", "cast", "dash"]:
+		if slot_boons.has(slot):
+			old = remove_boon(str(slot_boons[slot]))
+		slot_boons[slot] = id
 	owned_boons.append(boon)
 	boon_picks_done += 1
 	patron_counts[patron] = int(patron_counts.get(patron, 0)) + 1
-	_apply_boon_stats(boon)
-	if int(patron_counts.get(patron, 0)) == 3:
+	if pact_patron == "" and int(patron_counts.get(patron, 0)) >= 3:
 		_apply_pact_transform(patron)
 	## Church hates feeding more
 	if patron == "church" and feed_count > 0:
 		reputation -= 1
 		reputation_changed.emit(reputation)
+	if not old.is_empty():
+		boon_replaced.emit(old, boon)
 	boons_changed.emit()
 
 
-func _apply_boon_stats(boon: Dictionary) -> void:
-	damage_mult += float(boon.get("damage", 0.0))
-	move_mult += float(boon.get("move", 0.0))
-	attack_speed_mult += float(boon.get("attack_speed", 0.0))
-	lifesteal += float(boon.get("lifesteal", 0.0))
-	dash_mult += float(boon.get("dash", 0.0))
-	cooldown_mult -= float(boon.get("cooldown", 0.0))
-	crit_chance += float(boon.get("crit", 0.0))
-	player_max_hp += float(boon.get("max_hp", 0.0))
-	player_hp = minf(player_hp + float(boon.get("max_hp", 0.0)), player_max_hp)
+## Drops an owned boon (slot replacement). Returns it, or {} if not owned.
+func remove_boon(id: String) -> Dictionary:
+	for i in owned_boons.size():
+		var b: Dictionary = owned_boons[i]
+		if str(b.get("id", "")) != id:
+			continue
+		owned_boons.remove_at(i)
+		var patron := str(b.get("patron", ""))
+		patron_counts[patron] = maxi(0, int(patron_counts.get(patron, 0)) - 1)
+		var slot := str(b.get("slot", ""))
+		if str(slot_boons.get(slot, "")) == id:
+			slot_boons.erase(slot)
+		return b
+	return {}
+
+
+func has_boon(id: String) -> bool:
+	for b in owned_boons:
+		if str(b.get("id", "")) == id:
+			return true
+	return false
+
+
+## What taking `boon` would replace (same slot), or {}.
+func boon_in_slot(slot: String) -> Dictionary:
+	if not slot_boons.has(slot):
+		return {}
+	return BoonDB.get_boon(str(slot_boons[slot])) if BoonDB else {}
+
+
+func begin_room() -> void:
+	room_started.emit()
 
 
 func _apply_pact_transform(patron: String) -> void:
-	owned_boons.append({
-		"id": "pact_%s" % patron,
-		"patron": patron,
-		"name": "Deep Pact",
-		"desc": "Your weapon rewrites under %s." % patron_display(patron),
-		"is_pact": true,
-	})
+	## Pact passive + kit transform land in MW-005 via pact_formed. The legacy damage
+	## multiplier in player._dmg() stays until then.
+	pact_patron = patron
+	pact_formed.emit(patron)
 
 
 func has_pact(patron: String) -> bool:
-	return int(patron_counts.get(patron, 0)) >= 3
+	return patron != "" and pact_patron == patron
 
 
 func patron_display(patron: String) -> String:

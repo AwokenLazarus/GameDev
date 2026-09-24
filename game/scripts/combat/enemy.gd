@@ -50,6 +50,8 @@ var _aura: Polygon2D
 var _affix_label: Label
 var _tether: Line2D
 var _family_sprite: String = ""
+var _wander_dir: Vector2 = Vector2.RIGHT
+var _wander_t: float = 0.0
 
 
 func _ready() -> void:
@@ -133,6 +135,78 @@ func _on_attack_cancelled() -> void:
 	pass
 
 
+# --- Boon verbs (MW-006) ---------------------------------------------------
+
+func is_staggered() -> bool:
+	return _stagger > 0.0
+
+
+## True during a telegraphed wind-up (Sabotage Manifest reads this).
+func is_winding() -> bool:
+	return _winding or _affix_wind > 0.0
+
+
+func _cancel_windup() -> void:
+	_winding = false
+	_windup = 0.0
+	_affix_wind = 0.0
+	scale = _base_scale
+	_on_attack_cancelled()
+
+
+## Stagger (sabotage): interrupt the wind-up and hold still for `seconds`.
+func sabotage(seconds: float) -> void:
+	if not _alive:
+		return
+	_cancel_windup()
+	_stagger = maxf(_stagger, seconds)
+	_knock = Vector2.ZERO
+	if actor_visual:
+		actor_visual.flash(Color(1.5, 0.5, 0.35), 0.2)
+
+
+## Blind: drop the wind-up; _physics_process wanders until it wears off.
+func on_blinded() -> void:
+	_cancel_windup()
+	_wander_t = 0.0
+
+
+func _wander(delta: float) -> void:
+	_wander_t -= delta
+	if _wander_t <= 0.0:
+		_wander_t = 0.7
+		_wander_dir = Vector2.RIGHT.rotated(randf() * TAU)
+	velocity = _wander_dir * current_move_speed() * 0.45
+	_face_move(_wander_dir)
+	move_and_slide()
+
+
+## Ledger Step afterimage: chase `decoy` until it fades.
+func taunt(decoy: Node2D, _seconds: float) -> void:
+	if _alive and is_instance_valid(decoy):
+		_player = decoy
+
+
+## Anti-Banner: strip the elite affix. False if there was none.
+func strip_affix() -> bool:
+	if affix_id.is_empty():
+		return false
+	affix_id = ""
+	affix_name = ""
+	affix_speed = 1.0
+	affix_damage = 1.0
+	affix_incoming = 1.0
+	health.incoming_mult = 1.0
+	for n in [_aura, _affix_label, _tether]:
+		if n != null and is_instance_valid(n):
+			n.queue_free()
+	_aura = null
+	_affix_label = null
+	_tether = null
+	_VFX.telegraph_mark(get_parent(), global_position, 0.3, Vector2(0.8, 0.8))
+	return true
+
+
 func _apply_role_visuals() -> void:
 	var hp := _scaled_hp()
 	health.max_hp = hp
@@ -199,7 +273,9 @@ func _build_affix_aura() -> void:
 func current_move_speed() -> float:
 	var human_m := 0.85 if is_human else 1.0
 	var haste := _haste_mult if _haste > 0.0 else 1.0
-	return move_speed * affix_speed * haste * human_m
+	var st := MWBoonStatus.peek(self)
+	var boon_m := st.move_mult() if st else 1.0 ## Root / slow (MW-006)
+	return move_speed * affix_speed * haste * human_m * boon_m
 
 
 func strike_damage() -> float:
@@ -227,6 +303,10 @@ func _physics_process(delta: float) -> void:
 		_knock = _knock.move_toward(Vector2.ZERO, 900.0 * delta)
 		scale = _base_scale
 		move_and_slide()
+		return
+	var st := MWBoonStatus.peek(self)
+	if st and st.blinded():
+		_wander(delta)
 		return
 	_ensure_target()
 	if _tick_affix(delta):
