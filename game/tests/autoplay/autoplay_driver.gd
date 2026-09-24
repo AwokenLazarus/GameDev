@@ -198,6 +198,7 @@ func _process(delta: float) -> void:
 		_finish("DIED")
 		return
 	_try_pick_boon(sc)
+	_try_pick_door()
 	var pl := get_tree().get_first_node_in_group("player")
 	if pl:
 		_hook_player(pl)
@@ -217,6 +218,23 @@ func _try_pick_boon(sc: Node) -> void:
 	if choices.is_empty():
 		return
 	bui._pick(choices[rng.randi() % choices.size()])
+
+
+func _try_pick_door() -> void:
+	if mode == "human":
+		return
+	var doors := get_tree().get_nodes_in_group("exit_door")
+	if doors.is_empty():
+		return
+	var open: Array[Node] = []
+	for d in doors:
+		if d != null and is_instance_valid(d) and not bool(d.get("claimed")):
+			open.append(d)
+	if open.is_empty():
+		return
+	var pick: Node = open[rng.randi() % open.size()]
+	if pick.has_method("choose"):
+		pick.choose()
 
 
 func _hook_player(pl: Node) -> void:

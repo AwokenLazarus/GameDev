@@ -77,6 +77,23 @@ func configure(index: int, char_id: String, alt: String = "", dev: int = -1) -> 
 		_apply_character()
 
 
+func configure_stage_camera(half: Vector2, zoom: float) -> void:
+	## P1 follow-cam; limits keep the view inside the current room / wild map.
+	if camera == null:
+		return
+	if player_index != 0:
+		camera.enabled = false
+		return
+	camera.enabled = true
+	camera.zoom = Vector2(zoom, zoom)
+	camera.limit_left = int(-half.x)
+	camera.limit_right = int(half.x)
+	camera.limit_top = int(-half.y)
+	camera.limit_bottom = int(half.y)
+	camera.limit_smoothed = true
+	camera.position_smoothing_enabled = true
+
+
 func _apply_character() -> void:
 	var data: Dictionary = CharacterDB.get_character(character_id) if CharacterDB else {}
 	kit_type = str(data.get("kit_type", "melee"))
