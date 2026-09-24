@@ -68,8 +68,26 @@ Runtime sheets: `assets/textures/`
 
 Gamepad: left stick move, X attack, A dodge, Y feed.
 
-## Smoke test
+## Headless checks
+
+Run from `game/` (or pass `--path game`). **`--fixed-fps 60` is required for autoplay** so the bot is fast and deterministic with no display.
 
 ```bash
-godot --path game --headless res://scenes/tests/boot_smoke.tscn
+godot --headless --import
+godot --headless res://scenes/tests/boot_smoke.tscn
+godot --headless res://scenes/tests/raid_visibility_smoke.tscn
+godot --headless --fixed-fps 60 res://tests/autoplay/autoplay.tscn -- mode=kill sectors=all
 ```
+
+Autoplay args after `--`:
+
+| Arg | Values | Default |
+|-----|--------|---------|
+| `mode` | `kill` (bot + invuln) · `idle` (no input, reports time-to-death) · `human` (no bot) | `kill` |
+| `sectors` | `all` or comma ids (`dust_meridian,cinder_barrens`, …) | `all` |
+| `char` | character id | `severin` |
+| `seed` | integer (same seed → same RESULT lines) | `1` |
+
+Each sector prints one `RESULT …` line (outcome, run_time, phases, kills, gate, boons, feeds, dmg_taken, max_hit). The run ends with `AUTOPLAY_DONE`. **`mode=kill` exits 1** if any sector does not reach Ashwick.
+
+`mode=idle` is the time-to-death probe (`outcome=DIED`, `run_time` ≈ seconds to wipe).
