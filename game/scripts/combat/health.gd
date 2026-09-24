@@ -8,6 +8,7 @@ signal healed(amount: float, remaining: float)
 @export var max_hp: float = 50.0
 var hp: float = 50.0
 var invuln_timer: float = 0.0
+var incoming_mult: float = 1.0
 
 
 func _ready() -> void:
@@ -28,6 +29,7 @@ func take_damage(amount: float, ignore_invuln: bool = false) -> void:
 		return
 	if invuln_timer > 0.0 and not ignore_invuln:
 		return
+	amount *= incoming_mult
 	hp = maxf(0.0, hp - amount)
 	damaged.emit(amount, hp)
 	if hp <= 0.0:

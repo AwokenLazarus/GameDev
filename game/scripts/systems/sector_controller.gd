@@ -24,6 +24,7 @@ var _sector: Dictionary = {}
 var _biome: Node2D
 var _arena_half: Vector2 = Vector2(480, 320)
 var _pending_spawns: int = 0
+var _burst_archetypes: Array = []
 
 
 func _ready() -> void:
@@ -146,6 +147,7 @@ func _start_dungeon_burst() -> void:
 	if bool(_sector.get("nightmare", false)):
 		count += 3
 	_pending_spawns = count
+	_burst_archetypes.clear()
 	for i in count:
 		_kick_burst_spawn(i, count)
 
@@ -177,17 +179,19 @@ func _edge_spawn_pos() -> Vector2:
 
 
 func _spawn_burst_enemy(_i: int, _total: int) -> void:
-	var e: Node2D = ENEMY_SCENE.instantiate()
-	e.global_position = _edge_spawn_pos()
-	entities.add_child(e)
-	var human_chance := float(_sector.get("enemy_human_chance", 0.3))
-	var human := randf() < human_chance
-	var elite := RunState.run_time > 70.0 and randf() < 0.15
 	var lead := _lead()
-	e.setup(lead, human, elite)
-	## setup() keeps elite ×1.6 and applies difficulty_enemy_mult()
-	if e.has_method("begin_spawn_telegraph"):
-		e.begin_spawn_telegraph(0.45)
+	var e: Node2D = MWEnemyFactory.spawn(entities, _edge_spawn_pos(), lead, {
+		"sector_id": str(_sector.get("id", RunState.sector_id)),
+		"elite": MWEnemyFactory.burst_elite(),
+		"avoid_archetypes": _burst_archetypes,
+		"telegraph": true,
+		"telegraph_s": 0.45,
+	})
+	var arch := str(e.get("archetype"))
+	if arch != "" and not _burst_archetypes.has(arch):
+		_burst_archetypes.append(arch)
+	if _burst_archetypes.size() >= 4:
+		_burst_archetypes.clear()
 
 
 func _alive_enemies() -> int:

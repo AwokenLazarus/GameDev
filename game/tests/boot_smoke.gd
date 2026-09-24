@@ -27,6 +27,37 @@ func _ready() -> void:
 	else:
 		print("SECTORS ", sectors.size())
 
+	## Per-sector families must exist, differ, and Dust must field all 4 archetypes.
+	var dust_archs := {}
+	for row in SectorDB.enemy_families("dust_meridian"):
+		if typeof(row) == TYPE_DICTIONARY:
+			dust_archs[str(row.get("archetype", ""))] = true
+	if dust_archs.size() < 4:
+		push_error("Dust Meridian families need ≥4 archetypes, got %d" % dust_archs.size())
+		ok = false
+	else:
+		print("DUST_ARCHETYPES ", dust_archs.keys())
+	var by_sig := {}
+	for s in sectors:
+		var sid := str(s.get("id", ""))
+		var fams: Array = s.get("enemy_families", [])
+		if fams.size() < 4:
+			push_error("Sector %s family table too small (%d)" % [sid, fams.size()])
+			ok = false
+		var sig := SectorDB.family_signature(sid)
+		if by_sig.has(sig):
+			push_error("Family table collision %s vs %s" % [sid, str(by_sig[sig])])
+			ok = false
+		else:
+			by_sig[sig] = sid
+	print("FAMILY_TABLES ", by_sig.size())
+	var affix_ids: Array[String] = MWEliteAffixes.all_ids()
+	if affix_ids.size() < 4:
+		push_error("Need ≥4 elite affixes, got %d" % affix_ids.size())
+		ok = false
+	else:
+		print("AFFIXES ", affix_ids)
+
 	## Boons per patron
 	var counts := {"dust_compact": 0, "red_petition": 0, "house_veyra": 0, "church": 0}
 	for b in BoonDB.boons:
@@ -68,6 +99,14 @@ func _ready() -> void:
 	var e: Node = enemy_ps.instantiate()
 	add_child(e)
 	e.setup(p, true, true)
+	for arch in ["melee", "ranged", "charger", "caster"]:
+		var fe: Node = MWEnemyFactory.spawn(self, Vector2(24.0 * ["melee", "ranged", "charger", "caster"].find(arch), 20.0), p, {
+			"archetype": arch,
+			"elite": true,
+			"telegraph": false,
+			"family": {"id": "smoke_%s" % arch, "archetype": arch, "sprite": "dominion_grub", "human": false},
+		})
+		print("ARCH ", fe.get("archetype"), " AFFIX ", fe.get("affix_id"), " AURA ", fe.get("affix_name"))
 	var g: Node = general_ps.instantiate()
 	add_child(g)
 	g.configure("aurelian")
