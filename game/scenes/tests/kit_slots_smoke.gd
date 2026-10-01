@@ -6,12 +6,15 @@ const PLAYER := preload("res://scenes/entities/player.tscn")
 const ENEMY := preload("res://scenes/entities/enemy.tscn")
 const KITS := ["severin", "mira", "cassian", "odette", "vesper"]
 const DUMMY_HP := 100000.0
+const DEFAULT_SEED := 4
 
+var _seed: int = 0
 var _used: Dictionary = {}
 var _hits: Dictionary = {}
 
 
 func _ready() -> void:
+	_seed = SmokeSeed.begin(DEFAULT_SEED)
 	print("KIT_SLOTS_START")
 	var failures: Array[String] = []
 	for id: String in KITS:
@@ -25,8 +28,9 @@ func _ready() -> void:
 		get_tree().quit(0)
 		return
 	for f: String in failures:
-		push_error("KIT_SLOTS_FAIL " + f)
-		print("KIT_SLOTS_FAIL ", f)
+		var msg := SmokeSeed.fail_line("KIT_SLOTS_FAIL", _seed, f)
+		push_error(msg)
+		print(msg)
 	get_tree().quit(1)
 
 

@@ -17,11 +17,14 @@ const GENERALS := [
 ]
 const BOSS_AT := Vector2(0, -100)
 const PLAYER_AT := Vector2(0, 120)
+const DEFAULT_SEED := 5
 
+var _seed: int = 0
 var _hits: int = 0
 
 
 func _ready() -> void:
+	_seed = SmokeSeed.begin(DEFAULT_SEED)
 	print("BOSS_PHASES_START")
 	var failures: Array[String] = []
 	failures.append_array(_check_tables())
@@ -32,8 +35,9 @@ func _ready() -> void:
 		get_tree().quit(0)
 		return
 	for f: String in failures:
-		push_error("BOSS_PHASES_FAIL " + f)
-		print("BOSS_PHASES_FAIL ", f)
+		var msg := SmokeSeed.fail_line("BOSS_PHASES_FAIL", _seed, f)
+		push_error(msg)
+		print(msg)
 	get_tree().quit(1)
 
 

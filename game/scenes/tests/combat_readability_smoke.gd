@@ -1,8 +1,13 @@
 extends Node
 ## Headless: idle player must live 8s on Dust burst 1; no hit >35.
 
+const DEFAULT_SEED := 3
+
+var _seed: int = 0
+
 
 func _ready() -> void:
+	_seed = SmokeSeed.begin(DEFAULT_SEED)
 	print("COMBAT_READ_START")
 	GameState.selected_difficulty = "dust"
 	GameState.selected_sector = "dust_meridian"
@@ -13,9 +18,7 @@ func _ready() -> void:
 	await get_tree().create_timer(8.0, true, false, true).timeout
 	var players := get_tree().get_nodes_in_group("player")
 	if players.is_empty():
-		push_error("COMBAT_READ_FAIL no player")
-		print("COMBAT_READ_FAIL no player")
-		get_tree().quit(1)
+		_fail("no player")
 		return
 	var p: Node = players[0]
 	var hp := 0.0
@@ -26,15 +29,18 @@ func _ready() -> void:
 	var max_hit := RunState.max_hit_taken
 	print("IDLE_HP ", hp, " DEAD ", dead, " MAX_HIT ", max_hit)
 	if dead or hp <= 0.0:
-		push_error("COMBAT_READ_FAIL died before 8s")
-		print("COMBAT_READ_FAIL died before 8s")
-		get_tree().quit(1)
+		_fail("died before 8s")
 		return
 	if max_hit > 35.0:
-		push_error("COMBAT_READ_FAIL max hit %.1f" % max_hit)
-		print("COMBAT_READ_FAIL max hit")
-		get_tree().quit(1)
+		_fail("max hit %.1f" % max_hit)
 		return
 	print("IDLE_SURVIVE_PASS")
 	print("COMBAT_READ_PASS")
 	get_tree().quit(0)
+
+
+func _fail(detail: String) -> void:
+	var msg := SmokeSeed.fail_line("COMBAT_READ_FAIL", _seed, detail)
+	push_error(msg)
+	print(msg)
+	get_tree().quit(1)
