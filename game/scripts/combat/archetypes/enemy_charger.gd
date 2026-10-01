@@ -70,7 +70,7 @@ func _tick_dash(delta: float) -> void:
 	_dash_left -= delta
 	velocity = _dash_dir * DASH_SPEED
 	move_and_slide()
-	for p in get_tree().get_nodes_in_group("player"):
+	for p: Node in get_tree().get_nodes_in_group("player"):
 		if not is_instance_valid(p) or not p.has_method("apply_hit"):
 			continue
 		var id := p.get_instance_id()

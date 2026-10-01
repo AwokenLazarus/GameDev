@@ -71,7 +71,7 @@ func _physics_process(delta: float) -> void:
 func _nearest_enemy() -> Node2D:
 	var best: Node2D = null
 	var best_d := 280.0
-	for e in get_tree().get_nodes_in_group("enemy"):
+	for e: Node in get_tree().get_nodes_in_group("enemy"):
 		if not is_instance_valid(e):
 			continue
 		var d := global_position.distance_to(e.global_position)

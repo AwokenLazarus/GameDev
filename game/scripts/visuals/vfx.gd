@@ -59,7 +59,7 @@ static func pact_burst(parent: Node, pos: Vector2, tint: Color) -> void:
 ## Iso ground ellipse (y squashed to 0.6). `closed` repeats the first point for Line2D.
 static func ellipse(r: float, n: int = 24, closed: bool = false) -> PackedVector2Array:
 	var pts := PackedVector2Array()
-	for i in (n + 1 if closed else n):
+	for i: int in (n + 1 if closed else n):
 		var a := TAU * float(i) / float(n)
 		pts.append(Vector2(cos(a), sin(a) * 0.6) * r)
 	return pts

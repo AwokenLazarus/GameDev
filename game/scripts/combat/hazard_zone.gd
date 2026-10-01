@@ -19,7 +19,7 @@ func setup(pos: Vector2, zone_kind: String, seconds: float = 2.4, dmg: float = 8
 	_vis = Polygon2D.new()
 	_vis.z_index = -4
 	var pts: PackedVector2Array = PackedVector2Array()
-	for i in 14:
+	for i: int in 14:
 		var a := TAU * float(i) / 14.0
 		pts.append(Vector2(cos(a), sin(a)) * radius)
 	_vis.polygon = pts
@@ -33,7 +33,7 @@ func setup(pos: Vector2, zone_kind: String, seconds: float = 2.4, dmg: float = 8
 func _process(delta: float) -> void:
 	life -= delta
 	_pulse -= delta
-	for id in _hit_cd.keys():
+	for id: Variant in _hit_cd.keys():
 		_hit_cd[id] = float(_hit_cd[id]) - delta
 		if float(_hit_cd[id]) <= 0.0:
 			_hit_cd.erase(id)
@@ -48,7 +48,7 @@ func _process(delta: float) -> void:
 
 func _pulse_once() -> void:
 	if kind == "ward":
-		for e in get_tree().get_nodes_in_group("enemy"):
+		for e: Node in get_tree().get_nodes_in_group("enemy"):
 			if not is_instance_valid(e) or e == self:
 				continue
 			if global_position.distance_to(e.global_position) > radius + 8.0:
@@ -56,7 +56,7 @@ func _pulse_once() -> void:
 			if e.has_method("apply_haste"):
 				e.apply_haste(1.1, 1.22)
 		return
-	for p in get_tree().get_nodes_in_group("player"):
+	for p: Node in get_tree().get_nodes_in_group("player"):
 		if not is_instance_valid(p) or not p.has_method("apply_hit"):
 			continue
 		if global_position.distance_to(p.global_position) > radius:

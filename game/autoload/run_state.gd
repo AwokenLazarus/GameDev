@@ -149,7 +149,7 @@ func start_run(char_id: String = "severin", sector: String = "dust_meridian", al
 	boon_picks_target += int(meta_mods.get("boon_picks_bonus", 0))
 	if alt_id != "" and CharacterDB:
 		var alts: Array = CharacterDB.get_alts(character_id)
-		for a in alts:
+		for a: Variant in alts:
 			if str(a.get("id", "")) == alt_id:
 				var mods: Dictionary = a.get("kit_modifiers", {})
 				base_hp += float(mods.get("base_hp", 0.0))
@@ -278,7 +278,7 @@ func try_align(patron_id: String) -> bool:
 	if aligned_patron == "":
 		aligned_patron = patron_id
 		var rivals: Array = PATRON_RIVALS.get(patron_id, [])
-		for r in rivals:
+		for r: Variant in rivals:
 			if str(r) not in blocked_patrons:
 				blocked_patrons.append(str(r))
 		## Feeding + church tension
@@ -293,7 +293,7 @@ func add_boon(boon: Dictionary) -> void:
 		## Thin-pool heal: counts as a pick, doesn't align.
 		boon_picks_done += 1
 		player_hp = minf(player_hp + float(boon.get("heal", 0.0)), player_max_hp)
-		for p in get_tree().get_nodes_in_group("player"):
+		for p: Node in get_tree().get_nodes_in_group("player"):
 			var h: Health = p.get_node_or_null("Health")
 			if h:
 				h.heal(float(boon.get("heal", 0.0)))
@@ -327,7 +327,7 @@ func add_boon(boon: Dictionary) -> void:
 
 ## Drops an owned boon (slot replacement). Returns it, or {} if not owned.
 func remove_boon(id: String) -> Dictionary:
-	for i in owned_boons.size():
+	for i: int in owned_boons.size():
 		var b: Dictionary = owned_boons[i]
 		if str(b.get("id", "")) != id:
 			continue
@@ -342,7 +342,7 @@ func remove_boon(id: String) -> Dictionary:
 
 
 func has_boon(id: String) -> bool:
-	for b in owned_boons:
+	for b: Dictionary in owned_boons:
 		if str(b.get("id", "")) == id:
 			return true
 	return false

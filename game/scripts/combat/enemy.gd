@@ -198,7 +198,7 @@ func strip_affix() -> bool:
 	affix_damage = 1.0
 	affix_incoming = 1.0
 	health.incoming_mult = 1.0
-	for n in [_aura, _affix_label, _tether]:
+	for n: Variant in [_aura, _affix_label, _tether]:
 		if n != null and is_instance_valid(n):
 			n.queue_free()
 	_aura = null
@@ -245,7 +245,7 @@ func _build_affix_aura() -> void:
 		_aura = Polygon2D.new()
 		_aura.z_index = -3
 		var pts := PackedVector2Array()
-		for i in 16:
+		for i: int in 16:
 			var a := TAU * float(i) / 16.0
 			pts.append(Vector2(cos(a), sin(a)) * 26.0)
 		_aura.polygon = pts
@@ -353,7 +353,7 @@ func _tick_affix(delta: float) -> bool:
 
 
 func _do_void_pull() -> void:
-	for p in get_tree().get_nodes_in_group("player"):
+	for p: Node in get_tree().get_nodes_in_group("player"):
 		if not is_instance_valid(p):
 			continue
 		var n := p as Node2D
@@ -368,7 +368,7 @@ func _do_void_pull() -> void:
 func _nearest_blood_link() -> Node2D:
 	var best: Node2D = null
 	var best_d := 220.0
-	for e in get_tree().get_nodes_in_group("enemy"):
+	for e: Node in get_tree().get_nodes_in_group("enemy"):
 		if e == self or not is_instance_valid(e):
 			continue
 		if str(e.get("affix_id")) != "blood_linked":

@@ -92,13 +92,13 @@ func _build_arena(size: Vector2, inner_walls: Array = []) -> void:
 		-size.x, -size.y, size.x, -size.y, size.x, size.y, -size.x, size.y
 	])
 	ground.visible = false
-	for c in walls.get_children():
+	for c: Node in walls.get_children():
 		c.queue_free()
 	_add_wall(Vector2(0, -size.y), Vector2(size.x * 2, 24))
 	_add_wall(Vector2(0, size.y), Vector2(size.x * 2, 24))
 	_add_wall(Vector2(-size.x, 0), Vector2(24, size.y * 2))
 	_add_wall(Vector2(size.x, 0), Vector2(24, size.y * 2))
-	for w in inner_walls:
+	for w: Variant in inner_walls:
 		if typeof(w) != TYPE_DICTIONARY:
 			continue
 		_add_wall(w.get("pos", Vector2.ZERO), w.get("size", Vector2(40, 40)))
@@ -117,7 +117,7 @@ func _build_arena(size: Vector2, inner_walls: Array = []) -> void:
 
 func _apply_party_camera() -> void:
 	var zoom := StageLayout.WILD_CAM_ZOOM if RunState.phase == RunState.Phase.WILD else StageLayout.BURST_CAM_ZOOM
-	for p in players:
+	for p: CharacterBody2D in players:
 		if is_instance_valid(p) and p.has_method("configure_stage_camera"):
 			p.configure_stage_camera(_arena_half, zoom)
 
@@ -140,7 +140,7 @@ func _add_wall(pos: Vector2, size: Vector2) -> void:
 
 func _spawn_party(party: Array) -> void:
 	players.clear()
-	for i in party.size():
+	for i: int in party.size():
 		var slot: Dictionary = party[i]
 		var p: CharacterBody2D = PLAYER_SCENE.instantiate()
 		p.global_position = Vector2(i * 36.0 - (party.size() - 1) * 18.0, 0)
@@ -153,34 +153,34 @@ func _spawn_party(party: Array) -> void:
 
 
 func _lead() -> CharacterBody2D:
-	for p in players:
+	for p: CharacterBody2D in players:
 		if is_instance_valid(p) and not p.dead:
 			return p
 	return players[0] if players.size() else null
 
 
 func _place_party(at: Vector2) -> void:
-	for i in players.size():
+	for i: int in players.size():
 		var p: CharacterBody2D = players[i]
 		if is_instance_valid(p):
 			p.global_position = at + Vector2(i * 36.0 - (players.size() - 1) * 18.0, 0)
 
 
 func _clear_enemies() -> void:
-	for e in get_tree().get_nodes_in_group("enemy"):
+	for e: Node in get_tree().get_nodes_in_group("enemy"):
 		e.queue_free()
-	for c in get_tree().get_nodes_in_group("feedable_corpse"):
+	for c: Node in get_tree().get_nodes_in_group("feedable_corpse"):
 		c.queue_free()
 
 
 func _clear_exits() -> void:
-	for d in get_tree().get_nodes_in_group("exit_door"):
+	for d: Node in get_tree().get_nodes_in_group("exit_door"):
 		d.queue_free()
 	_awaiting_exit = false
 
 
 func _clear_hooks() -> void:
-	for n in get_tree().get_nodes_in_group("greed_hook"):
+	for n: Node in get_tree().get_nodes_in_group("greed_hook"):
 		n.queue_free()
 	chest_points.clear()
 	shrine_points.clear()
@@ -225,7 +225,7 @@ func _spawn_burst_wave() -> void:
 	var offset := _burst_total - _burst_left
 	_burst_left -= n
 	_pending_spawns += n
-	for i in n:
+	for i: int in n:
 		_kick_burst_spawn(offset + i, n, i)
 
 
@@ -314,7 +314,7 @@ func _open_exit_doors() -> void:
 	var specs: Array = StageLayout.last_burst_doors(_arena_half) if last else _room.get("doors", [])
 	if specs.size() < 2:
 		specs = StageLayout.room("chamber").get("doors", [])
-	for spec in specs:
+	for spec: Variant in specs:
 		if typeof(spec) != TYPE_DICTIONARY:
 			continue
 		var door: ExitDoor = ExitDoorScript.new()
@@ -390,14 +390,14 @@ func _place_greed_hooks(half: Vector2) -> void:
 	var hooks: Dictionary = StageLayout.greed_hooks(half)
 	chest_points.clear()
 	shrine_points.clear()
-	for p in hooks.get("chest", []):
+	for p: Variant in hooks.get("chest", []):
 		chest_points.append(p)
-	for p in hooks.get("shrine", []):
+	for p: Variant in hooks.get("shrine", []):
 		shrine_points.append(p)
-	for pos in chest_points:
+	for pos: Vector2 in chest_points:
 		_spawn_greed(pos, "chest")
 	var shrine_kinds: PackedStringArray = StageLayout.SHRINE_KINDS
-	for i in shrine_points.size():
+	for i: int in shrine_points.size():
 		_spawn_greed(shrine_points[i], shrine_kinds[i % shrine_kinds.size()])
 	print("WILD_GREED_HOOKS chests=%d shrines=%d" % [chest_points.size(), shrine_points.size()])
 
@@ -536,7 +536,7 @@ func _on_boon_chosen(_boon: Dictionary) -> void:
 func _on_player_died(p: CharacterBody2D) -> void:
 	## Co-op: wipe only if all dead
 	var any_alive := false
-	for pl in players:
+	for pl: CharacterBody2D in players:
 		if is_instance_valid(pl) and not pl.dead:
 			any_alive = true
 			break

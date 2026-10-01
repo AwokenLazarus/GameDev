@@ -40,8 +40,8 @@ func _ready() -> void:
 	GameState.selected_sector = "dust_meridian"
 	await _check_formation()
 	_check_no_multiplier()
-	for patron in PATRONS:
-		for kit in KITS:
+	for patron: String in PATRONS:
+		for kit: String in KITS:
 			await _run_case(patron, kit)
 	await _check_passives()
 	_scale = 1.0
@@ -54,7 +54,7 @@ func _ready() -> void:
 		print("PACTS_SMOKE_PASS")
 		get_tree().quit(0)
 		return
-	for f in _fails:
+	for f: String in _fails:
 		print("PACTS_SMOKE_FAIL ", f)
 	get_tree().quit(1)
 
@@ -81,7 +81,7 @@ func _setup(patron: String, kit: String) -> Node:
 	_p.global_position = Vector2.ZERO
 	_p.facing = Vector2.RIGHT
 	_slot_hits = {}
-	_p.slot_hit.connect(func(s: String, _t: Node, _d: float): _slot_hits[s] = true)
+	_p.slot_hit.connect(func(s: String, _t: Node, _d: float) -> void: _slot_hits[s] = true)
 	return _p
 
 
@@ -89,7 +89,7 @@ func _teardown() -> void:
 	if is_instance_valid(_arena):
 		_arena.queue_free()
 	await _wait(0.05)
-	for f in get_tree().get_nodes_in_group("boon_field"):
+	for f: Node in get_tree().get_nodes_in_group("boon_field"):
 		f.queue_free()
 	RunState.pact_patron = ""
 
@@ -140,7 +140,7 @@ func _expect(ok: bool, what: String) -> void:
 func _check_formation() -> void:
 	_setup("", "melee")
 	var before: Color = _p.blade_visual.modulate
-	for id in ["dust_reload", "dust_loot", "dust_sidestep"]:
+	for id: String in ["dust_reload", "dust_loot", "dust_sidestep"]:
 		RunState.add_boon(BoonDB.get_boon(id))
 	await _wait(0.1)
 	_expect(RunState.pact_of(_p) == "dust_compact", "3 Dust boons did not form the Dust pact")
@@ -149,7 +149,7 @@ func _check_formation() -> void:
 		"pact did not tint the weapon")
 	_expect(_p.pacts._aura != null, "pact did not draw its aura")
 	_expect(MWPactKit.PACT_NAMES.size() == 4, "pact names missing")
-	for pat in PATRONS:
+	for pat: String in PATRONS:
 		_expect((MWPactKit.TRANSFORMS[pat] as Dictionary).size() == 5, "%s lacks 5 kit transforms" % pat)
 	await _teardown()
 	print("PACTS formation ok")
@@ -163,7 +163,7 @@ func _check_no_multiplier() -> void:
 	p.configure(0, "severin")
 	add_child(p)
 	var base: float = p._dmg()
-	for pat in PATRONS:
+	for pat: String in PATRONS:
 		RunState.pact_patron = pat
 		if not is_equal_approx(p._dmg(), base):
 			_fail("%s pact scales _dmg() %.2f -> %.2f" % [pat, base, p._dmg()])
@@ -194,12 +194,12 @@ func _run_case(patron: String, kit: String) -> void:
 
 func _case_dust_melee() -> void:
 	var fan: Array[Node] = [_dummy(Vector2(60, -18)), _dummy(Vector2(60, 0)), _dummy(Vector2(60, 18))]
-	for i in 3:
+	for i: int in 3:
 		_use("attack")
 		await _wait(0.32)
 	await _wait(0.3)
 	_expect(_ev("dust_sidearm") == 1, "dust melee: finisher was not the sidearm blast")
-	_expect(fan.filter(func(e): return _bleed(e) >= 2).size() >= 2, "dust melee: sidearm pellets applied no 2-Bleed cone")
+	_expect(fan.filter(func(e: Node) -> bool: return _bleed(e) >= 2).size() >= 2, "dust melee: sidearm pellets applied no 2-Bleed cone")
 
 
 func _case_dust_hybrid_gun() -> void:
@@ -207,7 +207,7 @@ func _case_dust_hybrid_gun() -> void:
 	_use("attack")
 	await _wait(0.4)
 	_expect(_ev("dust_buckshot_rail") == 1, "dust mira: rail shot not replaced")
-	_expect(fan.filter(func(e): return _bleed(e) >= 1).size() == 3, "dust mira: buckshot cone did not bleed all 3 in the fan")
+	_expect(fan.filter(func(e: Node) -> bool: return _bleed(e) >= 1).size() == 3, "dust mira: buckshot cone did not bleed all 3 in the fan")
 	var far := _dummy(Vector2(400, 0))
 	_use("attack")
 	await _wait(0.6)
@@ -246,7 +246,7 @@ func _case_dust_astral() -> void:
 	_use("special")
 	await _wait(0.2)
 	_expect(_ev("dust_gunsmoke_burst") == 1, "dust vesper: detonate not a gunsmoke burst")
-	_expect(ds.all(func(e): return _st(e) != null and _st(e).blinded() and _bleed(e) >= 3),
+	_expect(ds.all(func(e: Node) -> bool: return _st(e) != null and _st(e).blinded() and _bleed(e) >= 3),
 		"dust vesper: burst did not Blind + 3 Bleed everything in radius")
 
 
@@ -256,7 +256,7 @@ func _case_red_melee() -> void:
 	var low := _dummy(Vector2(70, 0))
 	low.health.hp = DUMMY_HP * 0.08 ## above the 5% pact threshold, below the doubled 10%
 	var tall := _dummy(Vector2(80, 30))
-	for i in 3:
+	for i: int in 3:
 		_use("attack")
 		await _wait(0.32)
 	await _wait(0.4)
@@ -335,7 +335,7 @@ func _case_veyra_hybrid_gun() -> void:
 	var line: Array[Node] = [_dummy(Vector2(60, 0)), _dummy(Vector2(100, 0)), _dummy(Vector2(140, 0)), _dummy(Vector2(180, 0))]
 	_use("attack")
 	await _wait(0.5)
-	_expect(line.all(func(e): return _hurt(e)), "veyra mira: blood lance did not pierce the whole line")
+	_expect(line.all(func(e: Node) -> bool: return _hurt(e)), "veyra mira: blood lance did not pierce the whole line")
 	_expect(_ev("veyra_lance_siphon") >= 4, "veyra mira: lance did not lifesteal per pierce")
 	_use("attack", Vector2.UP)
 	await _wait(0.8)
@@ -378,7 +378,7 @@ func _case_veyra_astral() -> void:
 
 func _case_church_melee() -> void:
 	_dummy(Vector2(60, 0))
-	for i in 3:
+	for i: int in 3:
 		_use("attack")
 		await _wait(0.32)
 	await _wait(0.8)
@@ -395,7 +395,7 @@ func _case_church_melee() -> void:
 
 func _case_church_hybrid_gun() -> void:
 	_dummy(Vector2(80, 0))
-	for i in 5:
+	for i: int in 5:
 		_use("attack")
 		await _wait(0.35)
 	await _wait(1.0)
@@ -408,7 +408,7 @@ func _case_church_orbit() -> void:
 	_use("attack")
 	await _wait(0.6)
 	_expect(_ev("church_halo") == 1 and _hurt(e), "church cassian: fixed halo did not cut on contact")
-	_expect(_p._crescents.all(func(c): return c.mode == "halo"), "church cassian: crescents left the halo")
+	_expect(_p._crescents.all(func(c: Dictionary) -> bool: return c.mode == "halo"), "church cassian: crescents left the halo")
 	await _wait(0.8)
 	var far := _dummy(Vector2(150, 0))
 	_use("special")

@@ -187,7 +187,7 @@ func _add_node(data: Dictionary) -> void:
 func get_branch(branch: String) -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 	var raw: Array = _branches.get(branch, [])
-	for n in raw:
+	for n: Variant in raw:
 		if typeof(n) == TYPE_DICTIONARY:
 			out.append((n as Dictionary).duplicate(true))
 	return out
@@ -199,7 +199,7 @@ func get_upgrade(id: String) -> Dictionary:
 
 func all_nodes() -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
-	for id in _nodes.keys():
+	for id: Variant in _nodes.keys():
 		out.append(_nodes[id].duplicate(true))
 	return out
 
@@ -240,7 +240,7 @@ func apply_ranks_to_run(stats: Dictionary) -> Dictionary:
 		"tech_earn": 0.0,
 	}
 
-	for node_id in ranks.keys():
+	for node_id: Variant in ranks.keys():
 		var rank := int(ranks[node_id])
 		if rank <= 0:
 			continue
@@ -250,7 +250,7 @@ func apply_ranks_to_run(stats: Dictionary) -> Dictionary:
 		var max_rank := int(node.get("max_rank", 1))
 		rank = mini(rank, max_rank)
 		var effects: Dictionary = node.get("effects", {})
-		for key in effects.keys():
+		for key: Variant in effects.keys():
 			var value: Variant = effects[key]
 			match typeof(value):
 				TYPE_BOOL:

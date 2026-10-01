@@ -214,7 +214,7 @@ func _register_character(data: Dictionary, alts: Array) -> void:
 		return
 	_characters[id] = data
 	var alt_list: Array[Dictionary] = []
-	for a in alts:
+	for a: Variant in alts:
 		if typeof(a) == TYPE_DICTIONARY:
 			alt_list.append(a)
 	_alts[id] = alt_list
@@ -227,7 +227,7 @@ func get_slots(id: String, alt_id: String = "") -> Dictionary:
 	var kit := str(data.get("kit_type", "melee"))
 	var alt: Dictionary = {}
 	if alt_id != "":
-		for a in _alts.get(id, []):
+		for a: Variant in _alts.get(id, []):
 			if str(a.get("id", "")) == alt_id:
 				alt = a.get("kit_modifiers", {})
 				break
@@ -243,7 +243,7 @@ func get_slots(id: String, alt_id: String = "") -> Dictionary:
 
 
 func _merge_slots(into: Dictionary, overrides: Dictionary) -> void:
-	for slot in overrides.keys():
+	for slot: Variant in overrides.keys():
 		if into.has(slot):
 			(into[slot] as Dictionary).merge(overrides[slot], true)
 
@@ -254,7 +254,7 @@ func get_character(id: String) -> Dictionary:
 
 func all_characters() -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
-	for id in _characters.keys():
+	for id: Variant in _characters.keys():
 		out.append(_characters[id].duplicate(true))
 	return out
 
@@ -273,7 +273,7 @@ func is_unlocked(id: String) -> bool:
 func get_alts(id: String) -> Array[Dictionary]:
 	var raw: Array = _alts.get(id, [])
 	var out: Array[Dictionary] = []
-	for a in raw:
+	for a: Variant in raw:
 		if typeof(a) == TYPE_DICTIONARY:
 			out.append((a as Dictionary).duplicate(true))
 	return out

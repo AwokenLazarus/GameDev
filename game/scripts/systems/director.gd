@@ -50,7 +50,7 @@ func _process(delta: float) -> void:
 	if alive >= cap:
 		return
 	var burst := mini(1 + int(intensity * 1.25), cap - alive)
-	for i in burst:
+	for i: int in burst:
 		_spawn_one()
 
 

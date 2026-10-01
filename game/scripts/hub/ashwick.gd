@@ -32,7 +32,7 @@ func _ready() -> void:
 	add_child(biome)
 	biome.present_ashwick()
 	## Hide old flat polygons if present
-	for n in ["BG", "Road", "Building1", "Building2", "Chapel", "Steeple"]:
+	for n: String in ["BG", "Road", "Building1", "Building2", "Chapel", "Steeple"]:
 		var node := get_node_or_null(n)
 		if node:
 			node.visible = false
@@ -44,7 +44,7 @@ func _ready() -> void:
 	_build_difficulty()
 	_setup_simple_hub_ui()
 	raid_btn.pressed.connect(_on_raid)
-	menu_btn.pressed.connect(func(): get_tree().change_scene_to_file("res://scenes/main.tscn"))
+	menu_btn.pressed.connect(func() -> void: get_tree().change_scene_to_file("res://scenes/main.tscn"))
 	add_p2_btn.pressed.connect(_on_add_p2)
 	GameState.currencies_changed.connect(_refresh)
 	GameState.unlocks_changed.connect(_on_unlocks)
@@ -111,7 +111,7 @@ func _build_difficulty() -> void:
 			diff_btn.select(2)
 		_:
 			diff_btn.select(0)
-	diff_btn.item_selected.connect(func(i):
+	diff_btn.item_selected.connect(func(i: int) -> void:
 		GameState.selected_difficulty = ["dust", "blood", "eclipse"][i]
 		GameState.save_game()
 		_refresh()
@@ -119,7 +119,7 @@ func _build_difficulty() -> void:
 
 
 func _build_faction_buttons() -> void:
-	for c in buttons.get_children():
+	for c: Node in buttons.get_children():
 		c.queue_free()
 	_add_faction_btn("Mayor's Office", _on_mayor)
 	_add_faction_btn("Ashwick Kin", _on_kin)
@@ -127,15 +127,15 @@ func _build_faction_buttons() -> void:
 	if GameState.hub_flags.get("vendor_church", false) or GameState.meta_rank("ash_vendor_church") > 0:
 		_add_faction_btn("Church of the Pale Sun", _on_church)
 	else:
-		_add_faction_btn("Church (rebuild with Ash)", func(): dialogue.text = "The chapel stall is ash and silence. Fund the Churchyard Stall rite.")
+		_add_faction_btn("Church (rebuild with Ash)", func() -> void: dialogue.text = "The chapel stall is ash and silence. Fund the Churchyard Stall rite.")
 	if GameState.hub_flags.get("vendor_petition", false) or GameState.meta_rank("ash_mission_petition") > 0 or GameState.hub_flags.get("mission_board", false) or GameState.hub_flags.get("unlock_mission_petition", false):
 		_add_faction_btn("Red Petition", _on_petition)
 	else:
-		_add_faction_btn("Red Petition (locked)", func(): dialogue.text = "Rebels won't show until the Petition Board rises from ash.")
+		_add_faction_btn("Red Petition (locked)", func() -> void: dialogue.text = "Rebels won't show until the Petition Board rises from ash.")
 	if GameState.hub_flags.get("vendor_veyra", false) or GameState.meta_rank("ash_veyra_eyes") > 0 or GameState.hub_flags.get("ashwick_vendor_veyra", false):
 		_add_faction_btn("House Veyra's Eyes", _on_veyra)
 	else:
-		_add_faction_btn("Veyra Eyes (locked)", func(): dialogue.text = "A noble spy needs a rebuilt nest. Spend Ash on their safehouse.")
+		_add_faction_btn("Veyra Eyes (locked)", func() -> void: dialogue.text = "A noble spy needs a rebuilt nest. Spend Ash on their safehouse.")
 	_add_faction_btn("Blood Rite Chamber", _on_rite_hint)
 
 
@@ -148,13 +148,13 @@ func _add_faction_btn(text: String, cb: Callable) -> void:
 
 
 func _build_sectors() -> void:
-	for c in sector_box.get_children():
+	for c: Node in sector_box.get_children():
 		c.queue_free()
 	var title := Label.new()
 	title.text = "Raids"
 	title.modulate = Color(0.86, 0.78, 0.7)
 	sector_box.add_child(title)
-	for s in SectorDB.all_raidable_sectors():
+	for s: Dictionary in SectorDB.all_raidable_sectors():
 		var id := str(s.get("id", ""))
 		var b := Button.new()
 		var clears := int(GameState.sectors_cleared.get(id, 0))
@@ -176,13 +176,13 @@ func _select_sector(id: String, desc: String) -> void:
 
 
 func _build_roster() -> void:
-	for c in roster_box.get_children():
+	for c: Node in roster_box.get_children():
 		c.queue_free()
 	var title := Label.new()
 	title.text = "Brood Roster"
 	title.modulate = Color(0.86, 0.78, 0.7)
 	roster_box.add_child(title)
-	for ch in CharacterDB.all_characters():
+	for ch: Dictionary in CharacterDB.all_characters():
 		var id := str(ch.get("id", ""))
 		var unlocked := CharacterDB.is_unlocked(id)
 		var b := Button.new()
@@ -199,7 +199,7 @@ func _build_roster() -> void:
 		roster_box.add_child(b)
 		## Alts
 		if unlocked:
-			for alt in CharacterDB.get_alts(id):
+			for alt: Dictionary in CharacterDB.get_alts(id):
 				var aid := str(alt.get("id", ""))
 				var ab := Button.new()
 				if aid in GameState.unlocked_alts:
@@ -214,18 +214,18 @@ func _build_roster() -> void:
 
 
 func _build_meta() -> void:
-	for c in meta_box.get_children():
+	for c: Node in meta_box.get_children():
 		c.queue_free()
 	var title := Label.new()
 	title.text = "Meta — Blood / Ash / Tech"
 	title.modulate = Color(0.86, 0.78, 0.7)
 	meta_box.add_child(title)
-	for branch in ["blood", "ash", "tech"]:
+	for branch: String in ["blood", "ash", "tech"]:
 		var bl := Label.new()
 		bl.text = branch.capitalize()
 		bl.modulate = Color(0.7, 0.65, 0.55)
 		meta_box.add_child(bl)
-		for up in MetaDB.get_branch(branch):
+		for up: Dictionary in MetaDB.get_branch(branch):
 			var id := str(up.get("id", ""))
 			var rank := GameState.meta_rank(id)
 			var max_r := int(up.get("max_rank", 1))
@@ -234,7 +234,7 @@ func _build_meta() -> void:
 			b.tooltip_text = str(up.get("desc", ""))
 			b.disabled = rank >= max_r
 			b.custom_minimum_size = Vector2(260, 28)
-			b.pressed.connect(func():
+			b.pressed.connect(func() -> void:
 				if GameState.buy_meta(id):
 					dialogue.text = "Rite taken: %s" % up.get("name", id)
 					_build_meta()
@@ -254,7 +254,7 @@ func _refresh() -> void:
 	ng_label.text = "NG+ %d · Heats: %s · Diff: %s" % [GameState.ng_plus, heats, GameState.difficulty_label()]
 	status.text = "Ashwick — ruined family town · Sector: %s" % GameState.selected_sector.replace("_", " ").capitalize()
 	var parts: PackedStringArray = []
-	for i in GameState.party.size():
+	for i: int in GameState.party.size():
 		var p: Dictionary = GameState.party[i]
 		parts.append("P%d:%s" % [i + 1, str(p.get("character_id", "?"))])
 	party_label.text = "Party (%d): %s" % [GameState.party.size(), ", ".join(parts)]
@@ -322,10 +322,10 @@ func _on_add_p2() -> void:
 		return
 	## Next unlocked character not in party, keyboard P2 / joypad
 	var used: Array[String] = []
-	for p in GameState.party:
+	for p: Dictionary in GameState.party:
 		used.append(str(p.get("character_id", "")))
 	var pick := "severin"
-	for ch in CharacterDB.all_characters():
+	for ch: Dictionary in CharacterDB.all_characters():
 		var id := str(ch.get("id", ""))
 		if CharacterDB.is_unlocked(id) and id not in used:
 			pick = id
@@ -349,7 +349,7 @@ func _spawn_hub_npcs() -> void:
 		{"id": "npc_petition", "name": "Red Petition", "pos": Vector2(260, -40)},
 		{"id": "npc_veyra", "name": "Veyra Eye", "pos": Vector2(-260, -20)},
 	]
-	for d in defs:
+	for d: Variant in defs:
 		var npc: Node2D = HubNpcScript.new()
 		npc.npc_id = str(d["id"])
 		npc.display_name = str(d["name"])

@@ -14,7 +14,7 @@ func _ready() -> void:
 	start_btn.text = "PLAY RAID — Dust Meridian"
 	start_btn.custom_minimum_size = Vector2(360, 56)
 	start_btn.pressed.connect(_on_play_raid)
-	quit_btn.pressed.connect(func(): get_tree().quit())
+	quit_btn.pressed.connect(func() -> void: get_tree().quit())
 	subtitle.text = "Fight first. Town hub is optional."
 	_hub_btn = Button.new()
 	_hub_btn.text = "Ashwick Town Hub"

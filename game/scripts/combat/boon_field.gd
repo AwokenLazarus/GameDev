@@ -43,7 +43,7 @@ func _ready() -> void:
 		var m := minf(radius, 12.0)
 		pts = PackedVector2Array([Vector2(0, -m), Vector2(m, 0), Vector2(0, m), Vector2(-m, 0)])
 	else:
-		for i in 24:
+		for i: int in 24:
 			var a := TAU * float(i) / 24.0
 			pts.append(Vector2(cos(a), sin(a) * 0.6) * radius)
 	_fill = Polygon2D.new()
@@ -69,7 +69,7 @@ func _physics_process(delta: float) -> void:
 		_finish()
 		return
 	if on_player.is_valid():
-		for p in get_tree().get_nodes_in_group("player"):
+		for p: Node in get_tree().get_nodes_in_group("player"):
 			if not is_instance_valid(p) or bool(p.get("dead")):
 				continue
 			var id: int = p.get_instance_id()
@@ -86,7 +86,7 @@ func _physics_process(delta: float) -> void:
 	if _t > 0.0:
 		return
 	_t = interval
-	for e in get_tree().get_nodes_in_group("enemy"):
+	for e: Node in get_tree().get_nodes_in_group("enemy"):
 		if not is_instance_valid(e) or not _inside(e.global_position, 12.0):
 			continue
 		on_enemy.call(e)

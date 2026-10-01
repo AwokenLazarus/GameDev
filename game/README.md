@@ -93,6 +93,16 @@ godot --headless res://scenes/tests/raid_visibility_smoke.tscn
 godot --headless --fixed-fps 60 res://tests/autoplay/autoplay.tscn -- mode=kill sectors=all
 ```
 
+Static types are an error (`gdscript/warnings/untyped_declaration=2` in `project.godot`). Count what is left with the per-file check. Godot exits 0 on these, so count lines. Run from `game/`. `git ls-files` prints repo-root paths (`game/…`), so strip that prefix. `--check-only` cannot see autoloads or `class_name` and reports `Identifier not found` / `not declared in the current scope` for them; count only `Warning treated as error`. The target is 0.
+
+```bash
+for f in $(git ls-files '*.gd' | sed 's|^game/||'); do
+  godot --headless --path . --check-only --script "res://$f" 2>&1
+done | grep -c 'Warning treated as error'
+gdformat --check $(git ls-files '*.gd' | sed 's|^game/||')
+gdlint $(git ls-files '*.gd' | sed 's|^game/||')
+```
+
 Autoplay args after `--`:
 
 | Arg | Values | Default |

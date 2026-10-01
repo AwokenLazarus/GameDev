@@ -56,7 +56,7 @@ func _physics_process(delta: float) -> void:
 	if used:
 		return
 	var who: Node = null
-	for b in _inside:
+	for b: Node in _inside:
 		if is_instance_valid(b) and not bool(b.get("dead")):
 			who = b
 			break
@@ -100,7 +100,7 @@ func _update_bar() -> void:
 
 
 func _build_visual() -> void:
-	for c in get_children():
+	for c: Node in get_children():
 		c.queue_free()
 	var shape := CollisionShape2D.new()
 	var circle := CircleShape2D.new()
@@ -123,7 +123,7 @@ func _build_visual() -> void:
 	_glow = Polygon2D.new()
 	_glow.color = glow
 	var ring := PackedVector2Array()
-	for i in 20:
+	for i: int in 20:
 		var a := TAU * float(i) / 20.0
 		ring.append(Vector2(cos(a) * 44.0, sin(a) * 26.0))
 	_glow.polygon = ring

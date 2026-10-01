@@ -134,12 +134,12 @@ func _ready() -> void:
 			{"all": ["church_smite"], "any": ["church_ward", "church_vow"]}],
 	])
 	_by_id.clear()
-	for b in boons:
+	for b: Dictionary in boons:
 		_by_id[str(b["id"])] = b
 
 
 func _add(patron: String, rows: Array) -> void:
-	for r in rows:
+	for r: Variant in rows:
 		var b := {
 			"id": str(r[0]),
 			"patron": patron,
@@ -162,13 +162,13 @@ func requirements_met(boon: Dictionary) -> bool:
 	var req: Dictionary = boon.get("requires", {})
 	if req.is_empty():
 		return true
-	for id in req.get("all", []):
+	for id: Variant in req.get("all", []):
 		if not RunState.has_boon(str(id)):
 			return false
 	var any: Array = req.get("any", [])
 	if any.is_empty():
 		return true
-	for id in any:
+	for id: Variant in any:
 		if RunState.has_boon(str(id)):
 			return true
 	return false
@@ -206,7 +206,7 @@ func _rarity_weight(rarity: String) -> float:
 ## Boons that can be offered now: unblocked, unowned, prerequisites met.
 func available_pool() -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
-	for b in boons:
+	for b: Dictionary in boons:
 		if str(b.get("patron", "")) in RunState.blocked_patrons:
 			continue
 		if RunState.has_boon(str(b["id"])):
@@ -225,11 +225,11 @@ func get_choices(count: int = 3) -> Array[Dictionary]:
 	if pool.size() < count * 2 and RunState.aligned_patron != "":
 		boon_slots = count - 1
 	var weights: Array[float] = []
-	for b in pool:
+	for b: Dictionary in pool:
 		weights.append(_patron_weight(str(b["patron"])) * _rarity_weight(str(b["rarity"])))
 	while result.size() < boon_slots and not pool.is_empty():
 		var total := 0.0
-		for w in weights:
+		for w: float in weights:
 			total += w
 		var i := 0
 		if total > 0.0:

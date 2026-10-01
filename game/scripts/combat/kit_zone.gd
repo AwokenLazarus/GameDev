@@ -36,7 +36,7 @@ func setup(from: Node, slot_name: String, pos: Vector2, r: float, dmg: float, fu
 func _ready() -> void:
 	z_index = 5
 	var pts := PackedVector2Array()
-	for i in 24:
+	for i: int in 24:
 		var a := TAU * float(i) / 24.0
 		pts.append(Vector2(cos(a), sin(a) * 0.6) * radius)
 	_fill = Polygon2D.new()
@@ -74,7 +74,7 @@ func _tick() -> void:
 	tw.tween_property(_fill, "color:a", 0.15, 0.12)
 	if owner_player == null or not is_instance_valid(owner_player):
 		return
-	for e in get_tree().get_nodes_in_group("enemy"):
+	for e: Node in get_tree().get_nodes_in_group("enemy"):
 		if not is_instance_valid(e):
 			continue
 		var off: Vector2 = e.global_position - global_position

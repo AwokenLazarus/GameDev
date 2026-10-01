@@ -63,9 +63,9 @@ func load_sprite(folder: String, name: String) -> void:
 	sprite_folder = folder
 	sprite_name = name
 	_anims.clear()
-	for anim in ["idle", "walk", "run", "attack", "dodge", "talk"]:
+	for anim: String in ["idle", "walk", "run", "attack", "dodge", "talk"]:
 		var frames: Array[Texture2D] = []
-		for i in 8:
+		for i: int in 8:
 			var path := "res://assets/textures/%s/%s_%s_f%d.png" % [folder, name, anim, i]
 			if ResourceLoader.exists(path):
 				frames.append(load(path))
@@ -76,7 +76,7 @@ func load_sprite(folder: String, name: String) -> void:
 	## Legacy fallback: name_f0..f3 as walk/idle
 	if not _anims.has("walk"):
 		var legacy: Array[Texture2D] = []
-		for i in 4:
+		for i: int in 4:
 			var path := "res://assets/textures/%s/%s_f%d.png" % [folder, name, i]
 			if ResourceLoader.exists(path):
 				legacy.append(load(path))

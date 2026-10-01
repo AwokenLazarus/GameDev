@@ -26,7 +26,7 @@ func _ready() -> void:
 		get_tree().quit(1)
 		return
 	var p: Node = players[0]
-	var av = p.get_node_or_null("ActorVisual")
+	var av: Node = p.get_node_or_null("ActorVisual")
 	if av == null:
 		push_error("RAID_VIS_FAIL no ActorVisual")
 		get_tree().quit(1)

@@ -50,7 +50,7 @@ func _pick_zone_pos(dir: Vector2, dist: float) -> Vector2:
 
 
 func _ally_nearby() -> bool:
-	for e in get_tree().get_nodes_in_group("enemy"):
+	for e: Node in get_tree().get_nodes_in_group("enemy"):
 		if e == self or not is_instance_valid(e):
 			continue
 		if global_position.distance_to(e.global_position) < 130.0:

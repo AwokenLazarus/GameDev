@@ -340,7 +340,7 @@ func all_raidable_sectors() -> Array[Dictionary]:
 		"umbral_marches",
 		"pale_spire",
 	]
-	for id in order:
+	for id: String in order:
 		if _sectors.has(id):
 			out.append(_sectors[id].duplicate(true))
 	return out
@@ -443,7 +443,7 @@ func enemy_families(sector_id: String) -> Array:
 
 func family_signature(sector_id: String) -> String:
 	var parts: PackedStringArray = PackedStringArray()
-	for row in enemy_families(sector_id):
+	for row: Variant in enemy_families(sector_id):
 		if typeof(row) != TYPE_DICTIONARY:
 			continue
 		var d: Dictionary = row
@@ -454,7 +454,7 @@ func family_signature(sector_id: String) -> String:
 func roll_enemy_family(sector_id: String, force_archetype: String = "", avoid_archetypes: Array = []) -> Dictionary:
 	var rows: Array = enemy_families(sector_id)
 	var pool: Array = []
-	for row in rows:
+	for row: Variant in rows:
 		if typeof(row) != TYPE_DICTIONARY:
 			continue
 		var d: Dictionary = row
@@ -465,17 +465,17 @@ func roll_enemy_family(sector_id: String, force_archetype: String = "", avoid_ar
 			continue
 		pool.append(d)
 	if pool.is_empty():
-		for row in rows:
+		for row: Variant in rows:
 			if typeof(row) == TYPE_DICTIONARY:
 				pool.append(row)
 	if pool.is_empty():
 		return _row("rail_grub", "melee", 1.0, "dominion_grub", false)
 	var total := 0.0
-	for row in pool:
+	for row: Variant in pool:
 		total += float((row as Dictionary).get("weight", 1.0))
 	var pick := randf() * maxf(total, 0.001)
 	var acc := 0.0
-	for row in pool:
+	for row: Variant in pool:
 		acc += float((row as Dictionary).get("weight", 1.0))
 		if pick <= acc:
 			return (row as Dictionary).duplicate(true)

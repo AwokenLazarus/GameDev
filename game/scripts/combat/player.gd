@@ -161,7 +161,7 @@ func _apply_character() -> void:
 	if accent is Polygon2D:
 		(accent as Polygon2D).color = col
 	if alt_id != "" and CharacterDB:
-		for a in CharacterDB.get_alts(character_id):
+		for a: Dictionary in CharacterDB.get_alts(character_id):
 			if str(a.get("id", "")) == alt_id:
 				var mods: Dictionary = a.get("kit_modifiers", {})
 				if mods.has("kit_type"):
@@ -173,7 +173,7 @@ func _apply_character() -> void:
 	if kit_type == "astral":
 		move_speed *= 0.9 ## fragile body walks a touch slower
 	slots = CharacterDB.get_slots(character_id, alt_id) if CharacterDB else {}
-	for s in ["attack", "special", "cast", "dash"]:
+	for s: String in ["attack", "special", "cast", "dash"]:
 		if not slot_mods.has(s):
 			slot_mods[s] = {"damage": 1.0, "cooldown": 1.0}
 	_cast_base = int(_slot("cast").get("charges", 1))
@@ -221,20 +221,20 @@ func apply_weapon_tint() -> void:
 	blade_visual.modulate = tint
 	if kit_type == "melee":
 		blade_visual.scale = Vector2(pacts.melee_reach(), 1.0) ## the whip-blade reads longer
-	for c in _crescents:
+	for c: Dictionary in _crescents:
 		if is_instance_valid(c.node):
 			c.node.modulate = Color(tint, 0.95) if pact_on else Color(0.7, 0.9, 1.0, 0.95)
 	spirit_visual.modulate = Color(tint, 0.7) if pact_on else Color(0.75, 0.85, 1.0, 0.55)
 
 
 func _spawn_crescents() -> void:
-	for c in _crescents:
+	for c: Dictionary in _crescents:
 		if is_instance_valid(c.node):
 			c.node.queue_free()
 	_crescents.clear()
 	var tex_path := "res://assets/textures/vfx/crescent.png"
 	var tex: Texture2D = load(tex_path) if ResourceLoader.exists(tex_path) else null
-	for i in 2:
+	for i: int in 2:
 		var spr := Sprite2D.new()
 		spr.texture = tex
 		spr.modulate = Color(pacts.color(), 0.95) if pact() != "" else Color(0.7, 0.9, 1.0, 0.95)
@@ -288,7 +288,7 @@ func _physics_process(delta: float) -> void:
 	if _just.get("dodge", false) and dodge_cd <= 0.0:
 		_start_dodge(input_dir.normalized() if input_dir.length() > 0.1 else facing)
 	else:
-		for s in ["special", "cast", "attack"]:
+		for s: String in ["special", "cast", "attack"]:
 			if _just.get(s, false):
 				_buffered = s
 				_buffer_t = INPUT_BUFFER
@@ -352,7 +352,7 @@ func _move_vector() -> Vector2:
 ## Edge-detects every action once per physics frame. P1 keyboard uses the InputMap;
 ## pads and the P2 keyboard read raw state, so they need their own previous-frame copy.
 func _poll_input() -> void:
-	for a in ACTIONS:
+	for a: String in ACTIONS:
 		if player_index == 0 and device == -1:
 			_just[a] = Input.is_action_just_pressed(a)
 			continue
@@ -570,7 +570,7 @@ func pact() -> String:
 ## Enemies within `radius` of `center` and within `half_arc` radians of `dir`.
 func enemies_in_arc(center: Vector2, radius: float, dir: Vector2, half_arc: float = PI) -> Array[Node2D]:
 	var out: Array[Node2D] = []
-	for e in get_tree().get_nodes_in_group("enemy"):
+	for e: Node in get_tree().get_nodes_in_group("enemy"):
 		if not is_instance_valid(e):
 			continue
 		var off: Vector2 = e.global_position - center
@@ -708,7 +708,7 @@ func spirit_swap(at: Vector2) -> void:
 func start_halo(seconds: float) -> void:
 	_halo_t = seconds
 	_busy = 0.1
-	for c in _crescents:
+	for c: Dictionary in _crescents:
 		c.mode = "halo"
 		c.hits = {}
 		c.hit_t = 0.0
@@ -717,7 +717,7 @@ func start_halo(seconds: float) -> void:
 ## Dust pact recall: every saw-disc flies back to you through whatever is in the way.
 func start_drag() -> void:
 	_busy = 0.2
-	for i in _crescents.size():
+	for i: int in _crescents.size():
 		var c: Dictionary = _crescents[i]
 		if c.mode == "home":
 			c.pos = global_position + facing.rotated(0.4 if i % 2 == 0 else -0.4) * 170.0
@@ -824,7 +824,7 @@ func _melee_combo(dir: Vector2) -> void:
 	_VFX.slash(get_parent(), global_position + dir * 28.0, dir.angle())
 	if finisher:
 		_VFX.slash(get_parent(), global_position + dir * 40.0, dir.angle() + 0.5)
-	for e in enemies_in_arc(global_position, radius, dir, arc):
+	for e: Node2D in enemies_in_arc(global_position, radius, dir, arc):
 		land_slot_hit(e, _slot_dmg("attack", mult), "attack", finisher, 320.0 if finisher else 160.0)
 	_flash_blade(dir, 0.12)
 
@@ -840,9 +840,9 @@ func _melee_cleave(dir: Vector2) -> void:
 	if dead or not is_inside_tree():
 		return
 	velocity = Vector2.ZERO
-	for off in [-0.8, 0.0, 0.8]:
+	for off: float in [-0.8, 0.0, 0.8]:
 		_VFX.slash(get_parent(), global_position + dir.rotated(off) * 44.0, dir.angle() + off)
-	for e in enemies_in_arc(global_position, float(s.get("radius", 82.0)), dir, float(s.get("arc", 2.2))):
+	for e: Node2D in enemies_in_arc(global_position, float(s.get("radius", 82.0)), dir, float(s.get("arc", 2.2))):
 		land_slot_hit(e, _slot_dmg("special", float(s.get("damage", 2.0))), "special", true, 360.0)
 	pacts.after_cleave(dir, float(s.get("radius", 82.0)), float(s.get("arc", 2.2)))
 	_flash_blade(dir, 0.16)
@@ -878,7 +878,7 @@ func _gun_volley(dir: Vector2) -> void:
 	var s := _slot("special")
 	var bolts := int(s.get("bolts", 8))
 	_busy = float(s.get("interval", 0.045)) * bolts
-	for i in bolts:
+	for i: int in bolts:
 		if dead or not is_inside_tree():
 			return
 		var bolt := _spawn_projectile(global_position, dir.rotated(randf_range(-0.5, 0.5)),
@@ -898,7 +898,7 @@ func _gun_flare(dir: Vector2) -> void:
 # --- Cassian: orbit ----------------------------------------------------------
 
 func _home_crescent() -> int:
-	for i in _crescents.size():
+	for i: int in _crescents.size():
 		if _crescents[i].mode == "home":
 			return i
 	return -1
@@ -914,7 +914,7 @@ func _update_orbit(delta: float) -> void:
 	if _halo_t > 0.0:
 		_halo_t -= delta
 	var burst_time := float(_slot("special").get("time", 0.4))
-	for i in _crescents.size():
+	for i: int in _crescents.size():
 		var c: Dictionary = _crescents[i]
 		var spr: Sprite2D = c.node
 		if not is_instance_valid(spr):
@@ -965,7 +965,7 @@ func _update_orbit(delta: float) -> void:
 
 
 func _crescent_hits(c: Dictionary, pos: Vector2, slot: String, mult: float) -> void:
-	for e in get_tree().get_nodes_in_group("enemy"):
+	for e: Node in get_tree().get_nodes_in_group("enemy"):
 		if not is_instance_valid(e) or c.hits.has(e.get_instance_id()):
 			continue
 		if pos.distance_to(e.global_position) < 24.0:
@@ -995,7 +995,7 @@ func _orbit_burst() -> void:
 		return
 	_burst_t = float(_slot("special").get("time", 0.4))
 	_busy = _burst_t
-	for c in _crescents:
+	for c: Dictionary in _crescents:
 		c.mode = "burst"
 		c.hits = {}
 
@@ -1032,7 +1032,7 @@ func _maul_slam(dir: Vector2) -> void:
 	if dead or not is_inside_tree():
 		return
 	_VFX.dust_puff(get_parent(), global_position + dir * 40.0)
-	for e in enemies_in_arc(global_position, float(a.get("radius", 84.0)), dir, float(a.get("arc", 1.8))):
+	for e: Node2D in enemies_in_arc(global_position, float(a.get("radius", 84.0)), dir, float(a.get("arc", 1.8))):
 		land_slot_hit(e, _slot_dmg("attack", float(a.get("damage", 1.35))), "attack", true, 300.0)
 	pacts.after_slam(global_position + dir * 40.0)
 
@@ -1044,7 +1044,7 @@ func _maul_shockwave(dir: Vector2) -> void:
 		return
 	var spacing := float(s.get("spacing", 58.0))
 	var interval := float(s.get("interval", 0.09))
-	for i in int(s.get("steps", 4)):
+	for i: int in int(s.get("steps", 4)):
 		_spawn_zone(global_position + dir * spacing * float(i + 1), float(s.get("radius", 46.0)),
 			_slot_dmg("special", float(s.get("damage", 1.0))), "special", 0.12 + interval * i, 1, 0.1, 240.0,
 			Color(0.8, 0.45, 0.3))
@@ -1066,7 +1066,7 @@ func _update_astral(delta: float) -> void:
 		var t := 1.0 - clampf(_project_t / total, 0.0, 1.0)
 		_spirit_pos = _project_from.lerp(_project_to, t)
 		var radius := float(_slot("cast").get("radius", 30.0))
-		for e in get_tree().get_nodes_in_group("enemy"):
+		for e: Node in get_tree().get_nodes_in_group("enemy"):
 			if not is_instance_valid(e) or _project_hits.has(e.get_instance_id()):
 				continue
 			if _spirit_pos.distance_to(e.global_position) < radius + 14.0:
@@ -1100,7 +1100,7 @@ func _astral_collapse() -> void:
 	_busy = 0.15
 	var radius := float(s.get("radius", 100.0))
 	var at := _spirit_pos
-	for e in enemies_in_arc(_spirit_pos, radius, Vector2.RIGHT):
+	for e: Node2D in enemies_in_arc(_spirit_pos, radius, Vector2.RIGHT):
 		land_slot_hit(e, _slot_dmg("special", float(s.get("damage", 1.6))), "special", true, 260.0)
 	var flash := Polygon2D.new()
 	flash.color = Color(0.8, 0.9, 1.0, 0.4)
@@ -1130,7 +1130,7 @@ func _astral_project(dir: Vector2) -> void:
 func _nearest_enemy_from(pos: Vector2) -> Node2D:
 	var best: Node2D = null
 	var best_d := 9999.0
-	for e in get_tree().get_nodes_in_group("enemy"):
+	for e: Node in get_tree().get_nodes_in_group("enemy"):
 		if not is_instance_valid(e):
 			continue
 		var d := pos.distance_to(e.global_position)
@@ -1149,11 +1149,11 @@ func on_deal_damage(amount: float) -> void:
 # --- Feed / damage taken -----------------------------------------------------
 
 func _try_feed() -> void:
-	for body in feed_area.get_overlapping_bodies():
+	for body: Node2D in feed_area.get_overlapping_bodies():
 		if body.is_in_group("feedable_corpse"):
 			_feed(body)
 			return
-	for area in feed_area.get_overlapping_areas():
+	for area: Area2D in feed_area.get_overlapping_areas():
 		var p := area.get_parent()
 		if p and p.is_in_group("feedable_corpse"):
 			_feed(p)
