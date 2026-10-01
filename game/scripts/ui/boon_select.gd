@@ -32,7 +32,9 @@ func open_choices() -> void:
 	var left := maxi(0, RunState.boon_picks_target - RunState.boon_picks_done)
 	title.text = "PICK A BOON"
 	if _subtitle:
-		_subtitle.text = "Combat is paused (%d picks left this run). Click one pact to continue fighting." % left
+		_subtitle.text = (
+			"Combat is paused (%d picks left this run). Click one pact to continue fighting." % left
+		)
 	for boon: Dictionary in _choices:
 		var btn := Button.new()
 		btn.text = _label_for(boon)
@@ -58,13 +60,16 @@ func _label_for(boon: Dictionary) -> String:
 	if bool(boon.get("is_fallback", false)):
 		return "%s\n%s" % [str(boon.get("name", "")), str(boon.get("desc", ""))]
 	var slot := str(boon.get("slot", "trigger"))
-	var head := "%s — %s  [%s · %s · %s]" % [
-		RunState.patron_display(str(boon.get("patron", ""))),
-		str(boon.get("name", "")),
-		slot.capitalize(),
-		str(boon.get("verb", "")),
-		str(boon.get("rarity", "common")).capitalize(),
-	]
+	var head := (
+		"%s — %s  [%s · %s · %s]"
+		% [
+			RunState.patron_display(str(boon.get("patron", ""))),
+			str(boon.get("name", "")),
+			slot.capitalize(),
+			str(boon.get("verb", "")),
+			str(boon.get("rarity", "common")).capitalize(),
+		]
+	)
 	var old := RunState.boon_in_slot(slot)
 	if not old.is_empty():
 		head += "\nReplaces %s" % str(old.get("name", ""))

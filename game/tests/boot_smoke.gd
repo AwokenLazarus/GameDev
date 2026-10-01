@@ -6,7 +6,9 @@ func _ready() -> void:
 	print("BOOT_SMOKE_START")
 	var ok := true
 
-	for autoload_name: String in ["GameState", "RunState", "CharacterDB", "SectorDB", "MetaDB", "BoonDB"]:
+	for autoload_name: String in [
+		"GameState", "RunState", "CharacterDB", "SectorDB", "MetaDB", "BoonDB"
+	]:
 		if get_node_or_null("/root/" + autoload_name) == null:
 			push_error("Missing autoload " + autoload_name)
 			ok = false
@@ -100,13 +102,34 @@ func _ready() -> void:
 	add_child(e)
 	e.setup(p, true, true)
 	for arch: String in ["melee", "ranged", "charger", "caster"]:
-		var fe: Node = MWEnemyFactory.spawn(self, Vector2(24.0 * ["melee", "ranged", "charger", "caster"].find(arch), 20.0), p, {
-			"archetype": arch,
-			"elite": true,
-			"telegraph": false,
-			"family": {"id": "smoke_%s" % arch, "archetype": arch, "sprite": "dominion_grub", "human": false},
-		})
-		print("ARCH ", fe.get("archetype"), " AFFIX ", fe.get("affix_id"), " AURA ", fe.get("affix_name"))
+		var fe: Node = (
+			MWEnemyFactory
+			. spawn(
+				self,
+				Vector2(24.0 * ["melee", "ranged", "charger", "caster"].find(arch), 20.0),
+				p,
+				{
+					"archetype": arch,
+					"elite": true,
+					"telegraph": false,
+					"family":
+					{
+						"id": "smoke_%s" % arch,
+						"archetype": arch,
+						"sprite": "dominion_grub",
+						"human": false
+					},
+				}
+			)
+		)
+		print(
+			"ARCH ",
+			fe.get("archetype"),
+			" AFFIX ",
+			fe.get("affix_id"),
+			" AURA ",
+			fe.get("affix_name")
+		)
 	var g: Node = general_ps.instantiate()
 	add_child(g)
 	g.configure("aurelian")
@@ -126,7 +149,16 @@ func _ready() -> void:
 			print("SCENE_OK ", path)
 
 	## Generals all resolve
-	for gid: String in ["marshal_hale", "lady_sable", "marrowfang", "cantor_belis", "provost_rhea", "duke_orlokis", "admiral_drus", "aurelian"]:
+	for gid: String in [
+		"marshal_hale",
+		"lady_sable",
+		"marrowfang",
+		"cantor_belis",
+		"provost_rhea",
+		"duke_orlokis",
+		"admiral_drus",
+		"aurelian"
+	]:
 		var gd: Dictionary = SectorDB.get_general(gid)
 		if gd.is_empty() or not gd.has("pattern"):
 			push_error("General incomplete " + gid)

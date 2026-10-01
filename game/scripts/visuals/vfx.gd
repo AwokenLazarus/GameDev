@@ -6,23 +6,31 @@ static var _hitstopping: bool = false
 
 
 static func slash(parent: Node, pos: Vector2, angle: float) -> void:
-	_spawn_sprite(parent, "res://assets/textures/vfx/slash.png", pos, angle, 0.18, Vector2(1.2, 1.2))
+	_spawn_sprite(
+		parent, "res://assets/textures/vfx/slash.png", pos, angle, 0.18, Vector2(1.2, 1.2)
+	)
 
 
 static func blood(parent: Node, pos: Vector2) -> void:
-	_spawn_sprite(parent, "res://assets/textures/vfx/blood.png", pos, randf() * TAU, 0.35, Vector2(0.8, 0.8))
+	_spawn_sprite(
+		parent, "res://assets/textures/vfx/blood.png", pos, randf() * TAU, 0.35, Vector2(0.8, 0.8)
+	)
 
 
 static func dust_puff(parent: Node, pos: Vector2) -> void:
 	_spawn_sprite(parent, "res://assets/textures/vfx/dust.png", pos, 0.0, 0.4, Vector2(1.4, 1.0))
 
 
-static func telegraph_mark(parent: Node, pos: Vector2, life: float = 0.45, scl: Vector2 = Vector2(1.15, 1.15)) -> void:
+static func telegraph_mark(
+	parent: Node, pos: Vector2, life: float = 0.45, scl: Vector2 = Vector2(1.15, 1.15)
+) -> void:
 	_spawn_sprite(parent, "res://assets/textures/vfx/telegraph.png", pos, 0.0, life, scl)
 
 
 ## Flat ground ring that pops out and fades (boon verbs, pact bursts).
-static func ring(parent: Node, pos: Vector2, r: float, tint: Color, width: float = 3.0, life: float = 0.3) -> void:
+static func ring(
+	parent: Node, pos: Vector2, r: float, tint: Color, width: float = 3.0, life: float = 0.3
+) -> void:
 	if parent == null:
 		return
 	var line := Line2D.new()
@@ -46,7 +54,9 @@ static func pact_burst(parent: Node, pos: Vector2, tint: Color) -> void:
 	if parent == null:
 		return
 	var column := Polygon2D.new()
-	column.polygon = PackedVector2Array([Vector2(-16, 0), Vector2(16, 0), Vector2(6, -220), Vector2(-6, -220)])
+	column.polygon = PackedVector2Array(
+		[Vector2(-16, 0), Vector2(16, 0), Vector2(6, -220), Vector2(-6, -220)]
+	)
 	column.color = Color(tint, 0.55)
 	column.z_index = 25
 	parent.add_child(column)
@@ -59,7 +69,7 @@ static func pact_burst(parent: Node, pos: Vector2, tint: Color) -> void:
 ## Iso ground ellipse (y squashed to 0.6). `closed` repeats the first point for Line2D.
 static func ellipse(r: float, n: int = 24, closed: bool = false) -> PackedVector2Array:
 	var pts := PackedVector2Array()
-	for i: int in (n + 1 if closed else n):
+	for i: int in n + 1 if closed else n:
 		var a := TAU * float(i) / float(n)
 		pts.append(Vector2(cos(a), sin(a) * 0.6) * r)
 	return pts
@@ -75,7 +85,9 @@ static func hitstop(tree: SceneTree, seconds: float = 0.045) -> void:
 	_hitstopping = false
 
 
-static func _spawn_sprite(parent: Node, path: String, pos: Vector2, angle: float, life: float, scl: Vector2) -> void:
+static func _spawn_sprite(
+	parent: Node, path: String, pos: Vector2, angle: float, life: float, scl: Vector2
+) -> void:
 	if parent == null or not ResourceLoader.exists(path):
 		return
 	var s := Sprite2D.new()

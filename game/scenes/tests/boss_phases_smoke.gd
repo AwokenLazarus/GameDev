@@ -5,7 +5,16 @@ extends Node2D
 
 const PLAYER := preload("res://scenes/entities/player.tscn")
 const GENERAL := preload("res://scenes/entities/general.tscn")
-const GENERALS := ["marshal_hale", "lady_sable", "marrowfang", "cantor_belis", "provost_rhea", "duke_orlokis", "admiral_drus", "aurelian"]
+const GENERALS := [
+	"marshal_hale",
+	"lady_sable",
+	"marrowfang",
+	"cantor_belis",
+	"provost_rhea",
+	"duke_orlokis",
+	"admiral_drus",
+	"aurelian"
+]
 const BOSS_AT := Vector2(0, -100)
 const PLAYER_AT := Vector2(0, 120)
 
@@ -34,7 +43,7 @@ func _moves_of(phase: Dictionary) -> Array:
 
 func _check_tables() -> Array[String]:
 	var fails: Array[String] = []
-	var p2_owner: Dictionary = {} ## phase-2-only move -> general
+	var p2_owner: Dictionary = {}  ## phase-2-only move -> general
 	for gid: String in GENERALS:
 		var phases: Array = SectorDB.get_general(gid).get("phases", [])
 		var need := 3 if gid == "aurelian" else 2
@@ -48,7 +57,9 @@ func _check_tables() -> Array[String]:
 		if all.size() < 3:
 			fails.append("%s has %d distinct moves (< 3)" % [gid, all.size()])
 		var p1 := _moves_of(phases[0])
-		var fresh: Array = _moves_of(phases[1]).filter(func(m: Variant) -> bool: return not p1.has(m))
+		var fresh: Array = _moves_of(phases[1]).filter(
+			func(m: Variant) -> bool: return not p1.has(m)
+		)
 		if fresh.is_empty():
 			fails.append("%s phase 2 adds no new move" % gid)
 		if gid != "aurelian":
@@ -84,7 +95,7 @@ func _check_general(gid: String) -> Array[String]:
 	arena.add_child(b)
 	b.configure(gid)
 	b.global_position = BOSS_AT
-	b.set_physics_process(false) ## drive moves by hand
+	b.set_physics_process(false)  ## drive moves by hand
 	b.set("_player", p)
 	await get_tree().process_frame
 
@@ -112,7 +123,9 @@ func _check_general(gid: String) -> Array[String]:
 			landed += 1
 		print("MOVE ", gid, " ", m, " hits=", hits)
 	if landed < moves.size():
-		fails.append("%s: only %d/%d moves landed on a standing player" % [gid, landed, moves.size()])
+		fails.append(
+			"%s: only %d/%d moves landed on a standing player" % [gid, landed, moves.size()]
+		)
 
 	## Phase thresholds.
 	b.global_position = BOSS_AT
@@ -122,7 +135,9 @@ func _check_general(gid: String) -> Array[String]:
 		h.take_damage(h.hp - h.max_hp * (at - 0.02))
 		await get_tree().process_frame
 		if int(b.phase_index) != i:
-			fails.append("%s at %.0f%% HP is phase %d, want %d" % [gid, at * 100.0, b.phase_index + 1, i + 1])
+			fails.append(
+				"%s at %.0f%% HP is phase %d, want %d" % [gid, at * 100.0, b.phase_index + 1, i + 1]
+			)
 		var want_adds: bool = not (b.phases[i] as Dictionary).get("adds", {}).is_empty()
 		var adds := get_tree().get_nodes_in_group("boss_add").size()
 		if want_adds and adds == 0:

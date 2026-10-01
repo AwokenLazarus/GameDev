@@ -30,7 +30,7 @@ func _on_attack_cancelled() -> void:
 func _ai_tick(delta: float) -> void:
 	if _player == null:
 		return
-	var dir := (_player.global_position - global_position)
+	var dir := _player.global_position - global_position
 	var dist := dir.length()
 	if _dashing:
 		_tick_dash(delta)

@@ -25,114 +25,414 @@ var _by_id: Dictionary = {}
 
 func _ready() -> void:
 	boons = []
-	_add("dust_compact", [
-		["dust_bleed", "Scrap Teeth", "attack", "bleed", "common",
-			"Attacks apply 1 Bleed; heavy hits apply 2."],
-		["dust_buckshot", "Buckshot Draw", "special", "bleed", "common",
-			"Special also throws a 5-shard scrap cone; each shard applies 1 Bleed."],
-		["dust_smoke", "Smoke Canister", "cast", "gunsmoke", "common",
-			"Cast bursts into a gunsmoke cloud on arrival. Enemies inside are Blinded."],
-		["dust_dash", "Gunsmoke Step", "dash", "dash", "common",
-			"Dash leaves a smoke trail for 2 s. Enemies crossing it are Blinded."],
-		["dust_reload", "Quick Chamber", "trigger", "reload", "common",
-			"Ending a dash Chambers your next Attack (it hits twice)."],
-		["dust_loot", "Rail Rat Eyes", "trigger", "loot", "common",
-			"Elites drop a Scrap cache (1 Cast charge + 5 HP); generals drop 3."],
-		["dust_sidestep", "Cinder Slip", "trigger", "dash", "common",
-			"Taking a hit drops a smoke puff and refunds your dash (8 s cooldown)."],
-		["dust_shrapnel", "Rust Bloom", "trigger", "bleed", "rare",
-			"Enemies that die Bleeding burst into shrapnel: 2 Bleed to foes nearby."],
-		["dust_cashin", "Cash In", "trigger", "bleed", "rare",
-			"Special hits consume all Bleed on the target and deal it at once."],
-		["dust_doublehold", "Double Hold", "trigger", "loot", "epic",
-			"+1 Cast charge. Siblings who walk through your smoke are Chambered."],
-		["dust_devil", "Dust Devil", "trigger", "dash", "epic",
-			"Dashing through 3+ foes spins a dust devil that pulls, Blinds and Bleeds."],
-		["dust_tally", "Dead Man's Tally", "trigger", "bleed", "legendary",
-			"A foe at 5 Bleed ruptures for all its Bleed ×1.5 and Blinds everything near it.",
-			{"all": ["dust_bleed"], "any": ["dust_smoke", "dust_dash"]}],
-	])
-	_add("red_petition", [
-		["petition_execute", "Widow's Writ", "attack", "execute", "common",
-			"Attacks execute enemies below 15% HP (elites 7.5%)."],
-		["petition_sabotage", "Fuse Kiss", "special", "sabotage", "common",
-			"Special hits attach a fuse: 1.5 s later it bursts for area damage and Stagger."],
-		["petition_trap", "Iron Snare", "cast", "trap", "common",
-			"Cast plants an iron snare (max 3). The first foe in is Rooted and takes Cast ×2."],
-		["petition_caltrops", "Cell Runner", "dash", "trap", "common",
-			"Dash scatters caltrops at your start point for 4 s: slows and ticks damage."],
-		["petition_elite", "Anti-Banner", "trigger", "anti-elite", "common",
-			"Every 4th hit on an elite strips its affix; with none left, Stagger 1 s."],
-		["petition_team", "Shared Blood", "trigger", "team buff", "common",
-			"Executes drop a blood ration. The first sibling to touch it heals 8."],
-		["petition_rally", "Bread & Powder", "trigger", "team buff", "common",
-			"Executing Chambers you and every ally within 200."],
-		["petition_warrant", "Warrant", "trigger", "execute", "rare",
-			"Cast hits Warrant the target for 8 s: execute threshold +10% for every player."],
-		["petition_cell", "Cell Oath", "trigger", "rally", "rare",
-			"Hurt below 30%: rally bell. You and allies near get 1 s i-frames and Chamber (20 s cd)."],
-		["petition_chain", "Guillotine Hour", "trigger", "execute", "epic",
-			"Each execute re-checks every foe within 120 against the threshold."],
-		["petition_manifest", "Sabotage Manifest", "trigger", "sabotage", "epic",
-			"Hitting a foe mid wind-up cancels the attack, Staggers it and deals Special ×3."],
-		["petition_redletter", "Red Letter Day", "trigger", "execute", "legendary",
-			"Generals become executable below 8%. Any sibling's Special performs the Writ.",
-			{"all": ["petition_execute"], "any": ["petition_trap", "petition_caltrops"]}],
-	])
-	_add("house_veyra", [
-		["veyra_crit", "Debt Edge", "attack", "crit", "common",
-			"Attacks always crit foes facing away, Staggered, Rooted or Blinded."],
-		["veyra_pointe", "Pointe of Courtesy", "special", "shadowstep", "common",
-			"Special opens with a shadowstep to the nearest foe ahead; its first hit crits."],
-		["veyra_contract", "Blood Contract", "cast", "debt", "common",
-			"With no charges, cast anyway for 8 Debt. Debt-paid casts lifesteal 50%."],
-		["veyra_shadowstep", "Ledger Step", "dash", "shadowstep", "common",
-			"Dash becomes a shadowstep through foes and shots. The afterimage draws aggro 1 s."],
-		["veyra_life", "Courtesy Sip", "trigger", "lifesteal", "common",
-			"Feeding heals 20 and your next 3 hits lifesteal 30%."],
-		["veyra_evolve", "Gilded Vein", "trigger", "evolve", "common",
-			"Crits heal 1 HP. Evolves to 2 at 15 raid kills and 3 at 40."],
-		["veyra_spray", "Exsanguinate", "trigger", "lifesteal", "common",
-			"Crit kills spray blood: you and allies within 100 heal 3."],
-		["veyra_collateral", "Promissory Mark", "trigger", "crit", "rare",
-			"The first hit within 1 s of a dash crits and marks Collateral. Its death clears your Debt."],
-		["veyra_poise", "Noble Poise", "trigger", "debt", "rare",
-			"Once per room, lethal damage becomes Debt and leaves you at 1 HP."],
-		["veyra_couture", "Sanguine Couture", "trigger", "shadowstep", "epic",
-			"A Special kill makes your next dash leave 2 afterimages that each Attack once."],
-		["veyra_duel", "Duel of Houses", "trigger", "crit", "epic",
-			"First elite/general hit each room becomes your Duelist: always crit it; after a crit, others' contact misses you 3 s."],
-		["veyra_collects", "The House Always Collects", "trigger", "debt", "legendary",
-			"Debt no longer drains. At 30 it is called in: a nova for 3× Debt, then Debt clears.",
-			{"all": ["veyra_crit"], "any": ["veyra_contract", "veyra_poise"]}],
-	])
-	_add("church", [
-		["church_smite", "Pale Decree", "attack", "smite", "common",
-			"Every 3rd Attack calls a Smite on the target point."],
-		["church_judgment", "Judgment Flare", "special", "decree", "common",
-			"Special hits Condemn (Smites deal ×2 and spread Condemn)."],
-		["church_ward", "Sunlit Ward", "cast", "ward", "common",
-			"Cast raises a hymn circle on arrival. You and allies inside gain 1 Ward."],
-		["church_procession", "Pale Procession", "dash", "aura", "common",
-			"Dash ends in a sanctified ring that pushes foes out and damages them."],
-		["church_cleanse", "Salt Cleanse", "trigger", "cleanse", "common",
-			"Dashing cleanses you and destroys enemy shots along the path."],
-		["church_cooldown", "Bell Interval", "trigger", "cooldown", "common",
-			"Each Cast hit takes 1 s off your Special cooldown."],
-		["church_vow", "Vow of Abstinence", "trigger", "ward", "common",
-			"While you haven't fed this raid, start each room with 2 Ward."],
-		["church_litany", "Litany", "trigger", "aura", "rare",
-			"After you cast, a hymn aura pulses around you 3 times, damaging and slowing."],
-		["church_anathema", "Anathema", "trigger", "decree", "rare",
-			"Condemned foes leave consecrated ground: foes on it slow, allies on it cleanse."],
-		["church_choir", "Choir of Wards", "trigger", "smite", "epic",
-			"Each Ward that breaks calls an instant Smite on whoever broke it."],
-		["church_sunwheel", "Sunwheel", "trigger", "cooldown", "epic",
-			"Smite kills refund 1 Cast charge. The 5th Smite kill in 6 s resets Special and Dash."],
-		["church_fatherslight", "The Father's Light", "trigger", "smite", "legendary",
-			"While you keep attacking, a Smite falls every 4 s on the highest-HP foe. Generals you hit stay Condemned.",
-			{"all": ["church_smite"], "any": ["church_ward", "church_vow"]}],
-	])
+	_add(
+		"dust_compact",
+		[
+			[
+				"dust_bleed",
+				"Scrap Teeth",
+				"attack",
+				"bleed",
+				"common",
+				"Attacks apply 1 Bleed; heavy hits apply 2."
+			],
+			[
+				"dust_buckshot",
+				"Buckshot Draw",
+				"special",
+				"bleed",
+				"common",
+				"Special also throws a 5-shard scrap cone; each shard applies 1 Bleed."
+			],
+			[
+				"dust_smoke",
+				"Smoke Canister",
+				"cast",
+				"gunsmoke",
+				"common",
+				"Cast bursts into a gunsmoke cloud on arrival. Enemies inside are Blinded."
+			],
+			[
+				"dust_dash",
+				"Gunsmoke Step",
+				"dash",
+				"dash",
+				"common",
+				"Dash leaves a smoke trail for 2 s. Enemies crossing it are Blinded."
+			],
+			[
+				"dust_reload",
+				"Quick Chamber",
+				"trigger",
+				"reload",
+				"common",
+				"Ending a dash Chambers your next Attack (it hits twice)."
+			],
+			[
+				"dust_loot",
+				"Rail Rat Eyes",
+				"trigger",
+				"loot",
+				"common",
+				"Elites drop a Scrap cache (1 Cast charge + 5 HP); generals drop 3."
+			],
+			[
+				"dust_sidestep",
+				"Cinder Slip",
+				"trigger",
+				"dash",
+				"common",
+				"Taking a hit drops a smoke puff and refunds your dash (8 s cooldown)."
+			],
+			[
+				"dust_shrapnel",
+				"Rust Bloom",
+				"trigger",
+				"bleed",
+				"rare",
+				"Enemies that die Bleeding burst into shrapnel: 2 Bleed to foes nearby."
+			],
+			[
+				"dust_cashin",
+				"Cash In",
+				"trigger",
+				"bleed",
+				"rare",
+				"Special hits consume all Bleed on the target and deal it at once."
+			],
+			[
+				"dust_doublehold",
+				"Double Hold",
+				"trigger",
+				"loot",
+				"epic",
+				"+1 Cast charge. Siblings who walk through your smoke are Chambered."
+			],
+			[
+				"dust_devil",
+				"Dust Devil",
+				"trigger",
+				"dash",
+				"epic",
+				"Dashing through 3+ foes spins a dust devil that pulls, Blinds and Bleeds."
+			],
+			[
+				"dust_tally",
+				"Dead Man's Tally",
+				"trigger",
+				"bleed",
+				"legendary",
+				"A foe at 5 Bleed ruptures for all its Bleed ×1.5 and Blinds everything near it.",
+				{"all": ["dust_bleed"], "any": ["dust_smoke", "dust_dash"]}
+			],
+		]
+	)
+	_add(
+		"red_petition",
+		[
+			[
+				"petition_execute",
+				"Widow's Writ",
+				"attack",
+				"execute",
+				"common",
+				"Attacks execute enemies below 15% HP (elites 7.5%)."
+			],
+			[
+				"petition_sabotage",
+				"Fuse Kiss",
+				"special",
+				"sabotage",
+				"common",
+				"Special hits attach a fuse: 1.5 s later it bursts for area damage and Stagger."
+			],
+			[
+				"petition_trap",
+				"Iron Snare",
+				"cast",
+				"trap",
+				"common",
+				"Cast plants an iron snare (max 3). The first foe in is Rooted and takes Cast ×2."
+			],
+			[
+				"petition_caltrops",
+				"Cell Runner",
+				"dash",
+				"trap",
+				"common",
+				"Dash scatters caltrops at your start point for 4 s: slows and ticks damage."
+			],
+			[
+				"petition_elite",
+				"Anti-Banner",
+				"trigger",
+				"anti-elite",
+				"common",
+				"Every 4th hit on an elite strips its affix; with none left, Stagger 1 s."
+			],
+			[
+				"petition_team",
+				"Shared Blood",
+				"trigger",
+				"team buff",
+				"common",
+				"Executes drop a blood ration. The first sibling to touch it heals 8."
+			],
+			[
+				"petition_rally",
+				"Bread & Powder",
+				"trigger",
+				"team buff",
+				"common",
+				"Executing Chambers you and every ally within 200."
+			],
+			[
+				"petition_warrant",
+				"Warrant",
+				"trigger",
+				"execute",
+				"rare",
+				"Cast hits Warrant the target for 8 s: execute threshold +10% for every player."
+			],
+			[
+				"petition_cell",
+				"Cell Oath",
+				"trigger",
+				"rally",
+				"rare",
+				"Hurt below 30%: rally bell. You and allies near get 1 s i-frames and Chamber (20 s cd)."
+			],
+			[
+				"petition_chain",
+				"Guillotine Hour",
+				"trigger",
+				"execute",
+				"epic",
+				"Each execute re-checks every foe within 120 against the threshold."
+			],
+			[
+				"petition_manifest",
+				"Sabotage Manifest",
+				"trigger",
+				"sabotage",
+				"epic",
+				"Hitting a foe mid wind-up cancels the attack, Staggers it and deals Special ×3."
+			],
+			[
+				"petition_redletter",
+				"Red Letter Day",
+				"trigger",
+				"execute",
+				"legendary",
+				"Generals become executable below 8%. Any sibling's Special performs the Writ.",
+				{"all": ["petition_execute"], "any": ["petition_trap", "petition_caltrops"]}
+			],
+		]
+	)
+	_add(
+		"house_veyra",
+		[
+			[
+				"veyra_crit",
+				"Debt Edge",
+				"attack",
+				"crit",
+				"common",
+				"Attacks always crit foes facing away, Staggered, Rooted or Blinded."
+			],
+			[
+				"veyra_pointe",
+				"Pointe of Courtesy",
+				"special",
+				"shadowstep",
+				"common",
+				"Special opens with a shadowstep to the nearest foe ahead; its first hit crits."
+			],
+			[
+				"veyra_contract",
+				"Blood Contract",
+				"cast",
+				"debt",
+				"common",
+				"With no charges, cast anyway for 8 Debt. Debt-paid casts lifesteal 50%."
+			],
+			[
+				"veyra_shadowstep",
+				"Ledger Step",
+				"dash",
+				"shadowstep",
+				"common",
+				"Dash becomes a shadowstep through foes and shots. The afterimage draws aggro 1 s."
+			],
+			[
+				"veyra_life",
+				"Courtesy Sip",
+				"trigger",
+				"lifesteal",
+				"common",
+				"Feeding heals 20 and your next 3 hits lifesteal 30%."
+			],
+			[
+				"veyra_evolve",
+				"Gilded Vein",
+				"trigger",
+				"evolve",
+				"common",
+				"Crits heal 1 HP. Evolves to 2 at 15 raid kills and 3 at 40."
+			],
+			[
+				"veyra_spray",
+				"Exsanguinate",
+				"trigger",
+				"lifesteal",
+				"common",
+				"Crit kills spray blood: you and allies within 100 heal 3."
+			],
+			[
+				"veyra_collateral",
+				"Promissory Mark",
+				"trigger",
+				"crit",
+				"rare",
+				"The first hit within 1 s of a dash crits and marks Collateral. Its death clears your Debt."
+			],
+			[
+				"veyra_poise",
+				"Noble Poise",
+				"trigger",
+				"debt",
+				"rare",
+				"Once per room, lethal damage becomes Debt and leaves you at 1 HP."
+			],
+			[
+				"veyra_couture",
+				"Sanguine Couture",
+				"trigger",
+				"shadowstep",
+				"epic",
+				"A Special kill makes your next dash leave 2 afterimages that each Attack once."
+			],
+			[
+				"veyra_duel",
+				"Duel of Houses",
+				"trigger",
+				"crit",
+				"epic",
+				"First elite/general hit each room becomes your Duelist: always crit it; after a crit, others' contact misses you 3 s."
+			],
+			[
+				"veyra_collects",
+				"The House Always Collects",
+				"trigger",
+				"debt",
+				"legendary",
+				"Debt no longer drains. At 30 it is called in: a nova for 3× Debt, then Debt clears.",
+				{"all": ["veyra_crit"], "any": ["veyra_contract", "veyra_poise"]}
+			],
+		]
+	)
+	_add(
+		"church",
+		[
+			[
+				"church_smite",
+				"Pale Decree",
+				"attack",
+				"smite",
+				"common",
+				"Every 3rd Attack calls a Smite on the target point."
+			],
+			[
+				"church_judgment",
+				"Judgment Flare",
+				"special",
+				"decree",
+				"common",
+				"Special hits Condemn (Smites deal ×2 and spread Condemn)."
+			],
+			[
+				"church_ward",
+				"Sunlit Ward",
+				"cast",
+				"ward",
+				"common",
+				"Cast raises a hymn circle on arrival. You and allies inside gain 1 Ward."
+			],
+			[
+				"church_procession",
+				"Pale Procession",
+				"dash",
+				"aura",
+				"common",
+				"Dash ends in a sanctified ring that pushes foes out and damages them."
+			],
+			[
+				"church_cleanse",
+				"Salt Cleanse",
+				"trigger",
+				"cleanse",
+				"common",
+				"Dashing cleanses you and destroys enemy shots along the path."
+			],
+			[
+				"church_cooldown",
+				"Bell Interval",
+				"trigger",
+				"cooldown",
+				"common",
+				"Each Cast hit takes 1 s off your Special cooldown."
+			],
+			[
+				"church_vow",
+				"Vow of Abstinence",
+				"trigger",
+				"ward",
+				"common",
+				"While you haven't fed this raid, start each room with 2 Ward."
+			],
+			[
+				"church_litany",
+				"Litany",
+				"trigger",
+				"aura",
+				"rare",
+				"After you cast, a hymn aura pulses around you 3 times, damaging and slowing."
+			],
+			[
+				"church_anathema",
+				"Anathema",
+				"trigger",
+				"decree",
+				"rare",
+				"Condemned foes leave consecrated ground: foes on it slow, allies on it cleanse."
+			],
+			[
+				"church_choir",
+				"Choir of Wards",
+				"trigger",
+				"smite",
+				"epic",
+				"Each Ward that breaks calls an instant Smite on whoever broke it."
+			],
+			[
+				"church_sunwheel",
+				"Sunwheel",
+				"trigger",
+				"cooldown",
+				"epic",
+				"Smite kills refund 1 Cast charge. The 5th Smite kill in 6 s resets Special and Dash."
+			],
+			[
+				"church_fatherslight",
+				"The Father's Light",
+				"trigger",
+				"smite",
+				"legendary",
+				"While you keep attacking, a Smite falls every 4 s on the highest-HP foe. Generals you hit stay Condemned.",
+				{"all": ["church_smite"], "any": ["church_ward", "church_vow"]}
+			],
+		]
+	)
 	_by_id.clear()
 	for b: Dictionary in boons:
 		_by_id[str(b["id"])] = b

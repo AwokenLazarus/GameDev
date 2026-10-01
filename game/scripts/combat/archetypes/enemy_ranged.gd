@@ -6,6 +6,7 @@ const WANT := 210.0
 const BAND := 36.0
 const SHOT_WIND := 0.42
 
+
 func _ready() -> void:
 	archetype = "ranged"
 	move_speed = 76.0
@@ -17,7 +18,7 @@ func _ready() -> void:
 func _ai_tick(delta: float) -> void:
 	if _player == null:
 		return
-	var dir := (_player.global_position - global_position)
+	var dir := _player.global_position - global_position
 	var dist := dir.length()
 	if _winding:
 		_windup -= delta
@@ -41,7 +42,7 @@ func _ai_tick(delta: float) -> void:
 func _fire_bolt() -> void:
 	if _player == null or not is_instance_valid(_player):
 		return
-	var dir := (_player.global_position - global_position)
+	var dir := _player.global_position - global_position
 	if dir.length() < 4.0:
 		return
 	if actor_visual:

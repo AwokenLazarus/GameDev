@@ -18,9 +18,18 @@ var _ring: Line2D
 var _fill: Polygon2D
 
 
-func setup(from: Node, slot_name: String, pos: Vector2, r: float, dmg: float, fuse: float = 0.0,
-		tick_count: int = 1, tick_interval: float = 0.25, knock_force: float = 0.0,
-		tint: Color = Color(0.85, 0.25, 0.3)) -> void:
+func setup(
+	from: Node,
+	slot_name: String,
+	pos: Vector2,
+	r: float,
+	dmg: float,
+	fuse: float = 0.0,
+	tick_count: int = 1,
+	tick_interval: float = 0.25,
+	knock_force: float = 0.0,
+	tint: Color = Color(0.85, 0.25, 0.3)
+) -> void:
 	owner_player = from
 	slot = slot_name
 	global_position = pos

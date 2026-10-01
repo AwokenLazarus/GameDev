@@ -43,7 +43,7 @@ const MARK_META := "blood_mark"
 @onready var actor_visual: Node2D = $ActorVisual
 
 var player_index: int = 0
-var device: int = -1 ## -1 keyboard, -2 P2 keyboard, >=0 joypad
+var device: int = -1  ## -1 keyboard, -2 P2 keyboard, >=0 joypad
 var character_id: String = "severin"
 var alt_id: String = ""
 var kit_type: String = "melee"
@@ -72,13 +72,13 @@ var slot_mods: Dictionary = {}
 ## Boon verb state (MW-006). The BoonKit child runs the owned boons.
 var boons: MWBoonKit
 var pacts: MWPactKit
-var chambered: bool = false ## next Attack hits twice (echo 50%)
-var echo_armed: bool = false ## the Attack in flight is Chambered
-var wards: int = 0 ## each blocks one hit
-var debt: float = 0.0 ## borrowed HP; drains after a grace period
-var debt_cast: bool = false ## the Cast in flight was paid with Debt
+var chambered: bool = false  ## next Attack hits twice (echo 50%)
+var echo_armed: bool = false  ## the Attack in flight is Chambered
+var wards: int = 0  ## each blocks one hit
+var debt: float = 0.0  ## borrowed HP; drains after a grace period
+var debt_cast: bool = false  ## the Cast in flight was paid with Debt
 
-var _busy: float = 0.0 ## commit lock: no new attack/special/cast until it runs out
+var _busy: float = 0.0  ## commit lock: no new attack/special/cast until it runs out
 var _lunge_t: float = 0.0
 var _cast_recharge: float = 0.0
 var _buffered: String = ""
@@ -95,7 +95,7 @@ var _combo_window: float = 0.0
 var _crescents: Array[Dictionary] = []
 var _orbit_angle: float = 0.0
 var _burst_t: float = 0.0
-var _halo_t: float = 0.0 ## Church pact: crescents hold a fixed, cutting halo
+var _halo_t: float = 0.0  ## Church pact: crescents hold a fixed, cutting halo
 
 ## Astral kit
 var _spirit_pos: Vector2 = Vector2.ZERO
@@ -171,7 +171,7 @@ func _apply_character() -> void:
 				base_attack_cd += float(mods.get("attack_cooldown", 0.0))
 				break
 	if kit_type == "astral":
-		move_speed *= 0.9 ## fragile body walks a touch slower
+		move_speed *= 0.9  ## fragile body walks a touch slower
 	slots = CharacterDB.get_slots(character_id, alt_id) if CharacterDB else {}
 	for s: String in ["attack", "special", "cast", "dash"]:
 		if not slot_mods.has(s):
@@ -179,7 +179,9 @@ func _apply_character() -> void:
 	_cast_base = int(_slot("cast").get("charges", 1))
 	cast_max = _cast_base + _cast_bonus
 	cast_charges = cast_max
-	health.max_hp = RunState.player_max_hp if player_index == 0 else float(data.get("base_hp", 100.0))
+	health.max_hp = (
+		RunState.player_max_hp if player_index == 0 else float(data.get("base_hp", 100.0))
+	)
 	health.hp = health.max_hp
 	if player_index == 0:
 		health.hp = RunState.player_hp
@@ -220,7 +222,7 @@ func apply_weapon_tint() -> void:
 	var tint: Color = pacts.color() if pact_on else Color.WHITE
 	blade_visual.modulate = tint
 	if kit_type == "melee":
-		blade_visual.scale = Vector2(pacts.melee_reach(), 1.0) ## the whip-blade reads longer
+		blade_visual.scale = Vector2(pacts.melee_reach(), 1.0)  ## the whip-blade reads longer
 	for c: Dictionary in _crescents:
 		if is_instance_valid(c.node):
 			c.node.modulate = Color(tint, 0.95) if pact_on else Color(0.7, 0.9, 1.0, 0.95)
@@ -240,10 +242,20 @@ func _spawn_crescents() -> void:
 		spr.modulate = Color(pacts.color(), 0.95) if pact() != "" else Color(0.7, 0.9, 1.0, 0.95)
 		spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		add_child(spr)
-		_crescents.append({"node": spr, "mode": "home", "pos": Vector2.ZERO, "dir": Vector2.RIGHT, "dist": 0.0, "hits": {}})
+		_crescents.append(
+			{
+				"node": spr,
+				"mode": "home",
+				"pos": Vector2.ZERO,
+				"dir": Vector2.RIGHT,
+				"dist": 0.0,
+				"hits": {}
+			}
+		)
 
 
 # --- Frame loop --------------------------------------------------------------
+
 
 func _physics_process(delta: float) -> void:
 	if dead:
@@ -327,11 +339,14 @@ func _tick_timers(delta: float) -> void:
 
 # --- Input -------------------------------------------------------------------
 
+
 func _move_vector() -> Vector2:
 	if player_index == 0 and device == -1:
 		return Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	if device >= 0:
-		var v := Vector2(Input.get_joy_axis(device, JOY_AXIS_LEFT_X), Input.get_joy_axis(device, JOY_AXIS_LEFT_Y))
+		var v := Vector2(
+			Input.get_joy_axis(device, JOY_AXIS_LEFT_X), Input.get_joy_axis(device, JOY_AXIS_LEFT_Y)
+		)
 		if v.length() < 0.25:
 			return Vector2.ZERO
 		return v.normalized()
@@ -407,13 +422,17 @@ func _aim_dir() -> Vector2:
 		if d.length() > 4.0:
 			return d.normalized()
 	if device >= 0:
-		var r := Vector2(Input.get_joy_axis(device, JOY_AXIS_RIGHT_X), Input.get_joy_axis(device, JOY_AXIS_RIGHT_Y))
+		var r := Vector2(
+			Input.get_joy_axis(device, JOY_AXIS_RIGHT_X),
+			Input.get_joy_axis(device, JOY_AXIS_RIGHT_Y)
+		)
 		if r.length() > 0.35:
 			return r.normalized()
 	return facing
 
 
 # --- Slots -------------------------------------------------------------------
+
 
 func _slot(slot: String) -> Dictionary:
 	return slots.get(slot, {})
@@ -477,7 +496,7 @@ func use_slot(slot: String) -> bool:
 		"cast":
 			debt_cast = cast_charges <= 0
 			if debt_cast:
-				boons.add_debt(8.0) ## Blood Contract: cast on credit
+				boons.add_debt(8.0)  ## Blood Contract: cast on credit
 			else:
 				if cast_charges == cast_max:
 					_cast_recharge = _cd("cast", float(_slot("cast").get("recharge", 4.0)))
@@ -567,8 +586,11 @@ func pact() -> String:
 
 # --- Hit helpers -------------------------------------------------------------
 
+
 ## Enemies within `radius` of `center` and within `half_arc` radians of `dir`.
-func enemies_in_arc(center: Vector2, radius: float, dir: Vector2, half_arc: float = PI) -> Array[Node2D]:
+func enemies_in_arc(
+	center: Vector2, radius: float, dir: Vector2, half_arc: float = PI
+) -> Array[Node2D]:
 	var out: Array[Node2D] = []
 	for e: Node in get_tree().get_nodes_in_group("enemy"):
 		if not is_instance_valid(e):
@@ -585,7 +607,9 @@ func enemies_in_arc(center: Vector2, radius: float, dir: Vector2, half_arc: floa
 ## Every player-caused hit lands here: blood marks, lifesteal, stagger and boon hooks.
 ## `slot` is a kit slot (attack/special/cast) or a boon source: echo (Chambered repeat),
 ## bleed, smite, boon. Heavy hits (finisher, slam, detonate…) are the hitstop ones.
-func land_slot_hit(node: Node, dmg: float, slot: String, do_hitstop: bool = false, knock: float = 200.0) -> void:
+func land_slot_hit(
+	node: Node, dmg: float, slot: String, do_hitstop: bool = false, knock: float = 200.0
+) -> void:
 	if node == null or not is_instance_valid(node):
 		return
 	var h: Health = node.get_node_or_null("Health")
@@ -626,6 +650,7 @@ func note_kill(node: Node, slot: String, crit: bool) -> void:
 
 
 # --- Boon API (called by MWBoonKit) ------------------------------------------------
+
 
 func slot_data(slot: String) -> Dictionary:
 	return _slot(slot)
@@ -681,8 +706,17 @@ func spawn_smite(pos: Vector2, radius: float, dmg: float, fuse: float, tint: Col
 
 
 ## A player shot for pact transforms; `life` < 0 keeps the default lifetime.
-func spawn_shot(origin: Vector2, dir: Vector2, dmg: float, slot: String, tag: String, speed: float,
-		pierce: int, tint: Color, life: float = -1.0) -> Node:
+func spawn_shot(
+	origin: Vector2,
+	dir: Vector2,
+	dmg: float,
+	slot: String,
+	tag: String,
+	speed: float,
+	pierce: int,
+	tint: Color,
+	life: float = -1.0
+) -> Node:
 	var shot := _spawn_projectile(origin, dir, dmg, slot, tag, false, speed, pierce, tint)
 	if life > 0.0:
 		shot.lifetime = life
@@ -742,13 +776,24 @@ func land_projectile_hit(p: Node, node: Node) -> void:
 			land_slot_hit(node, p.damage, p.slot, false, 0.0)
 			if node.has_method("apply_stagger") and is_instance_valid(node):
 				var away: Vector2 = (node.global_position - global_position).normalized()
-				node.apply_stagger(node.global_position + away * 10.0, float(_slot("cast").get("pull", 520.0)))
+				node.apply_stagger(
+					node.global_position + away * 10.0, float(_slot("cast").get("pull", 520.0))
+				)
 		_:
 			land_slot_hit(node, p.damage, p.slot, false, 140.0)
 
 
-func _spawn_projectile(origin: Vector2, dir: Vector2, dmg: float, slot: String, tag: String = "",
-		seeking: bool = false, speed: float = 420.0, pierce: int = 0, tint: Color = Color.WHITE) -> Node:
+func _spawn_projectile(
+	origin: Vector2,
+	dir: Vector2,
+	dmg: float,
+	slot: String,
+	tag: String = "",
+	seeking: bool = false,
+	speed: float = 420.0,
+	pierce: int = 0,
+	tint: Color = Color.WHITE
+) -> Node:
 	var p: Node = PROJ.instantiate()
 	get_parent().add_child(p)
 	p.setup(origin + dir * 18.0, dir, dmg, self, seeking, speed)
@@ -759,8 +804,17 @@ func _spawn_projectile(origin: Vector2, dir: Vector2, dmg: float, slot: String, 
 	return p
 
 
-func _spawn_zone(pos: Vector2, radius: float, dmg: float, slot: String, fuse: float = 0.0,
-		ticks: int = 1, interval: float = 0.25, knock: float = 0.0, tint: Color = Color(0.85, 0.25, 0.3)) -> Node2D:
+func _spawn_zone(
+	pos: Vector2,
+	radius: float,
+	dmg: float,
+	slot: String,
+	fuse: float = 0.0,
+	ticks: int = 1,
+	interval: float = 0.25,
+	knock: float = 0.0,
+	tint: Color = Color(0.85, 0.25, 0.3)
+) -> Node2D:
 	var z: Node2D = _ZONE.new()
 	z.setup(self, slot, pos, radius, dmg, fuse, ticks, interval, knock, tint)
 	get_parent().add_child(z)
@@ -785,7 +839,9 @@ func apply_mark(node: Node, seconds: float, bonus: float) -> void:
 	if icon == null:
 		## The icon owns its expiry timer, so it dies with the enemy and a re-mark just restarts it.
 		icon = Polygon2D.new()
-		(icon as Polygon2D).polygon = PackedVector2Array([Vector2(0, -7), Vector2(5, 0), Vector2(0, 7), Vector2(-5, 0)])
+		(icon as Polygon2D).polygon = PackedVector2Array(
+			[Vector2(0, -7), Vector2(5, 0), Vector2(0, 7), Vector2(-5, 0)]
+		)
 		(icon as Polygon2D).color = Color(0.9, 0.12, 0.2, 0.95)
 		icon.position = Vector2(0, -38)
 		icon.z_index = 30
@@ -796,10 +852,14 @@ func apply_mark(node: Node, seconds: float, bonus: float) -> void:
 		icon.add_child(timer)
 		node.add_child(icon)
 	(icon.get_node("Expire") as Timer).start(seconds)
-	node.set_meta(MARK_META, {"until": Time.get_ticks_msec() + int(seconds * 1000.0), "bonus": bonus, "icon": icon})
+	node.set_meta(
+		MARK_META,
+		{"until": Time.get_ticks_msec() + int(seconds * 1000.0), "bonus": bonus, "icon": icon}
+	)
 
 
 # --- Severin: melee ----------------------------------------------------------
+
 
 func _melee_combo(dir: Vector2) -> void:
 	var a := _slot("attack")
@@ -812,7 +872,9 @@ func _melee_combo(dir: Vector2) -> void:
 	_busy = minf(attack_cd, 0.16)
 	_combo_step = (i + 1) % 3
 	_combo_window = 0.0 if finisher else float(a.get("combo_window", 0.6))
-	var radius := float((a.get("combo_radius", [58.0, 58.0, 74.0]) as Array)[i]) * pacts.melee_reach()
+	var radius := (
+		float((a.get("combo_radius", [58.0, 58.0, 74.0]) as Array)[i]) * pacts.melee_reach()
+	)
 	var arc := float((a.get("combo_arc", [1.1, 1.1, 1.6]) as Array)[i])
 	var mult := float((a.get("combo_damage", [1.0, 1.0, 1.7]) as Array)[i])
 	if finisher and pacts.melee_finisher(dir, radius, arc, _slot_dmg("attack", mult)):
@@ -825,7 +887,9 @@ func _melee_combo(dir: Vector2) -> void:
 	if finisher:
 		_VFX.slash(get_parent(), global_position + dir * 40.0, dir.angle() + 0.5)
 	for e: Node2D in enemies_in_arc(global_position, radius, dir, arc):
-		land_slot_hit(e, _slot_dmg("attack", mult), "attack", finisher, 320.0 if finisher else 160.0)
+		land_slot_hit(
+			e, _slot_dmg("attack", mult), "attack", finisher, 320.0 if finisher else 160.0
+		)
 	_flash_blade(dir, 0.12)
 
 
@@ -842,7 +906,9 @@ func _melee_cleave(dir: Vector2) -> void:
 	velocity = Vector2.ZERO
 	for off: float in [-0.8, 0.0, 0.8]:
 		_VFX.slash(get_parent(), global_position + dir.rotated(off) * 44.0, dir.angle() + off)
-	for e: Node2D in enemies_in_arc(global_position, float(s.get("radius", 82.0)), dir, float(s.get("arc", 2.2))):
+	for e: Node2D in enemies_in_arc(
+		global_position, float(s.get("radius", 82.0)), dir, float(s.get("arc", 2.2))
+	):
 		land_slot_hit(e, _slot_dmg("special", float(s.get("damage", 2.0))), "special", true, 360.0)
 	pacts.after_cleave(dir, float(s.get("radius", 82.0)), float(s.get("arc", 2.2)))
 	_flash_blade(dir, 0.16)
@@ -851,8 +917,17 @@ func _melee_cleave(dir: Vector2) -> void:
 func _melee_stake(dir: Vector2) -> void:
 	var c := _slot("cast")
 	_busy = 0.12
-	_spawn_projectile(global_position, dir, _slot_dmg("cast", float(c.get("damage", 0.8))), "cast", "stake",
-		false, float(c.get("speed", 640.0)), 0, Color(1.0, 0.25, 0.3))
+	_spawn_projectile(
+		global_position,
+		dir,
+		_slot_dmg("cast", float(c.get("damage", 0.8))),
+		"cast",
+		"stake",
+		false,
+		float(c.get("speed", 640.0)),
+		0,
+		Color(1.0, 0.25, 0.3)
+	)
 
 
 func _flash_blade(dir: Vector2, seconds: float) -> void:
@@ -865,13 +940,23 @@ func _flash_blade(dir: Vector2, seconds: float) -> void:
 
 # --- Mira: hybrid_gun --------------------------------------------------------
 
+
 func _gun_rail(dir: Vector2) -> void:
 	var a := _slot("attack")
 	_busy = 0.08
 	if pacts.gun_rail(dir, _slot_dmg("attack", float(a.get("damage", 1.8))), a):
 		return
-	_spawn_projectile(global_position, dir, _slot_dmg("attack", float(a.get("damage", 1.8))), "attack", "rail",
-		false, float(a.get("speed", 780.0)), int(a.get("pierce", 1)), Color(1.0, 0.95, 0.75))
+	_spawn_projectile(
+		global_position,
+		dir,
+		_slot_dmg("attack", float(a.get("damage", 1.8))),
+		"attack",
+		"rail",
+		false,
+		float(a.get("speed", 780.0)),
+		int(a.get("pierce", 1)),
+		Color(1.0, 0.95, 0.75)
+	)
 
 
 func _gun_volley(dir: Vector2) -> void:
@@ -881,8 +966,15 @@ func _gun_volley(dir: Vector2) -> void:
 	for i: int in bolts:
 		if dead or not is_inside_tree():
 			return
-		var bolt := _spawn_projectile(global_position, dir.rotated(randf_range(-0.5, 0.5)),
-			_slot_dmg("special", float(s.get("damage", 0.6))), "special", "", true, 420.0)
+		var bolt := _spawn_projectile(
+			global_position,
+			dir.rotated(randf_range(-0.5, 0.5)),
+			_slot_dmg("special", float(s.get("damage", 0.6))),
+			"special",
+			"",
+			true,
+			420.0
+		)
 		pacts.tag_bolt(bolt)
 		await get_tree().create_timer(float(s.get("interval", 0.045))).timeout
 
@@ -891,11 +983,21 @@ func _gun_flare(dir: Vector2) -> void:
 	var c := _slot("cast")
 	_busy = 0.12
 	var target := global_position + dir * float(c.get("range", 190.0))
-	_spawn_zone(target, float(c.get("radius", 72.0)), _slot_dmg("cast", float(c.get("damage", 2.4))), "cast",
-		float(c.get("fuse", 0.55)), 1, 0.25, 220.0, Color(1.0, 0.9, 0.55))
+	_spawn_zone(
+		target,
+		float(c.get("radius", 72.0)),
+		_slot_dmg("cast", float(c.get("damage", 2.4))),
+		"cast",
+		float(c.get("fuse", 0.55)),
+		1,
+		0.25,
+		220.0,
+		Color(1.0, 0.9, 0.55)
+	)
 
 
 # --- Cassian: orbit ----------------------------------------------------------
+
 
 func _home_crescent() -> int:
 	for i: int in _crescents.size():
@@ -928,7 +1030,9 @@ func _update_orbit(delta: float) -> void:
 				var t := 1.0 - clampf(_burst_t / burst_time, 0.0, 1.0)
 				var r := lerpf(home_r, float(_slot("special").get("radius", 120.0)), sin(t * PI))
 				spr.position = Vector2(cos(ang * 2.0), sin(ang * 2.0)) * r
-				_crescent_hits(c, spr.global_position, "special", float(_slot("special").get("damage", 1.3)))
+				_crescent_hits(
+					c, spr.global_position, "special", float(_slot("special").get("damage", 1.3))
+				)
 				if _burst_t <= 0.0:
 					c.mode = "home"
 			"out":
@@ -1005,12 +1109,21 @@ func _orbit_sigil(dir: Vector2) -> void:
 	_busy = 0.12
 	var life := float(c.get("life", 2.5))
 	var interval := float(c.get("interval", 0.25))
-	_spawn_zone(global_position + dir * float(c.get("range", 150.0)), float(c.get("radius", 56.0)),
-		_slot_dmg("cast", float(c.get("damage", 0.35))), "cast", 0.0, int(life / interval), interval, 0.0,
-		Color(0.6, 0.85, 1.0))
+	_spawn_zone(
+		global_position + dir * float(c.get("range", 150.0)),
+		float(c.get("radius", 56.0)),
+		_slot_dmg("cast", float(c.get("damage", 0.35))),
+		"cast",
+		0.0,
+		int(life / interval),
+		interval,
+		0.0,
+		Color(0.6, 0.85, 1.0)
+	)
 
 
 # --- Odette: maul ------------------------------------------------------------
+
 
 func _maul_slam(dir: Vector2) -> void:
 	var a := _slot("attack")
@@ -1032,7 +1145,9 @@ func _maul_slam(dir: Vector2) -> void:
 	if dead or not is_inside_tree():
 		return
 	_VFX.dust_puff(get_parent(), global_position + dir * 40.0)
-	for e: Node2D in enemies_in_arc(global_position, float(a.get("radius", 84.0)), dir, float(a.get("arc", 1.8))):
+	for e: Node2D in enemies_in_arc(
+		global_position, float(a.get("radius", 84.0)), dir, float(a.get("arc", 1.8))
+	):
 		land_slot_hit(e, _slot_dmg("attack", float(a.get("damage", 1.35))), "attack", true, 300.0)
 	pacts.after_slam(global_position + dir * 40.0)
 
@@ -1045,19 +1160,37 @@ func _maul_shockwave(dir: Vector2) -> void:
 	var spacing := float(s.get("spacing", 58.0))
 	var interval := float(s.get("interval", 0.09))
 	for i: int in int(s.get("steps", 4)):
-		_spawn_zone(global_position + dir * spacing * float(i + 1), float(s.get("radius", 46.0)),
-			_slot_dmg("special", float(s.get("damage", 1.0))), "special", 0.12 + interval * i, 1, 0.1, 240.0,
-			Color(0.8, 0.45, 0.3))
+		_spawn_zone(
+			global_position + dir * spacing * float(i + 1),
+			float(s.get("radius", 46.0)),
+			_slot_dmg("special", float(s.get("damage", 1.0))),
+			"special",
+			0.12 + interval * i,
+			1,
+			0.1,
+			240.0,
+			Color(0.8, 0.45, 0.3)
+		)
 
 
 func _maul_hook(dir: Vector2) -> void:
 	var c := _slot("cast")
 	_busy = 0.15
-	_spawn_projectile(global_position, dir, _slot_dmg("cast", float(c.get("damage", 0.6))), "cast", "hook",
-		false, float(c.get("speed", 560.0)), 0, Color(0.7, 0.7, 0.75))
+	_spawn_projectile(
+		global_position,
+		dir,
+		_slot_dmg("cast", float(c.get("damage", 0.6))),
+		"cast",
+		"hook",
+		false,
+		float(c.get("speed", 560.0)),
+		0,
+		Color(0.7, 0.7, 0.75)
+	)
 
 
 # --- Vesper: astral ----------------------------------------------------------
+
 
 func _update_astral(delta: float) -> void:
 	if _project_t > 0.0:
@@ -1071,7 +1204,13 @@ func _update_astral(delta: float) -> void:
 				continue
 			if _spirit_pos.distance_to(e.global_position) < radius + 14.0:
 				_project_hits[e.get_instance_id()] = true
-				land_slot_hit(e, _slot_dmg("cast", float(_slot("cast").get("damage", 0.8))), "cast", false, 160.0)
+				land_slot_hit(
+					e,
+					_slot_dmg("cast", float(_slot("cast").get("damage", 0.8))),
+					"cast",
+					false,
+					160.0
+				)
 	elif _anchor_t > 0.0:
 		_anchor_t -= delta
 	else:
@@ -1086,13 +1225,25 @@ func _astral_spike(dir: Vector2) -> void:
 	_busy = 0.08
 	var aim := dir
 	var target := _nearest_enemy_from(_spirit_pos)
-	if target and target.global_position.distance_to(_spirit_pos) <= float(a.get("seek_range", 280.0)):
+	if (
+		target
+		and target.global_position.distance_to(_spirit_pos) <= float(a.get("seek_range", 280.0))
+	):
 		aim = (target.global_position - _spirit_pos).normalized()
 	if pacts.spirit_spike(_spirit_pos, aim, _slot_dmg("attack", float(a.get("damage", 1.0))), a):
 		return
 	## Origin offset cancels _spawn_projectile's muzzle offset so the spike leaves the spirit.
-	_spawn_projectile(_spirit_pos - aim * 18.0, aim, _slot_dmg("attack", float(a.get("damage", 1.0))),
-		"attack", "", false, float(a.get("speed", 560.0)), int(a.get("pierce", 2)), Color(0.7, 0.85, 1.0))
+	_spawn_projectile(
+		_spirit_pos - aim * 18.0,
+		aim,
+		_slot_dmg("attack", float(a.get("damage", 1.0))),
+		"attack",
+		"",
+		false,
+		float(a.get("speed", 560.0)),
+		int(a.get("pierce", 2)),
+		Color(0.7, 0.85, 1.0)
+	)
 
 
 func _astral_collapse() -> void:
@@ -1104,7 +1255,9 @@ func _astral_collapse() -> void:
 		land_slot_hit(e, _slot_dmg("special", float(s.get("damage", 1.6))), "special", true, 260.0)
 	var flash := Polygon2D.new()
 	flash.color = Color(0.8, 0.9, 1.0, 0.4)
-	flash.polygon = PackedVector2Array([-radius, -radius * 0.6, radius, -radius * 0.6, radius, radius * 0.6, -radius, radius * 0.6])
+	flash.polygon = PackedVector2Array(
+		[-radius, -radius * 0.6, radius, -radius * 0.6, radius, radius * 0.6, -radius, radius * 0.6]
+	)
 	get_parent().add_child(flash)
 	flash.global_position = _spirit_pos
 	## The spirit reforms at the body.
@@ -1148,6 +1301,7 @@ func on_deal_damage(amount: float) -> void:
 
 # --- Feed / damage taken -----------------------------------------------------
 
+
 func _try_feed() -> void:
 	for body: Node2D in feed_area.get_overlapping_bodies():
 		if body.is_in_group("feedable_corpse"):
@@ -1186,7 +1340,7 @@ func apply_hit(amount: float, from: Vector2 = Vector2.ZERO) -> void:
 	amount = minf(amount, MAX_HIT)
 	amount = boons.before_hurt(amount, from)
 	if amount <= 0.0:
-		health.set_invuln(HIT_IFRAME) ## a Ward or the Duel guard ate it
+		health.set_invuln(HIT_IFRAME)  ## a Ward or the Duel guard ate it
 		return
 	if amount >= health.hp and boons.try_lethal(amount):
 		health.set_invuln(HIT_IFRAME)

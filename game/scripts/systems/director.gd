@@ -62,11 +62,23 @@ func _spawn_one() -> void:
 	var angle := randf() * TAU
 	var dist := randf_range(spawn_radius_min, spawn_radius_max)
 	var pos := player.global_position + Vector2(cos(angle), sin(angle)) * dist
-	pos.x = clampf(pos.x, _arena_center.x - _arena_half.x + 40.0, _arena_center.x + _arena_half.x - 40.0)
-	pos.y = clampf(pos.y, _arena_center.y - _arena_half.y + 40.0, _arena_center.y + _arena_half.y - 40.0)
-	var e: Node2D = MWEnemyFactory.spawn(get_parent(), pos, player, {
-		"elite": MWEnemyFactory.roll_elite(),
-		"telegraph": true,
-		"telegraph_s": 0.4,
-	})
+	pos.x = clampf(
+		pos.x, _arena_center.x - _arena_half.x + 40.0, _arena_center.x + _arena_half.x - 40.0
+	)
+	pos.y = clampf(
+		pos.y, _arena_center.y - _arena_half.y + 40.0, _arena_center.y + _arena_half.y - 40.0
+	)
+	var e: Node2D = (
+		MWEnemyFactory
+		. spawn(
+			get_parent(),
+			pos,
+			player,
+			{
+				"elite": MWEnemyFactory.roll_elite(),
+				"telegraph": true,
+				"telegraph_s": 0.4,
+			}
+		)
+	)
 	spawned.emit(e)

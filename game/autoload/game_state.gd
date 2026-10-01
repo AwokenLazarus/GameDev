@@ -11,9 +11,9 @@ var ash: int = 0
 var tech: int = 0
 
 var unlocked_characters: Array[String] = ["severin"]
-var unlocked_alts: Array[String] = [] ## alt kit ids
+var unlocked_alts: Array[String] = []  ## alt kit ids
 var unlocked_skins: Array[String] = []
-var meta_ranks: Dictionary = {} ## upgrade_id -> rank
+var meta_ranks: Dictionary = {}  ## upgrade_id -> rank
 
 var kin_met: bool = false
 var mayor_met: bool = false
@@ -30,8 +30,8 @@ var selected_sector: String = "dust_meridian"
 
 var ng_plus: int = 0
 var aurelian_defeated: bool = false
-var sectors_cleared: Dictionary = {} ## sector_id -> clear count
-var heat_modifiers: Array[String] = [] ## active NG+ heats
+var sectors_cleared: Dictionary = {}  ## sector_id -> clear count
+var heat_modifiers: Array[String] = []  ## active NG+ heats
 
 ## Ashwick rebuild unlocks from ash branch
 var hub_flags: Dictionary = {
@@ -97,9 +97,11 @@ func add_currency(kind: String, amount: int) -> void:
 
 
 func can_spend_cost(cost: Dictionary) -> bool:
-	return blood >= int(cost.get("blood", 0)) \
-		and ash >= int(cost.get("ash", 0)) \
+	return (
+		blood >= int(cost.get("blood", 0))
+		and ash >= int(cost.get("ash", 0))
 		and tech >= int(cost.get("tech", 0))
+	)
 
 
 func spend_cost(cost: Dictionary) -> bool:
@@ -189,7 +191,12 @@ func _apply_hub_flags_from_meta() -> void:
 		var up: Dictionary = MetaDB.get_upgrade(str(id)) if MetaDB.has_method("get_upgrade") else {}
 		var effects: Dictionary = up.get("effects", {})
 		for k: Variant in effects.keys():
-			if str(k).begins_with("ashwick_") or str(k).begins_with("vendor_") or str(k).begins_with("mission_") or str(k) in hub_flags:
+			if (
+				str(k).begins_with("ashwick_")
+				or str(k).begins_with("vendor_")
+				or str(k).begins_with("mission_")
+				or str(k) in hub_flags
+			):
 				hub_flags[str(k).replace("ashwick_", "")] = true
 				if str(k).begins_with("vendor_"):
 					hub_flags[str(k)] = true

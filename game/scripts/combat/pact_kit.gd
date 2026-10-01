@@ -21,14 +21,38 @@ const PACT_NAMES := {
 }
 ## patron -> kit_type -> transform name (HUD banner and tests).
 const TRANSFORMS := {
-	"dust_compact": {"melee": "Peace-cord Sidearm", "hybrid_gun": "Buckshot Rail", "orbit": "Serrated Saw-discs",
-		"maul": "Shrapnel Ring", "astral": "Gunsmoke Spirit"},
-	"red_petition": {"melee": "Guillotine Drop", "hybrid_gun": "Nail-rail", "orbit": "Bolas",
-		"maul": "Iron Spike Traps", "astral": "Sabotage Charge"},
-	"house_veyra": {"melee": "Whip-blade", "hybrid_gun": "Blood Lance", "orbit": "Blood Halo",
-		"maul": "The Gavel", "astral": "Body Swap"},
-	"church": {"melee": "Sun-tip Smite", "hybrid_gun": "Hymn Notes", "orbit": "Fixed Halo",
-		"maul": "Judgment Ring", "astral": "Lantern"},
+	"dust_compact":
+	{
+		"melee": "Peace-cord Sidearm",
+		"hybrid_gun": "Buckshot Rail",
+		"orbit": "Serrated Saw-discs",
+		"maul": "Shrapnel Ring",
+		"astral": "Gunsmoke Spirit"
+	},
+	"red_petition":
+	{
+		"melee": "Guillotine Drop",
+		"hybrid_gun": "Nail-rail",
+		"orbit": "Bolas",
+		"maul": "Iron Spike Traps",
+		"astral": "Sabotage Charge"
+	},
+	"house_veyra":
+	{
+		"melee": "Whip-blade",
+		"hybrid_gun": "Blood Lance",
+		"orbit": "Blood Halo",
+		"maul": "The Gavel",
+		"astral": "Body Swap"
+	},
+	"church":
+	{
+		"melee": "Sun-tip Smite",
+		"hybrid_gun": "Hymn Notes",
+		"orbit": "Fixed Halo",
+		"maul": "Judgment Ring",
+		"astral": "Lantern"
+	},
 }
 const COLORS := {
 	"dust_compact": MWBoonKit.C_DUST,
@@ -41,14 +65,14 @@ const MAX_TRAPS := 4
 const NOTES_PER_SMITE := 5
 const CHARGE_META := "mw_pact_charge"
 
-var p: Node2D ## owning player
+var p: Node2D  ## owning player
 ## How often each transform/passive fired, by key (tests and telemetry read this).
 var events: Dictionary = {}
 
 var _dashing: bool = false
 var _dash_refunded: bool = false
-var _crit_now: bool = false ## the hits in flight crit (whip-blade finisher)
-var _crit_next: bool = false ## the next combat hit crits (body swap)
+var _crit_now: bool = false  ## the hits in flight crit (whip-blade finisher)
+var _crit_next: bool = false  ## the next combat hit crits (body swap)
 var _aura: Line2D
 var _wake_t: float = 0.0
 var _trail_t: float = 0.0
@@ -57,7 +81,7 @@ var _notes: Array[Node] = []
 var _note_count: int = 0
 var _note_target: Node2D = null
 var _last_note_pos: Vector2 = Vector2.ZERO
-var _tethers: Array[Dictionary] = [] ## {foe, t, line}
+var _tethers: Array[Dictionary] = []  ## {foe, t, line}
 var _siphon_t: float = 0.0
 
 
@@ -93,6 +117,7 @@ func _count(key: String) -> void:
 
 # --- Pact formed / FX ----------------------------------------------------------------
 
+
 func _on_pact_formed(pat: String) -> void:
 	if pat != patron():
 		return
@@ -100,7 +125,12 @@ func _on_pact_formed(pat: String) -> void:
 	_VFX.pact_burst(p.get_parent(), p.global_position, color())
 	if pat == "church":
 		p.wards = maxi(p.wards, 1)
-	print("MW005_PACT patron=%s kit=%s transform=%s" % [pat, p.kit_type, TRANSFORMS[pat].get(p.kit_type, "?")])
+	print(
+		(
+			"MW005_PACT patron=%s kit=%s transform=%s"
+			% [pat, p.kit_type, TRANSFORMS[pat].get(p.kit_type, "?")]
+		)
+	)
 
 
 ## Patron-coloured weapon tint plus a ground aura ring under the sibling.
@@ -136,7 +166,12 @@ func _tick_wake(delta: float) -> void:
 	_wake_t -= delta
 	if _wake_t <= 0.0 and p.velocity.length() > 60.0:
 		_wake_t = 0.1
-		_puff(p.global_position + Vector2(0, 12), 6.0 if patron() != "dust_compact" else 9.0, color(), 0.4)
+		_puff(
+			p.global_position + Vector2(0, 12),
+			6.0 if patron() != "dust_compact" else 9.0,
+			color(),
+			0.4
+		)
 	if p.kit_type == "astral" and _on("dust_compact"):
 		## The spirit trails dust.
 		_trail_t -= delta
@@ -159,6 +194,7 @@ func _puff(pos: Vector2, r: float, tint: Color, life: float) -> void:
 
 
 # --- Passives ------------------------------------------------------------------------
+
 
 func _on_dash_started(_dir: Vector2) -> void:
 	_dashing = true
@@ -201,7 +237,9 @@ func on_execute(pos: Vector2) -> void:
 func _sparks(pos: Vector2) -> void:
 	for i: int in 6:
 		var bit := Polygon2D.new()
-		bit.polygon = PackedVector2Array([Vector2(-3, -1), Vector2(3, -1), Vector2(3, 1), Vector2(-3, 1)])
+		bit.polygon = PackedVector2Array(
+			[Vector2(-3, -1), Vector2(3, -1), Vector2(3, 1), Vector2(-3, 1)]
+		)
 		bit.color = MWBoonKit.C_PETITION if i % 2 == 0 else Color(0.62, 0.62, 0.66)
 		bit.z_index = 22
 		p.get_parent().add_child(bit)
@@ -222,8 +260,7 @@ func on_smite(pos: Vector2, fuse: float) -> void:
 		return
 	_count("church_hymn")
 	var f: MWBoonField = p.boons.field(pos, 56.0, 1.0, MWBoonKit.C_CHURCH)
-	f.on_player = func(pl: Node) -> void:
-		pl.cleanse()
+	f.on_player = func(pl: Node) -> void: pl.cleanse()
 
 
 ## Crits a pact grants (read by MWBoonKit.before_hit).
@@ -246,6 +283,7 @@ func _armored(foe: Node) -> bool:
 
 # --- Severin: melee ------------------------------------------------------------------
 
+
 ## Whip-blade reach (Veyra): the moon-edge reaches 1.5× as far.
 func melee_reach() -> float:
 	return 1.5 if _on("house_veyra", "melee") else 1.0
@@ -260,8 +298,17 @@ func melee_finisher(dir: Vector2, radius: float, arc: float, dmg: float) -> bool
 			_muzzle(dir)
 			for i: int in 6:
 				var d := dir.rotated((float(i) - 2.5) * 0.17)
-				var shot: Node = p.spawn_shot(p.global_position, d, dmg * 0.3, "attack", "pact_pellet", 700.0, 0,
-					MWBoonKit.C_DUST, 0.22)
+				var shot: Node = p.spawn_shot(
+					p.global_position,
+					d,
+					dmg * 0.3,
+					"attack",
+					"pact_pellet",
+					700.0,
+					0,
+					MWBoonKit.C_DUST,
+					0.22
+				)
 				shot.set_meta("bleed", 2)
 			return true
 		"red_petition":
@@ -336,6 +383,7 @@ func after_cleave(dir: Vector2, radius: float, arc: float) -> void:
 
 # --- Mira: hybrid_gun ----------------------------------------------------------------
 
+
 ## The aimed rail shot. True when the transform fired instead.
 func gun_rail(dir: Vector2, dmg: float, a: Dictionary) -> bool:
 	var speed := float(a.get("speed", 780.0))
@@ -345,22 +393,57 @@ func gun_rail(dir: Vector2, dmg: float, a: Dictionary) -> bool:
 			_count("dust_buckshot_rail")
 			_muzzle(dir)
 			for i: int in 5:
-				var shot: Node = p.spawn_shot(p.global_position, dir.rotated((float(i) - 2.0) * 0.16), dmg * 0.4,
-					"attack", "pact_pellet", speed * 0.9, 0, MWBoonKit.C_DUST, 0.3)
+				var shot: Node = p.spawn_shot(
+					p.global_position,
+					dir.rotated((float(i) - 2.0) * 0.16),
+					dmg * 0.4,
+					"attack",
+					"pact_pellet",
+					speed * 0.9,
+					0,
+					MWBoonKit.C_DUST,
+					0.3
+				)
 				shot.set_meta("bleed", 1)
 		"red_petition":
 			_count("petition_nail_rail")
-			p.spawn_shot(p.global_position, dir, dmg, "attack", "pact_nail", speed, int(a.get("pierce", 1)),
-				MWBoonKit.C_PETITION)
+			p.spawn_shot(
+				p.global_position,
+				dir,
+				dmg,
+				"attack",
+				"pact_nail",
+				speed,
+				int(a.get("pierce", 1)),
+				MWBoonKit.C_PETITION
+			)
 		"house_veyra":
 			## Blood lance: pierces every foe in line; a shot that hits nothing costs 3 Debt.
 			_count("veyra_lance")
-			var lance: Node = p.spawn_shot(p.global_position, dir, dmg, "attack", "pact_lance", speed, 99,
-				MWBoonKit.C_VEYRA, 0.6)
+			var lance: Node = p.spawn_shot(
+				p.global_position,
+				dir,
+				dmg,
+				"attack",
+				"pact_lance",
+				speed,
+				99,
+				MWBoonKit.C_VEYRA,
+				0.6
+			)
 			lance.expired.connect(_on_lance_expired)
 		"church":
-			var note: Node = p.spawn_shot(p.global_position, dir, dmg, "attack", "pact_note", speed,
-				int(a.get("pierce", 1)), MWBoonKit.C_CHURCH, 0.5)
+			var note: Node = p.spawn_shot(
+				p.global_position,
+				dir,
+				dmg,
+				"attack",
+				"pact_note",
+				speed,
+				int(a.get("pierce", 1)),
+				MWBoonKit.C_CHURCH,
+				0.5
+			)
 			note.expired.connect(_on_note_expired)
 		_:
 			return false
@@ -436,7 +519,9 @@ func _add_note(pos: Vector2) -> void:
 
 
 func _converge() -> void:
-	var at: Vector2 = _note_target.global_position if is_instance_valid(_note_target) else _last_note_pos
+	var at: Vector2 = (
+		_note_target.global_position if is_instance_valid(_note_target) else _last_note_pos
+	)
 	_count("church_note_smite")
 	for n: Node in _notes:
 		if is_instance_valid(n) and n.is_inside_tree():
@@ -448,6 +533,7 @@ func _converge() -> void:
 
 
 # --- Cassian: orbit ------------------------------------------------------------------
+
 
 ## Orbit radius at rest (the Blood Halo widens it 42 → 54).
 func orbit_radius(base: float) -> float:
@@ -551,8 +637,13 @@ func _nearest_unhit(pos: Vector2, r: float, hit: Dictionary) -> Node2D:
 ## Blood halo: tether the 2 nearest enemies and siphon them every 0.5 s for 2.5 s.
 func _tether_nearest() -> void:
 	var foes: Array[Node2D] = p.boons.foes_near(p.global_position, 220.0)
-	foes.sort_custom(func(a: Node2D, b: Node2D) -> bool:
-		return a.global_position.distance_to(p.global_position) < b.global_position.distance_to(p.global_position))
+	foes.sort_custom(
+		func(a: Node2D, b: Node2D) -> bool:
+			return (
+				a.global_position.distance_to(p.global_position)
+				< b.global_position.distance_to(p.global_position)
+			)
+	)
 	for e: Node2D in foes.slice(0, 2):
 		var found := false
 		for t: Dictionary in _tethers:
@@ -596,6 +687,7 @@ func _tick_tethers(delta: float) -> void:
 
 # --- Odette: maul --------------------------------------------------------------------
 
+
 ## The Gavel (Veyra): each slam shadowsteps Odette to the target point first.
 func before_slam(dir: Vector2) -> void:
 	if not _on("house_veyra", "maul"):
@@ -616,8 +708,17 @@ func after_slam(at: Vector2) -> void:
 			## Shrapnel ring: 8 shards fly outward with Bleed; the impact raises smoke.
 			_count("dust_shrapnel")
 			for i: int in 8:
-				var shot: Node = p.spawn_shot(at, Vector2.RIGHT.rotated(TAU * float(i) / 8.0), p.base_hit(0.35),
-					"attack", "pact_pellet", 460.0, 0, MWBoonKit.C_DUST, 0.35)
+				var shot: Node = p.spawn_shot(
+					at,
+					Vector2.RIGHT.rotated(TAU * float(i) / 8.0),
+					p.base_hit(0.35),
+					"attack",
+					"pact_pellet",
+					460.0,
+					0,
+					MWBoonKit.C_DUST,
+					0.35
+				)
 				shot.set_meta("bleed", 1)
 			p.boons.smoke(at, 50.0, 1.5, 1.5)
 		"red_petition":
@@ -626,7 +727,11 @@ func after_slam(at: Vector2) -> void:
 
 ## Iron spike trap (max 4): Roots and nicks whatever stands on it until the Shockwave blows it.
 func _plant_trap(at: Vector2) -> void:
-	_traps.assign(_traps.filter(func(n: Node) -> bool: return is_instance_valid(n) and not n.is_queued_for_deletion()))
+	_traps.assign(
+		_traps.filter(
+			func(n: Node) -> bool: return is_instance_valid(n) and not n.is_queued_for_deletion()
+		)
+	)
 	if _traps.size() >= MAX_TRAPS:
 		_traps.pop_front().queue_free()
 	var f: MWBoonField = p.boons.field(at, 18.0, 20.0, Color(0.62, 0.62, 0.66))
@@ -693,14 +798,23 @@ func _judgment_ring() -> void:
 
 # --- Vesper: astral ------------------------------------------------------------------
 
+
 ## Spirit spike. True when replaced.
 func spirit_spike(origin: Vector2, aim: Vector2, dmg: float, a: Dictionary) -> bool:
 	match patron():
 		"red_petition":
 			## Sabotage charge: sticks to its target; Detonate sets it off.
 			_count("petition_charge_thrown")
-			p.spawn_shot(origin - aim * 18.0, aim, dmg, "attack", "pact_charge", float(a.get("speed", 560.0)), 0,
-				MWBoonKit.C_PETITION)
+			p.spawn_shot(
+				origin - aim * 18.0,
+				aim,
+				dmg,
+				"attack",
+				"pact_charge",
+				float(a.get("speed", 560.0)),
+				0,
+				MWBoonKit.C_PETITION
+			)
 			return true
 		"church":
 			_sun_ray(origin, aim, dmg)
@@ -738,7 +852,9 @@ func _attach_charge(foe: Node) -> void:
 	if foe.has_meta(CHARGE_META):
 		return
 	var icon := Polygon2D.new()
-	icon.polygon = PackedVector2Array([Vector2(-4, -4), Vector2(4, -4), Vector2(4, 4), Vector2(-4, 4)])
+	icon.polygon = PackedVector2Array(
+		[Vector2(-4, -4), Vector2(4, -4), Vector2(4, 4), Vector2(-4, 4)]
+	)
 	icon.color = MWBoonKit.C_PETITION
 	icon.position = Vector2(8, -30)
 	icon.z_index = 30
@@ -788,7 +904,12 @@ func _detonate_charges(at: Vector2, radius: float) -> void:
 	for i: int in blasts.size():
 		_VFX.ring(p.get_parent(), blasts[i], radii[i], MWBoonKit.C_PETITION)
 		for e: Node2D in p.boons.foes_near(blasts[i], radii[i]):
-			if i > 0 and MWBoonStatus.is_elite(e) and e.has_method("strip_affix") and e.strip_affix():
+			if (
+				i > 0
+				and MWBoonStatus.is_elite(e)
+				and e.has_method("strip_affix")
+				and e.strip_affix()
+			):
 				_count("petition_affix_stripped")
 			p.boons.sabotage(e, 1.0)
 			_count("petition_staggered")
@@ -796,9 +917,12 @@ func _detonate_charges(at: Vector2, radius: float) -> void:
 
 # --- Shared --------------------------------------------------------------------------
 
+
 ## Ring that sweeps from r0 to r1 around `center` (a Vector2, or a Node2D it follows) and
 ## calls on_hit once per foe it passes.
-func _expanding_ring(center: Variant, r0: float, r1: float, seconds: float, on_hit: Callable) -> void:
+func _expanding_ring(
+	center: Variant, r0: float, r1: float, seconds: float, on_hit: Callable
+) -> void:
 	var line := Line2D.new()
 	line.points = _VFX.ellipse(1.0, 28, true)
 	line.width = 4.0 / r0

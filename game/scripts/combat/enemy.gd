@@ -138,6 +138,7 @@ func _on_attack_cancelled() -> void:
 
 # --- Boon verbs (MW-006) ---------------------------------------------------
 
+
 func is_staggered() -> bool:
 	return _stagger > 0.0
 
@@ -218,7 +219,11 @@ func _apply_role_visuals() -> void:
 	if _family_sprite != "":
 		enemy_sprite = _family_sprite
 	elif is_human:
-		enemy_sprite = "church_zealot" if RunState.sector_id in ["salt_choir", "pale_spire"] else "human_enforcer"
+		enemy_sprite = (
+			"church_zealot"
+			if RunState.sector_id in ["salt_choir", "pale_spire"]
+			else "human_enforcer"
+		)
 	else:
 		match RunState.sector_id:
 			"gloampine", "iron_orchard":
@@ -275,7 +280,7 @@ func current_move_speed() -> float:
 	var human_m := 0.85 if is_human else 1.0
 	var haste := _haste_mult if _haste > 0.0 else 1.0
 	var st := MWBoonStatus.peek(self)
-	var boon_m := st.move_mult() if st else 1.0 ## Root / slow (MW-006)
+	var boon_m := st.move_mult() if st else 1.0  ## Root / slow (MW-006)
 	return move_speed * affix_speed * haste * human_m * boon_m
 
 
@@ -359,7 +364,7 @@ func _do_void_pull() -> void:
 		var n := p as Node2D
 		if n.global_position.distance_to(global_position) > 260.0:
 			continue
-		var dir := (global_position - n.global_position)
+		var dir := global_position - n.global_position
 		if dir.length() < 8.0:
 			continue
 		n.global_position += dir.normalized() * 52.0
@@ -394,7 +399,7 @@ func _ai_tick(delta: float) -> void:
 	## Default melee chaser (used when the scene is instanced without a subclass).
 	if _player == null:
 		return
-	var dir := (_player.global_position - global_position)
+	var dir := _player.global_position - global_position
 	var dist := dir.length()
 	if _winding:
 		_windup -= delta
@@ -441,7 +446,12 @@ func _face_move(dir: Vector2) -> void:
 		actor_visual.set_facing_x(dir.x)
 
 
-func _start_windup(seconds: float = WINDUP, tint: Color = Color(1.55, 0.55, 0.25), mark_off: Vector2 = Vector2(0, 18), mark_scl: Vector2 = Vector2(0.85, 0.55)) -> void:
+func _start_windup(
+	seconds: float = WINDUP,
+	tint: Color = Color(1.55, 0.55, 0.25),
+	mark_off: Vector2 = Vector2(0, 18),
+	mark_scl: Vector2 = Vector2(0.85, 0.55)
+) -> void:
 	_winding = true
 	_windup = seconds
 	_wind_t = 0.0

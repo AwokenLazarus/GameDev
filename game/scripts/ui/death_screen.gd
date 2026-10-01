@@ -36,7 +36,9 @@ func _ready() -> void:
 	tw.tween_property(self, "modulate:a", 1.0, 0.8)
 	if moon:
 		tw.parallel().tween_property(moon, "modulate:a", 1.0, 1.4)
-		tw.parallel().tween_property(moon, "scale", Vector2(0.85, 0.85), 1.6).set_trans(Tween.TRANS_SINE)
+		tw.parallel().tween_property(moon, "scale", Vector2(0.85, 0.85), 1.6).set_trans(
+			Tween.TRANS_SINE
+		)
 	if shadow_birth:
 		tw.tween_property(shadow_birth, "modulate:a", 1.0, 0.9)
 		tw.parallel().tween_property(shadow_birth, "position:y", 380.0, 1.0)

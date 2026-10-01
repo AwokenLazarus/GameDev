@@ -51,7 +51,7 @@ func _check_kit(id: String) -> Array[String]:
 		e.global_position = Vector2(x, 0.0)
 		e.health.max_hp = DUMMY_HP
 		e.health.hp = DUMMY_HP
-		e.set_physics_process(false) ## stationary target dummies
+		e.set_physics_process(false)  ## stationary target dummies
 		dummies.append(e)
 
 	await _wait(1.5)

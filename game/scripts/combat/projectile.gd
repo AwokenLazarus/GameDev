@@ -32,7 +32,9 @@ func _ready() -> void:
 			(visual as Sprite2D).texture = load(path)
 
 
-func setup(origin: Vector2, dir: Vector2, dmg: float, from: Node, seeking: bool = true, spd: float = 420.0) -> void:
+func setup(
+	origin: Vector2, dir: Vector2, dmg: float, from: Node, seeking: bool = true, spd: float = 420.0
+) -> void:
 	global_position = origin
 	velocity = dir.normalized() * spd
 	damage = dmg
@@ -49,7 +51,7 @@ func setup(origin: Vector2, dir: Vector2, dmg: float, from: Node, seeking: bool 
 func make_hostile() -> void:
 	set_meta("hostile", true)
 	add_to_group("hostile_projectile")
-	collision_mask = 2 ## player layer
+	collision_mask = 2  ## player layer
 	seek = false
 
 

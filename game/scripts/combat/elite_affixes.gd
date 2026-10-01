@@ -5,7 +5,8 @@ extends RefCounted
 const IDS: Array[String] = ["armored", "frenzied", "blood_linked", "void_pull"]
 
 const DEFS := {
-	"armored": {
+	"armored":
+	{
 		"id": "armored",
 		"name": "Armored",
 		"color": Color(0.55, 0.62, 0.78),
@@ -13,7 +14,8 @@ const DEFS := {
 		"speed_mult": 0.88,
 		"damage_mult": 1.0,
 	},
-	"frenzied": {
+	"frenzied":
+	{
 		"id": "frenzied",
 		"name": "Frenzied",
 		"color": Color(0.95, 0.42, 0.18),
@@ -21,7 +23,8 @@ const DEFS := {
 		"speed_mult": 1.28,
 		"damage_mult": 1.15,
 	},
-	"blood_linked": {
+	"blood_linked":
+	{
 		"id": "blood_linked",
 		"name": "Blood-Linked",
 		"color": Color(0.82, 0.16, 0.28),
@@ -29,7 +32,8 @@ const DEFS := {
 		"speed_mult": 1.0,
 		"damage_mult": 1.0,
 	},
-	"void_pull": {
+	"void_pull":
+	{
 		"id": "void_pull",
 		"name": "Void-Pull",
 		"color": Color(0.52, 0.28, 0.78),

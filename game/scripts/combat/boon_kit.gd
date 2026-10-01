@@ -16,7 +16,7 @@ const _VFX = preload("res://scripts/visuals/vfx.gd")
 const COMBAT_SLOTS := ["attack", "special", "cast", "echo"]
 const CRIT_MULT := 2.0
 const DEBT_CAP := 30.0
-const DEBT_CAP_PACT := 40.0 ## The Blood Ledger (Veyra pact)
+const DEBT_CAP_PACT := 40.0  ## The Blood Ledger (Veyra pact)
 const DEBT_GRACE := 5.0
 const DEBT_DRAIN := 2.0
 const MAX_WARD := 3
@@ -28,7 +28,7 @@ const C_VEYRA := Color(0.62, 0.08, 0.16)
 const C_VEYRA_GILT := Color(1.0, 0.78, 0.35)
 const C_CHURCH := Color(1.0, 0.95, 0.72)
 
-var p: Node2D ## owning player
+var p: Node2D  ## owning player
 
 var _owned: Dictionary = {}
 var _attack_count: int = 0
@@ -87,6 +87,7 @@ func refresh() -> void:
 
 # --- Frame ---------------------------------------------------------------------
 
+
 func _physics_process(delta: float) -> void:
 	if p == null or p.dead:
 		return
@@ -128,7 +129,7 @@ func _tick_debt(delta: float) -> void:
 		_debt_age = 0.0
 		return
 	if has("veyra_collects"):
-		if p.debt >= DEBT_CAP: ## called in at 30 even under the Ledger's 40 cap
+		if p.debt >= DEBT_CAP:  ## called in at 30 even under the Ledger's 40 cap
 			var dmg: float = p.debt * 3.0
 			p.debt = 0.0
 			ring(p.global_position, 140.0, C_VEYRA_GILT)
@@ -144,6 +145,7 @@ func _tick_debt(delta: float) -> void:
 
 
 # --- Slot events -----------------------------------------------------------------
+
 
 func _on_slot_used(slot: String) -> void:
 	match slot:
@@ -230,6 +232,7 @@ func _on_room_started() -> void:
 
 # --- Hits -------------------------------------------------------------------------
 
+
 ## Damage modifiers before the hit lands. Returns {dmg, crit}.
 func before_hit(foe: Node, dmg: float, slot: String) -> Dictionary:
 	var crit := false
@@ -272,7 +275,12 @@ func after_hit(foe: Node, dmg: float, slot: String, heavy: bool, crit: bool) -> 
 		if _sip_hits > 0:
 			_sip_hits -= 1
 			p.heal_hp(dmg * 0.3)
-		if has("veyra_duel") and _duelist == null and alive and (MWBoonStatus.is_elite(foe) or MWBoonStatus.is_general(foe)):
+		if (
+			has("veyra_duel")
+			and _duelist == null
+			and alive
+			and (MWBoonStatus.is_elite(foe) or MWBoonStatus.is_general(foe))
+		):
 			_duelist = foe as Node2D
 		if has("petition_manifest") and alive and _is_winding(foe):
 			sabotage(foe, 1.2)
@@ -329,7 +337,7 @@ func execute_threshold(foe: Node, mult: float = 1.0) -> float:
 		return 0.0
 	var t := 0.15 if has("petition_execute") else 0.0
 	if p.pact() == "red_petition":
-		t += 0.05 ## The Cell Rises
+		t += 0.05  ## The Cell Rises
 	if t <= 0.0:
 		return 0.0
 	t *= mult
@@ -358,7 +366,7 @@ func execute(foe: Node) -> void:
 	var pos: Vector2 = (foe as Node2D).global_position
 	ring(pos, 46.0, Color(0.55, 0.55, 0.6))
 	ring(pos, 30.0, C_PETITION)
-	h.kill() ## ignores Armored incoming_mult
+	h.kill()  ## ignores Armored incoming_mult
 	p.note_kill(foe, "execute", false)
 	print("MW006_EXECUTE foe=%s" % foe.name)
 	p.pacts.on_execute(pos)
@@ -366,8 +374,7 @@ func execute(foe: Node) -> void:
 		var f := field(pos, 14.0, 10.0, C_PETITION)
 		f.marker = true
 		f.pickup = true
-		f.on_player = func(pl: Node) -> void:
-			pl.heal_hp(8.0)
+		f.on_player = func(pl: Node) -> void: pl.heal_hp(8.0)
 	if has("petition_rally"):
 		for pl: Node in players_near(p.global_position, 200.0):
 			pl.chambered = true
@@ -433,6 +440,7 @@ func on_bleed_capped(foe: Node) -> void:
 
 # --- Damage taken ------------------------------------------------------------------
 
+
 ## Returns the damage left after Wards and the Duel guard (0 = ignored).
 func before_hurt(amount: float, from: Vector2) -> float:
 	if has("veyra_duel") and Time.get_ticks_msec() < _duel_guard_ms:
@@ -474,6 +482,7 @@ func try_lethal(amount: float) -> bool:
 
 # --- Debt ------------------------------------------------------------------------
 
+
 func add_debt(amount: float) -> void:
 	p.debt = minf(debt_cap(), p.debt + amount)
 	_debt_age = 0.0
@@ -489,6 +498,7 @@ func can_debt_cast() -> bool:
 
 # --- Verb objects -------------------------------------------------------------------
 
+
 ## Smite: light pillar after a 0.6 s telegraph ring (instant for Choir of Wards).
 func smite(pos: Vector2, instant: bool = false) -> void:
 	p.spawn_smite(pos, 42.0, p.base_hit(1.6), 0.0 if instant else SMITE_TELEGRAPH, C_CHURCH)
@@ -499,7 +509,9 @@ func _cast_arrive(pos: Vector2) -> void:
 	if has("dust_smoke"):
 		smoke(pos, 70.0, 3.0, 1.0)
 	if has("petition_trap"):
-		_snares.assign(_snares.filter(func(n: Node) -> bool: return is_instance_valid(n) and not n.is_queued_for_deletion()))
+		var still_up := func(n: Node) -> bool:
+			return is_instance_valid(n) and not n.is_queued_for_deletion()
+		_snares.assign(_snares.filter(still_up))
 		if _snares.size() >= 3:
 			_snares.pop_front().queue_free()
 		var c: Dictionary = p.slot_data("cast")
@@ -514,18 +526,15 @@ func _cast_arrive(pos: Vector2) -> void:
 		_snares.append(f)
 	if has("church_ward"):
 		var f := field(pos, 80.0, 3.0, C_CHURCH)
-		f.on_player = func(pl: Node) -> void:
-			pl.wards = mini(MAX_WARD, pl.wards + 1)
+		f.on_player = func(pl: Node) -> void: pl.wards = mini(MAX_WARD, pl.wards + 1)
 
 
 func smoke(pos: Vector2, r: float, seconds: float, blind_s: float) -> MWBoonField:
 	var f := field(pos, r, seconds, Color(0.72, 0.68, 0.6))
 	f.smoke = true
-	f.on_enemy = func(e: Node) -> void:
-		MWBoonStatus.of(e).blind(blind_s)
+	f.on_enemy = func(e: Node) -> void: MWBoonStatus.of(e).blind(blind_s)
 	if has("dust_doublehold"):
-		f.on_player = func(pl: Node) -> void:
-			pl.chambered = true
+		f.on_player = func(pl: Node) -> void: pl.chambered = true
 	return f
 
 
@@ -542,10 +551,8 @@ func _dust_devil(pos: Vector2) -> void:
 
 func _consecrate(pos: Vector2) -> void:
 	var f := field(pos, 60.0, 4.0, C_CHURCH)
-	f.on_enemy = func(e: Node) -> void:
-		MWBoonStatus.of(e).slow(0.4, 0.5)
-	f.on_player = func(pl: Node) -> void:
-		pl.cleanse()
+	f.on_enemy = func(e: Node) -> void: MWBoonStatus.of(e).slow(0.4, 0.5)
+	f.on_player = func(pl: Node) -> void: pl.cleanse()
 
 
 func _litany() -> void:
@@ -610,6 +617,7 @@ func _destroy_shots(pos: Vector2, r: float) -> void:
 
 # --- Queries ---------------------------------------------------------------------
 
+
 func _crit_condition(foe: Node, st: MWBoonStatus) -> bool:
 	if st and (st.blinded() or st.rooted()):
 		return true
@@ -638,7 +646,11 @@ func foes_near(pos: Vector2, r: float) -> Array[Node2D]:
 func players_near(pos: Vector2, r: float) -> Array[Node]:
 	var out: Array[Node] = []
 	for pl: Node in get_tree().get_nodes_in_group("player"):
-		if is_instance_valid(pl) and not bool(pl.get("dead")) and pl.global_position.distance_to(pos) <= r:
+		if (
+			is_instance_valid(pl)
+			and not bool(pl.get("dead"))
+			and pl.global_position.distance_to(pos) <= r
+		):
 			out.append(pl)
 	return out
 
@@ -664,7 +676,10 @@ func foe_ahead(r: float, half_arc: float) -> Node2D:
 		if not is_instance_valid(e):
 			continue
 		var off: Vector2 = e.global_position - p.global_position
-		if off.length() < best_d and (off.length() < 12.0 or absf(p.facing.angle_to(off)) <= half_arc):
+		if (
+			off.length() < best_d
+			and (off.length() < 12.0 or absf(p.facing.angle_to(off)) <= half_arc)
+		):
 			best_d = off.length()
 			best = e
 	return best
@@ -683,6 +698,7 @@ func _highest_hp_foe(r: float) -> Node2D:
 
 # --- Visuals ---------------------------------------------------------------------
 
+
 func field(pos: Vector2, r: float, seconds: float, tint: Color) -> MWBoonField:
 	var f: MWBoonField = _FIELD.new()
 	f.setup(pos, r, seconds, tint)
@@ -697,7 +713,9 @@ func ring(pos: Vector2, r: float, tint: Color) -> void:
 ## Fading silhouette; stays in group "decoy" for `life` seconds (Ledger Step aggro).
 func afterimage(pos: Vector2, tint: Color, life: float = 0.35) -> Node2D:
 	var ghost := Polygon2D.new()
-	ghost.polygon = PackedVector2Array([Vector2(0, -22), Vector2(10, -4), Vector2(8, 14), Vector2(-8, 14), Vector2(-10, -4)])
+	ghost.polygon = PackedVector2Array(
+		[Vector2(0, -22), Vector2(10, -4), Vector2(8, 14), Vector2(-8, 14), Vector2(-10, -4)]
+	)
 	ghost.color = Color(tint, 0.6)
 	ghost.z_index = 10
 	ghost.add_to_group("decoy")

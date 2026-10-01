@@ -11,10 +11,29 @@ const KITS := ["severin", "mira", "cassian", "odette", "vesper"]
 const PATRONS := ["dust_compact", "red_petition", "house_veyra", "church"]
 const DUMMY_HP := 100000.0
 const LEGACY_IDS := [
-	"dust_dash", "dust_bleed", "dust_reload", "dust_loot", "dust_sidestep",
-	"petition_execute", "petition_trap", "petition_team", "petition_elite", "petition_sabotage", "petition_cell",
-	"veyra_crit", "veyra_life", "veyra_shadowstep", "veyra_evolve", "veyra_contract", "veyra_pointe",
-	"church_smite", "church_ward", "church_cleanse", "church_cooldown", "church_judgment", "church_procession",
+	"dust_dash",
+	"dust_bleed",
+	"dust_reload",
+	"dust_loot",
+	"dust_sidestep",
+	"petition_execute",
+	"petition_trap",
+	"petition_team",
+	"petition_elite",
+	"petition_sabotage",
+	"petition_cell",
+	"veyra_crit",
+	"veyra_life",
+	"veyra_shadowstep",
+	"veyra_evolve",
+	"veyra_contract",
+	"veyra_pointe",
+	"church_smite",
+	"church_ward",
+	"church_cleanse",
+	"church_cooldown",
+	"church_judgment",
+	"church_procession",
 ]
 const RIVALS_C := {
 	"dust_compact": ["church"],
@@ -24,12 +43,21 @@ const RIVALS_C := {
 }
 
 
-class ErrorCounter extends Logger:
+class ErrorCounter:
+	extends Logger
 	var count: int = 0
 	var first: String = ""
 
-	func _log_error(function: String, file: String, line: int, code: String, rationale: String,
-			_editor_notify: bool, _error_type: int, _script_backtrace: Array[ScriptBacktrace]) -> void:
+	func _log_error(
+		function: String,
+		file: String,
+		line: int,
+		code: String,
+		rationale: String,
+		_editor_notify: bool,
+		_error_type: int,
+		_script_backtrace: Array[ScriptBacktrace]
+	) -> void:
 		count += 1
 		if first == "":
 			first = "%s:%d %s %s %s" % [file, line, function, code, rationale]
@@ -90,7 +118,9 @@ func _check_catalogue() -> void:
 		counts[b["patron"]] = int(counts.get(b["patron"], 0)) + 1
 		if str(b["slot"]) not in ["attack", "special", "cast", "dash", "trigger"]:
 			_fail("%s bad slot %s" % [id, b["slot"]])
-		for stat: String in ["damage", "move", "attack_speed", "lifesteal", "dash", "max_hp", "crit", "cooldown"]:
+		for stat: String in [
+			"damage", "move", "attack_speed", "lifesteal", "dash", "max_hp", "crit", "cooldown"
+		]:
 			if b.has(stat):
 				_fail("%s still carries flat stat %s" % [id, stat])
 		if str(b["rarity"]) == "legendary":
@@ -150,7 +180,7 @@ func _check_slots() -> void:
 	RunState.add_boon(BoonDB.get_boon("dust_bleed"))
 	RunState.add_boon(BoonDB.get_boon("dust_reload"))
 	RunState.add_boon(BoonDB.get_boon("dust_loot"))
-	RunState.add_boon(BoonDB.get_boon("petition_execute")) ## Dust + Petition may mix
+	RunState.add_boon(BoonDB.get_boon("petition_execute"))  ## Dust + Petition may mix
 	if RunState.has_boon("dust_bleed"):
 		_fail("attack boon was not replaced")
 	if str(RunState.slot_boons.get("attack", "")) != "petition_execute":
@@ -186,11 +216,23 @@ func _check_offers() -> void:
 	## Church stands alone: once most of its pool is taken, one offer falls back to a heal.
 	RunState.start_run("severin", "dust_meridian")
 	for b: Dictionary in BoonDB.boons:
-		if b["patron"] == "church" and b["rarity"] != "legendary" and RunState.owned_boons.size() < 9:
+		if (
+			b["patron"] == "church"
+			and b["rarity"] != "legendary"
+			and RunState.owned_boons.size() < 9
+		):
 			RunState.add_boon(b)
 	var choices := BoonDB.get_choices(3)
-	if choices.size() != 3 or not choices.any(func(c: Dictionary) -> bool: return bool(c.get("is_fallback", false))):
-		_fail("thin church pool did not fall back to a heal: %s" % [choices.map(func(c: Dictionary) -> String: return c["id"])])
+	if (
+		choices.size() != 3
+		or not choices.any(func(c: Dictionary) -> bool: return bool(c.get("is_fallback", false)))
+	):
+		_fail(
+			(
+				"thin church pool did not fall back to a heal: %s"
+				% [choices.map(func(c: Dictionary) -> String: return c["id"])]
+			)
+		)
 	var hp := RunState.player_hp
 	RunState.player_hp = 10.0
 	RunState.add_boon(BoonDB.FALLBACK_HEAL.duplicate())
@@ -264,16 +306,24 @@ func _check_kit(kit: String) -> void:
 		p.apply_hit(10.0, elite.global_position)
 		p.health.invuln_timer = 0.0
 		if id == "veyra_poise":
-			p.health.hp = 20.0 ## a single hit is capped at MAX_HIT, so bring HP into range
+			p.health.hp = 20.0  ## a single hit is capped at MAX_HIT, so bring HP into range
 			p.apply_hit(30.0, elite.global_position)
 			if p.dead or p.health.hp > 1.0 or p.debt <= 0.0:
 				_fail("%s: Noble Poise did not turn lethal damage into Debt" % kit)
 		p.fed.emit()
 		RunState.begin_room()
 		await _wait(0.8)
-		if id == "dust_bleed" and dummies.any(func(d: Variant) -> bool: return is_instance_valid(d) and MWBoonStatus.peek(d) != null and MWBoonStatus.peek(d).bleed > 0):
+		var bleeding := func(d: Variant) -> bool:
+			return (
+				is_instance_valid(d)
+				and MWBoonStatus.peek(d) != null
+				and MWBoonStatus.peek(d).bleed > 0
+			)
+		if id == "dust_bleed" and dummies.any(bleeding):
 			bled = true
-		if id == "petition_execute" and dummies.any(func(d: Variant) -> bool: return not is_instance_valid(d) or not d.health.is_alive()):
+		var gone := func(d: Variant) -> bool:
+			return not is_instance_valid(d) or not d.health.is_alive()
+		if id == "petition_execute" and dummies.any(gone):
 			executed = true
 		if id == "church_smite" and _slot_hits.has("smite"):
 			smote = true
@@ -295,13 +345,26 @@ func _check_kit(kit: String) -> void:
 		_fail("%s: Ledger Step left no afterimage" % kit)
 	if not smote:
 		_fail("%s: Pale Decree's third Attack called no Smite" % kit)
-	print("BOONS kit ", kit, " ok=", bled and executed and stepped and smote, " errors=", _errors.count)
+	print(
+		"BOONS kit ",
+		kit,
+		" ok=",
+		bled and executed and stepped and smote,
+		" errors=",
+		_errors.count
+	)
 
 
 ## Red Letter Day: a general below 8% dies to a Special; without it, generals are immune.
 func _check_red_letter() -> void:
 	for with_legendary: bool in [false, true]:
-		_equip(BoonDB.get_boon("petition_redletter") if with_legendary else BoonDB.get_boon("petition_execute"))
+		_equip(
+			(
+				BoonDB.get_boon("petition_redletter")
+				if with_legendary
+				else BoonDB.get_boon("petition_execute")
+			)
+		)
 		var arena := Node2D.new()
 		add_child(arena)
 		var p: Node = PLAYER.instantiate()
@@ -309,9 +372,9 @@ func _check_red_letter() -> void:
 		arena.add_child(p)
 		var g: Node = GENERAL.instantiate()
 		arena.add_child(g)
-		g.global_position = Vector2(190, 0) ## the cleave lunges 150 px first
+		g.global_position = Vector2(190, 0)  ## the cleave lunges 150 px first
 		g.set_physics_process(false)
-		g.health.max_hp = DUMMY_HP ## big pool: normal hits can't finish 5%
+		g.health.max_hp = DUMMY_HP  ## big pool: normal hits can't finish 5%
 		g.health.hp = DUMMY_HP * 0.05
 		p.facing = Vector2.RIGHT
 		p.use_slot("special")
@@ -321,11 +384,15 @@ func _check_red_letter() -> void:
 		await _wait(0.3)
 		var dead: bool = not is_instance_valid(g) or not g.health.is_alive()
 		if dead != with_legendary:
-			_fail("general at 5%% %s with legendary=%s" % ["died" if dead else "lived", with_legendary])
+			_fail(
+				(
+					"general at 5%% %s with legendary=%s"
+					% ["died" if dead else "lived", with_legendary]
+				)
+			)
 		arena.queue_free()
 		await _wait(0.05)
 	print("BOONS red letter ok")
-
 
 
 ## Dead Man's Tally: capping Bleed at 5 through the player (the real source) must fire the Legendary.

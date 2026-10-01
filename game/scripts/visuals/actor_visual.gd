@@ -12,7 +12,7 @@ var _sprite: Sprite2D
 var _outline: Sprite2D
 var _shadow: Sprite2D
 var _marker: Polygon2D
-var _anims: Dictionary = {} ## String -> Array[Texture2D]
+var _anims: Dictionary = {}  ## String -> Array[Texture2D]
 var _anim: String = "idle"
 var _frames: Array[Texture2D] = []
 var _frame_i: int = 0
@@ -32,9 +32,7 @@ func _ready() -> void:
 	_marker = Polygon2D.new()
 	_marker.z_index = -2
 	_marker.color = Color(0.95, 0.35, 0.3, 0.55)
-	_marker.polygon = PackedVector2Array([
-		-22, 0, -16, 8, 16, 8, 22, 0, 16, -6, -16, -6
-	])
+	_marker.polygon = PackedVector2Array([-22, 0, -16, 8, 16, 8, 22, 0, 16, -6, -16, -6])
 	_marker.visible = show_marker
 	add_child(_marker)
 	_shadow = Sprite2D.new()

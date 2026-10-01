@@ -105,7 +105,7 @@ func _build_ground(sid: String, half_size: Vector2) -> void:
 			s.texture = tile_tex
 			s.modulate = Color(1, 1, 1, 0.18)
 			s.position = Vector2(ix * 90 + (iy % 2) * 45, iy * 50)
-			s.scale = Vector2(0.7, 0.45) ## flatten into faux-iso
+			s.scale = Vector2(0.7, 0.45)  ## flatten into faux-iso
 			s.z_index = -19
 			_tiles.add_child(s)
 
@@ -128,7 +128,9 @@ func _build_props(sid: String, _half_size: Vector2) -> void:
 			_spawn_prop("crate", Vector2(40, 160), 1.2)
 		"gloampine":
 			for i: int in 6:
-				_spawn_prop("ruin", Vector2(-300 + i * 110, -150 + (i % 2) * 80), 0.7 + (i % 3) * 0.15)
+				_spawn_prop(
+					"ruin", Vector2(-300 + i * 110, -150 + (i % 2) * 80), 0.7 + (i % 3) * 0.15
+				)
 		"salt_choir":
 			_spawn_prop("chapel", Vector2(0, -200), 1.0)
 			_spawn_prop("ruin", Vector2(-260, 40), 0.9)
@@ -158,7 +160,11 @@ func _build_props_wild(sid: String, half_size: Vector2) -> void:
 	for spec: Variant in StageLayout.wild_landmarks(sid, half_size):
 		if typeof(spec) != TYPE_DICTIONARY:
 			continue
-		_spawn_prop(str(spec.get("kind", "ruin")), spec.get("pos", Vector2.ZERO), float(spec.get("scale", 1.0)))
+		_spawn_prop(
+			str(spec.get("kind", "ruin")),
+			spec.get("pos", Vector2.ZERO),
+			float(spec.get("scale", 1.0))
+		)
 
 
 func place_landmarks(landmarks: Array) -> void:
@@ -170,7 +176,11 @@ func place_landmarks(landmarks: Array) -> void:
 	for spec: Variant in landmarks:
 		if typeof(spec) != TYPE_DICTIONARY:
 			continue
-		_spawn_prop(str(spec.get("kind", "ruin")), spec.get("pos", Vector2.ZERO), float(spec.get("scale", 1.0)))
+		_spawn_prop(
+			str(spec.get("kind", "ruin")),
+			spec.get("pos", Vector2.ZERO),
+			float(spec.get("scale", 1.0))
+		)
 
 
 func _spawn_prop(kind: String, pos: Vector2, scl: float) -> void:

@@ -14,7 +14,7 @@ signal phase_changed(index: int, title: String)
 @export var max_hp: float = 520.0
 @export var move_speed: float = 130.0
 @export var color: Color = Color(0.45, 0.38, 0.32)
-@export var pattern: String = "charge" ## legacy single-pattern id; used when a general has no `phases`
+@export var pattern: String = "charge"  ## legacy single-pattern id; used when a general has no `phases`
 
 @onready var visual: CanvasItem = $Visual
 @onready var health: Health = $Health
@@ -37,12 +37,12 @@ var _player: Node2D
 var _cd: float = 2.0
 var _busy: bool = false
 var _alive: bool = true
-var _contact_cd: Dictionary = {} ## instance_id -> remaining
+var _contact_cd: Dictionary = {}  ## instance_id -> remaining
 var _move_i: int = 0
 var _adds_cd: float = 0.0
 var _hazard_cd: float = 0.0
 var _winding: bool = false
-var _sabotaged: bool = false ## Sabotage Manifest: the current move lands nothing
+var _sabotaged: bool = false  ## Sabotage Manifest: the current move lands nothing
 
 const PROJ := preload("res://scenes/entities/projectile.tscn")
 
@@ -126,7 +126,9 @@ func _physics_process(delta: float) -> void:
 			return
 	var dir := (_player.global_position - global_position).normalized()
 	var st := MWBoonStatus.peek(self)
-	velocity = dir * move_speed * float(_phase().get("speed", 1.0)) * (st.move_mult() if st else 1.0)
+	velocity = (
+		dir * move_speed * float(_phase().get("speed", 1.0)) * (st.move_mult() if st else 1.0)
+	)
 	if actor_visual:
 		actor_visual.set_running(true)
 		actor_visual.set_moving(true)
@@ -170,10 +172,14 @@ func apply_stagger(from: Vector2, force: float = 90.0) -> void:
 
 # --- Phases ---------------------------------------------------------------
 
+
 func _on_damaged(_amount: float, _remaining: float) -> void:
 	if not _alive:
 		return
-	while phase_index + 1 < phases.size() and hp_frac() <= float((phases[phase_index + 1] as Dictionary).get("at", 0.0)):
+	while (
+		phase_index + 1 < phases.size()
+		and hp_frac() <= float((phases[phase_index + 1] as Dictionary).get("at", 0.0))
+	):
 		_enter_phase(phase_index + 1)
 
 
@@ -227,11 +233,19 @@ func _spawn_adds(adds: Dictionary) -> void:
 	for k: int in n:
 		var a := TAU * float(k) / float(maxi(n, 1)) + randf() * 0.6
 		var pos := global_position + Vector2(cos(a), sin(a)) * 90.0
-		var e := MWEnemyFactory.spawn(parent, pos, _player, {
-			"archetype": str(archs[k % archs.size()]),
-			"elite": bool(adds.get("elite", false)),
-			"telegraph_s": 0.6,
-		})
+		var e := (
+			MWEnemyFactory
+			. spawn(
+				parent,
+				pos,
+				_player,
+				{
+					"archetype": str(archs[k % archs.size()]),
+					"elite": bool(adds.get("elite", false)),
+					"telegraph_s": 0.6,
+				}
+			)
+		)
 		e.add_to_group("boss_add")
 
 
@@ -243,7 +257,9 @@ func _drop_hazards(hz: Dictionary) -> void:
 		var pos := _player.global_position + Vector2(randf_range(-120, 120), randf_range(-90, 90))
 		if k == 0:
 			pos = _player.global_position
-		_delayed_zone(pos, str(hz.get("kind", "void")), float(hz.get("life", 3.5)), float(hz.get("dmg", 8.0)))
+		_delayed_zone(
+			pos, str(hz.get("kind", "void")), float(hz.get("life", 3.5)), float(hz.get("dmg", 8.0))
+		)
 
 
 func _delayed_zone(pos: Vector2, kind: String, life: float, dmg: float) -> void:
@@ -259,6 +275,7 @@ func _delayed_zone(pos: Vector2, kind: String, life: float, dmg: float) -> void:
 
 
 # --- Move rotation --------------------------------------------------------
+
 
 func _use_next_move() -> void:
 	var moves: Array = _phase().get("moves", [pattern])
@@ -320,6 +337,7 @@ func _run_move(id: String) -> void:
 
 # --- Telegraph + hit helpers ---------------------------------------------
 
+
 func _circle_pts(radius: float, n: int = 24) -> PackedVector2Array:
 	var pts := PackedVector2Array()
 	for i: int in n:
@@ -328,7 +346,13 @@ func _circle_pts(radius: float, n: int = 24) -> PackedVector2Array:
 	return pts
 
 
-func _tele_node(pos: Vector2, shape: PackedVector2Array, seconds: float, rot: float = 0.0, grow_x_only: bool = false) -> void:
+func _tele_node(
+	pos: Vector2,
+	shape: PackedVector2Array,
+	seconds: float,
+	rot: float = 0.0,
+	grow_x_only: bool = false
+) -> void:
 	## Ground marker: faint outline of the exact hit shape, fill grows to full at impact.
 	var parent := get_parent()
 	if parent == null:
@@ -365,7 +389,9 @@ func _tele_circle(pos: Vector2, radius: float, seconds: float) -> void:
 
 func _tele_lane(from: Vector2, dir: Vector2, length: float, width: float, seconds: float) -> void:
 	var hw := width * 0.5
-	var shape := PackedVector2Array([Vector2(0, -hw), Vector2(length, -hw), Vector2(length, hw), Vector2(0, hw)])
+	var shape := PackedVector2Array(
+		[Vector2(0, -hw), Vector2(length, -hw), Vector2(length, hw), Vector2(0, hw)]
+	)
 	_tele_node(from, shape, seconds, dir.angle(), true)
 
 
@@ -388,7 +414,9 @@ func _hit_circle(pos: Vector2, radius: float, dmg: float, hit_ids: Dictionary = 
 		p.apply_hit(dmg, pos)
 
 
-func _hit_lane(from: Vector2, dir: Vector2, length: float, width: float, dmg: float, hit_ids: Dictionary = {}) -> void:
+func _hit_lane(
+	from: Vector2, dir: Vector2, length: float, width: float, dmg: float, hit_ids: Dictionary = {}
+) -> void:
 	if _sabotaged:
 		return
 	for p: Variant in _players():
@@ -442,6 +470,7 @@ func _shoot(dir: Vector2, dmg: float, spd: float, tint: Color) -> void:
 
 
 # --- Shared moves ---------------------------------------------------------
+
 
 func _mv_charge() -> void:
 	var dir := (_target_pos() - global_position).normalized()
@@ -527,7 +556,9 @@ func _mv_hymn() -> void:
 
 func _mv_thorns() -> void:
 	for i: int in 12:
-		_tele_lane(global_position, Vector2.from_angle(TAU * float(i) / 12.0), 90.0, 8.0, TELEGRAPH_MIN)
+		_tele_lane(
+			global_position, Vector2.from_angle(TAU * float(i) / 12.0), 90.0, 8.0, TELEGRAPH_MIN
+		)
 	await _windup(TELEGRAPH_MIN)
 	if not _alive:
 		return
@@ -553,6 +584,7 @@ func _mv_void() -> void:
 
 
 # --- Signature phase-2 moves ---------------------------------------------
+
 
 func _mv_gallows() -> void:
 	## Hale: nooses drop on the player and two flanks, then a second row where they dodged to.
@@ -627,7 +659,9 @@ func _mv_blight_bloom() -> void:
 		return
 	for k: int in 3:
 		var a := randf() * TAU
-		_delayed_zone(global_position + Vector2(cos(a), sin(a)) * randf_range(90, 170), "void", 3.5, 7.0)
+		_delayed_zone(
+			global_position + Vector2(cos(a), sin(a)) * randf_range(90, 170), "void", 3.5, 7.0
+		)
 
 
 func _mv_eclipse_step() -> void:

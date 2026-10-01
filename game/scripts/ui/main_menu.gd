@@ -51,8 +51,12 @@ func _ready() -> void:
 		hero.scale = Vector2(1.8, 1.8)
 	if moon:
 		var tw := create_tween().set_loops()
-		tw.tween_property(moon, "position:y", moon.position.y - 8.0, 2.4).set_trans(Tween.TRANS_SINE)
-		tw.tween_property(moon, "position:y", moon.position.y + 8.0, 2.4).set_trans(Tween.TRANS_SINE)
+		tw.tween_property(moon, "position:y", moon.position.y - 8.0, 2.4).set_trans(
+			Tween.TRANS_SINE
+		)
+		tw.tween_property(moon, "position:y", moon.position.y + 8.0, 2.4).set_trans(
+			Tween.TRANS_SINE
+		)
 	if hero:
 		var tw2 := create_tween().set_loops()
 		tw2.tween_property(hero, "position:y", hero.position.y - 4.0, 1.2)

@@ -16,8 +16,8 @@ var on_player: Callable
 var pickup: bool = false
 var enemy_once: bool = false
 var follow: Node2D = null
-var marker: bool = false ## small diamond instead of an ellipse (pickups, snares)
-var smoke: bool = false ## gunsmoke cloud (group "smoke_cloud"; the Dust pact dashes through it)
+var marker: bool = false  ## small diamond instead of an ellipse (pickups, snares)
+var smoke: bool = false  ## gunsmoke cloud (group "smoke_cloud"; the Dust pact dashes through it)
 
 var _t: float = 0.0
 var _players_in: Dictionary = {}

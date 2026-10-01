@@ -48,8 +48,10 @@ func _ready() -> void:
 	_apply_seed()
 	RunState.phase_changed.connect(_on_phase)
 	print(
-		"AUTOPLAY_START mode=%s sectors=%s char=%s seed=%d"
-		% [mode, ",".join(sectors), char_id, seed_value]
+		(
+			"AUTOPLAY_START mode=%s sectors=%s char=%s seed=%d"
+			% [mode, ",".join(sectors), char_id, seed_value]
+		)
 	)
 	_start()
 
@@ -299,7 +301,11 @@ func _greed_walk(pl: Node2D, delta: float) -> void:
 	if RunState.phase != RunState.Phase.WILD:
 		greed_target = null
 		return
-	if greed_target == null or not is_instance_valid(greed_target) or bool(greed_target.get("used")):
+	if (
+		greed_target == null
+		or not is_instance_valid(greed_target)
+		or bool(greed_target.get("used"))
+	):
 		greed_target = null
 		var best := INF
 		for g: Node in get_tree().get_nodes_in_group("greed_shrine"):
@@ -311,14 +317,20 @@ func _greed_walk(pl: Node2D, delta: float) -> void:
 				greed_target = g
 	if greed_target == null:
 		return
-	pl.global_position = pl.global_position.move_toward(greed_target.global_position, _walk_speed(pl) * delta)
+	pl.global_position = pl.global_position.move_toward(
+		greed_target.global_position, _walk_speed(pl) * delta
+	)
 
 
 func _hook_player(pl: Node) -> void:
 	var h: Health = pl.get_node_or_null("Health")
 	if h == null or h == hooked_health:
 		return
-	if hooked_health and is_instance_valid(hooked_health) and hooked_health.damaged.is_connected(_on_player_damaged):
+	if (
+		hooked_health
+		and is_instance_valid(hooked_health)
+		and hooked_health.damaged.is_connected(_on_player_damaged)
+	):
 		hooked_health.damaged.disconnect(_on_player_damaged)
 	hooked_health = h
 	if not h.damaged.is_connected(_on_player_damaged):

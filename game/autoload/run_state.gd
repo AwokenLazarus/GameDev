@@ -89,7 +89,12 @@ var meta_mods: Dictionary = {}
 var max_hit_taken: float = 0.0
 
 
-func start_run(char_id: String = "severin", sector: String = "dust_meridian", alt: String = "", players: int = 1) -> void:
+func start_run(
+	char_id: String = "severin",
+	sector: String = "dust_meridian",
+	alt: String = "",
+	players: int = 1
+) -> void:
 	character_id = char_id
 	alt_id = alt
 	sector_id = sector
@@ -164,7 +169,7 @@ func start_run(char_id: String = "severin", sector: String = "dust_meridian", al
 
 ## Tuning (MW-025): ~30 min sector at a human kill rate (~1 kill / 1.2 s);
 ## the wild stage is ~80 % of it. See game/README.md "Pacing".
-const CLOCK_FULL := 1500.0 ## director / enemy scaling reaches 1.0 at 25 min
+const CLOCK_FULL := 1500.0  ## director / enemy scaling reaches 1.0 at 25 min
 const GATE_PER_EXTRA_PLAYER := 0.35
 
 

@@ -5,7 +5,7 @@ class_name MWBoonStatus
 ## Bleed ticks route through the player who applied it, so kills and hooks credit them.
 
 const BLEED_MAX := 5
-const BLEED_DPS := 3.0 ## per stack
+const BLEED_DPS := 3.0  ## per stack
 const BLEED_TIME := 4.0
 const ROOT_IMMUNE := 4.0
 

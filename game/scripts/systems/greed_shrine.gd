@@ -110,16 +110,35 @@ func _build_visual() -> void:
 
 	var col := Color(0.62, 0.48, 0.24, 0.95)
 	var glow := Color(0.95, 0.75, 0.35, 0.35)
-	var poly := PackedVector2Array([Vector2(-18, 12), Vector2(18, 12), Vector2(18, -8), Vector2(-18, -8)])
+	var poly := PackedVector2Array(
+		[Vector2(-18, 12), Vector2(18, 12), Vector2(18, -8), Vector2(-18, -8)]
+	)
 	match kind:
 		"moon_altar":
 			col = Color(0.55, 0.58, 0.66, 0.95)
 			glow = Color(0.75, 0.82, 1.0, 0.35)
-			poly = PackedVector2Array([Vector2(-16, 14), Vector2(16, 14), Vector2(10, -22), Vector2(0, -30), Vector2(-10, -22)])
+			poly = PackedVector2Array(
+				[
+					Vector2(-16, 14),
+					Vector2(16, 14),
+					Vector2(10, -22),
+					Vector2(0, -30),
+					Vector2(-10, -22)
+				]
+			)
 		"blood_well":
 			col = Color(0.36, 0.1, 0.12, 0.95)
 			glow = Color(0.85, 0.12, 0.16, 0.4)
-			poly = PackedVector2Array([Vector2(-22, 6), Vector2(-14, -10), Vector2(14, -10), Vector2(22, 6), Vector2(14, 16), Vector2(-14, 16)])
+			poly = PackedVector2Array(
+				[
+					Vector2(-22, 6),
+					Vector2(-14, -10),
+					Vector2(14, -10),
+					Vector2(22, 6),
+					Vector2(14, 16),
+					Vector2(-14, 16)
+				]
+			)
 	_glow = Polygon2D.new()
 	_glow.color = glow
 	var ring := PackedVector2Array()
@@ -135,7 +154,9 @@ func _build_visual() -> void:
 
 	_bar = Polygon2D.new()
 	_bar.color = Color(0.95, 0.85, 0.6, 0.9)
-	_bar.polygon = PackedVector2Array([Vector2(0, 0), Vector2(60, 0), Vector2(60, 5), Vector2(0, 5)])
+	_bar.polygon = PackedVector2Array(
+		[Vector2(0, 0), Vector2(60, 0), Vector2(60, 5), Vector2(0, 5)]
+	)
 	_bar.position = Vector2(-30, 22)
 	_bar.visible = false
 	add_child(_bar)
