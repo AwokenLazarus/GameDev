@@ -1,8 +1,13 @@
 extends Node
 ## Full mandate boot smoke.
 
+const DEFAULT_SEED := 1
+
+var _seed: int = 0
+
 
 func _ready() -> void:
+	_seed = SmokeSeed.begin(DEFAULT_SEED)
 	print("BOOT_SMOKE_START")
 	var ok := true
 
@@ -169,5 +174,5 @@ func _ready() -> void:
 		print("BOOT_SMOKE_PASS")
 		get_tree().quit(0)
 	else:
-		print("BOOT_SMOKE_FAIL")
+		print(SmokeSeed.fail_line("BOOT_SMOKE_FAIL", _seed))
 		get_tree().quit(1)

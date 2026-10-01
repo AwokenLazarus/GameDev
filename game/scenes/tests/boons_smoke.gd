@@ -41,6 +41,7 @@ const RIVALS_C := {
 	"house_veyra": ["church", "red_petition"],
 	"church": ["dust_compact", "red_petition", "house_veyra"],
 }
+const DEFAULT_SEED := 6
 
 
 class ErrorCounter:
@@ -66,6 +67,7 @@ class ErrorCounter:
 		pass
 
 
+var _seed: int = 0
 var _fails: Array[String] = []
 var _errors := ErrorCounter.new()
 var _slot_hits: Dictionary = {}
@@ -73,6 +75,7 @@ var _scale: float = 1.0
 
 
 func _ready() -> void:
+	_seed = SmokeSeed.begin(DEFAULT_SEED)
 	print("BOONS_SMOKE_START")
 	OS.add_logger(_errors)
 	GameState.selected_sector = "dust_meridian"
@@ -96,7 +99,7 @@ func _ready() -> void:
 		get_tree().quit(0)
 		return
 	for f: String in _fails:
-		print("BOONS_SMOKE_FAIL ", f)
+		print(SmokeSeed.fail_line("BOONS_SMOKE_FAIL", _seed, f))
 	get_tree().quit(1)
 
 

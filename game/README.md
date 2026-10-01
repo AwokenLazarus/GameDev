@@ -93,6 +93,8 @@ godot --headless res://scenes/tests/raid_visibility_smoke.tscn
 godot --headless --fixed-fps 60 res://tests/autoplay/autoplay.tscn -- mode=kill sectors=all
 ```
 
+Each smoke scene calls `seed()` before it does any work, prints `SEED=N` first, and puts `SEED=N` on every `*_FAIL` line. Override with `-- seed=N` (same form as autoplay). Defaults: boot `1`, raid visibility `2`, combat readability `3`, kit slots `4`, boss phases `5`, boons `6`, pacts `7`. Pass `--fixed-fps 60` when two runs must match byte for byte. Without it, combat's printed HP and boons' instance ids can shift.
+
 Static types are an error (`gdscript/warnings/untyped_declaration=2` in `project.godot`). Count what is left with the per-file check. Godot exits 0 on these, so count lines. Run from `game/`. `git ls-files` prints repo-root paths (`game/…`), so strip that prefix. `--check-only` cannot see autoloads or `class_name` and reports `Identifier not found` / `not declared in the current scope` for them; count only `Warning treated as error`. The target is 0.
 
 ```bash

@@ -16,6 +16,7 @@ const KITS := {
 	"astral": "vesper"
 }
 const DUMMY_HP := 100000.0
+const DEFAULT_SEED := 7
 
 
 class ErrorCounter:
@@ -41,6 +42,7 @@ class ErrorCounter:
 		pass
 
 
+var _seed: int = 0
 var _fails: Array[String] = []
 var _errors := ErrorCounter.new()
 var _arena: Node2D
@@ -50,6 +52,7 @@ var _scale: float = 2.0
 
 
 func _ready() -> void:
+	_seed = SmokeSeed.begin(DEFAULT_SEED)
 	print("PACTS_SMOKE_START")
 	OS.add_logger(_errors)
 	GameState.selected_sector = "dust_meridian"
@@ -70,7 +73,7 @@ func _ready() -> void:
 		get_tree().quit(0)
 		return
 	for f: String in _fails:
-		print("PACTS_SMOKE_FAIL ", f)
+		print(SmokeSeed.fail_line("PACTS_SMOKE_FAIL", _seed, f))
 	get_tree().quit(1)
 
 
