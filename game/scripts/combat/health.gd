@@ -36,7 +36,6 @@ func take_damage(amount: float, ignore_invuln: bool = false) -> void:
 		died.emit()
 
 
-
 ## Lethal regardless of i-frames or damage multipliers (e.g. adds routing when their general falls).
 func kill() -> void:
 	if not is_alive():

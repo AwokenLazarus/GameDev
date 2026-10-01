@@ -32,7 +32,9 @@ func _ready() -> void:
 			(visual as Sprite2D).texture = load(path)
 
 
-func setup(origin: Vector2, dir: Vector2, dmg: float, from: Node, seeking: bool = true, spd: float = 420.0) -> void:
+func setup(
+	origin: Vector2, dir: Vector2, dmg: float, from: Node, seeking: bool = true, spd: float = 420.0
+) -> void:
 	global_position = origin
 	velocity = dir.normalized() * spd
 	damage = dmg
@@ -49,7 +51,7 @@ func setup(origin: Vector2, dir: Vector2, dmg: float, from: Node, seeking: bool 
 func make_hostile() -> void:
 	set_meta("hostile", true)
 	add_to_group("hostile_projectile")
-	collision_mask = 2 ## player layer
+	collision_mask = 2  ## player layer
 	seek = false
 
 
@@ -71,7 +73,7 @@ func _physics_process(delta: float) -> void:
 func _nearest_enemy() -> Node2D:
 	var best: Node2D = null
 	var best_d := 280.0
-	for e in get_tree().get_nodes_in_group("enemy"):
+	for e: Node in get_tree().get_nodes_in_group("enemy"):
 		if not is_instance_valid(e):
 			continue
 		var d := global_position.distance_to(e.global_position)

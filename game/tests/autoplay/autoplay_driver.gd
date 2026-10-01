@@ -48,15 +48,17 @@ func _ready() -> void:
 	_apply_seed()
 	RunState.phase_changed.connect(_on_phase)
 	print(
-		"AUTOPLAY_START mode=%s sectors=%s char=%s seed=%d"
-		% [mode, ",".join(sectors), char_id, seed_value]
+		(
+			"AUTOPLAY_START mode=%s sectors=%s char=%s seed=%d"
+			% [mode, ",".join(sectors), char_id, seed_value]
+		)
 	)
 	_start()
 
 
 func _parse_args() -> void:
 	var raw_sectors := ""
-	for a in OS.get_cmdline_user_args():
+	for a: String in OS.get_cmdline_user_args():
 		if a.begins_with("mode="):
 			mode = a.substr(5).strip_edges()
 		elif a.begins_with("sectors="):
@@ -76,12 +78,12 @@ func _parse_args() -> void:
 func _resolve_sectors(raw: String) -> Array[String]:
 	var out: Array[String] = []
 	if raw.is_empty() or raw == "all":
-		for s in SectorDB.all_raidable_sectors():
+		for s: Dictionary in SectorDB.all_raidable_sectors():
 			var id := str(s.get("id", ""))
 			if not id.is_empty():
 				out.append(id)
 		return out
-	for part in raw.split(",", false):
+	for part: String in raw.split(",", false):
 		var id := part.strip_edges()
 		if id == "all":
 			return _resolve_sectors("all")
@@ -261,7 +263,7 @@ func _try_pick_boon(sc: Node, delta: float) -> void:
 func _try_pick_door(pl: Node2D, delta: float) -> void:
 	var doors := get_tree().get_nodes_in_group("exit_door")
 	var open: Array[Node] = []
-	for d in doors:
+	for d: Node in doors:
 		if d != null and is_instance_valid(d) and not bool(d.get("claimed")):
 			open.append(d)
 	if open.is_empty():
@@ -269,7 +271,7 @@ func _try_pick_door(pl: Node2D, delta: float) -> void:
 		return
 	var pick: Node = open[rng.randi() % open.size()]
 	if mode == "human":
-		for d in open:
+		for d: Node in open:
 			if str(d.get("reward")) == "boon" and rng.randf() < HUMAN_PACT_BIAS:
 				pick = d
 				break
@@ -299,10 +301,14 @@ func _greed_walk(pl: Node2D, delta: float) -> void:
 	if RunState.phase != RunState.Phase.WILD:
 		greed_target = null
 		return
-	if greed_target == null or not is_instance_valid(greed_target) or bool(greed_target.get("used")):
+	if (
+		greed_target == null
+		or not is_instance_valid(greed_target)
+		or bool(greed_target.get("used"))
+	):
 		greed_target = null
 		var best := INF
-		for g in get_tree().get_nodes_in_group("greed_shrine"):
+		for g: Node in get_tree().get_nodes_in_group("greed_shrine"):
 			if bool(g.get("used")):
 				continue
 			var dd := pl.global_position.distance_to((g as Node2D).global_position)
@@ -311,14 +317,20 @@ func _greed_walk(pl: Node2D, delta: float) -> void:
 				greed_target = g
 	if greed_target == null:
 		return
-	pl.global_position = pl.global_position.move_toward(greed_target.global_position, _walk_speed(pl) * delta)
+	pl.global_position = pl.global_position.move_toward(
+		greed_target.global_position, _walk_speed(pl) * delta
+	)
 
 
 func _hook_player(pl: Node) -> void:
 	var h: Health = pl.get_node_or_null("Health")
 	if h == null or h == hooked_health:
 		return
-	if hooked_health and is_instance_valid(hooked_health) and hooked_health.damaged.is_connected(_on_player_damaged):
+	if (
+		hooked_health
+		and is_instance_valid(hooked_health)
+		and hooked_health.damaged.is_connected(_on_player_damaged)
+	):
 		hooked_health.damaged.disconnect(_on_player_damaged)
 	hooked_health = h
 	if not h.damaged.is_connected(_on_player_damaged):

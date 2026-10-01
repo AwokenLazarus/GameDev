@@ -5,7 +5,7 @@ class_name MWBoonStatus
 ## Bleed ticks route through the player who applied it, so kills and hooks credit them.
 
 const BLEED_MAX := 5
-const BLEED_DPS := 3.0 ## per stack
+const BLEED_DPS := 3.0  ## per stack
 const BLEED_TIME := 4.0
 const ROOT_IMMUNE := 4.0
 
@@ -74,7 +74,7 @@ func add_bleed(stacks: int, src: Node) -> int:
 	bleed_src = src
 	if bleed == BLEED_MAX and before < BLEED_MAX and is_instance_valid(src):
 		## src is the player; its BoonKit owns the Dead Man's Tally hook.
-		var kit = src.get("boons") if "boons" in src else src
+		var kit: Variant = src.get("boons") if "boons" in src else src
 		if kit != null and kit.has_method("on_bleed_capped"):
 			kit.on_bleed_capped(get_parent())
 	_refresh_label()
@@ -159,7 +159,7 @@ func move_mult() -> float:
 
 func _process(delta: float) -> void:
 	var changed := false
-	for key in ["blind_t", "root_t", "condemn_t", "warrant_t"]:
+	for key: String in ["blind_t", "root_t", "condemn_t", "warrant_t"]:
 		var v: float = get(key)
 		if v > 0.0:
 			v -= delta

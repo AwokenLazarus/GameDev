@@ -16,7 +16,7 @@ const _VFX = preload("res://scripts/visuals/vfx.gd")
 const COMBAT_SLOTS := ["attack", "special", "cast", "echo"]
 const CRIT_MULT := 2.0
 const DEBT_CAP := 30.0
-const DEBT_CAP_PACT := 40.0 ## The Blood Ledger (Veyra pact)
+const DEBT_CAP_PACT := 40.0  ## The Blood Ledger (Veyra pact)
 const DEBT_GRACE := 5.0
 const DEBT_DRAIN := 2.0
 const MAX_WARD := 3
@@ -28,7 +28,7 @@ const C_VEYRA := Color(0.62, 0.08, 0.16)
 const C_VEYRA_GILT := Color(1.0, 0.78, 0.35)
 const C_CHURCH := Color(1.0, 0.95, 0.72)
 
-var p: Node2D ## owning player
+var p: Node2D  ## owning player
 
 var _owned: Dictionary = {}
 var _attack_count: int = 0
@@ -79,13 +79,14 @@ func has(id: String) -> bool:
 ## Re-reads the loadout (after a pick or a slot replacement).
 func refresh() -> void:
 	_owned.clear()
-	for b in RunState.owned_boons:
+	for b: Dictionary in RunState.owned_boons:
 		_owned[str(b.get("id", ""))] = true
 	var bonus := 1 if has("dust_doublehold") else 0
 	p.set_cast_bonus(bonus)
 
 
 # --- Frame ---------------------------------------------------------------------
+
 
 func _physics_process(delta: float) -> void:
 	if p == null or p.dead:
@@ -111,7 +112,7 @@ func _physics_process(delta: float) -> void:
 
 
 func _tick_dash(delta: float) -> void:
-	for e in get_tree().get_nodes_in_group("enemy"):
+	for e: Node in get_tree().get_nodes_in_group("enemy"):
 		if is_instance_valid(e) and e.global_position.distance_to(p.global_position) < 34.0:
 			_dash_passed[e.get_instance_id()] = true
 	if has("dust_dash"):
@@ -128,11 +129,11 @@ func _tick_debt(delta: float) -> void:
 		_debt_age = 0.0
 		return
 	if has("veyra_collects"):
-		if p.debt >= DEBT_CAP: ## called in at 30 even under the Ledger's 40 cap
+		if p.debt >= DEBT_CAP:  ## called in at 30 even under the Ledger's 40 cap
 			var dmg: float = p.debt * 3.0
 			p.debt = 0.0
 			ring(p.global_position, 140.0, C_VEYRA_GILT)
-			for e in foes_near(p.global_position, 140.0):
+			for e: Node2D in foes_near(p.global_position, 140.0):
 				p.land_slot_hit(e, dmg, "boon", true, 260.0)
 		return
 	_debt_age += delta
@@ -144,6 +145,7 @@ func _tick_debt(delta: float) -> void:
 
 
 # --- Slot events -----------------------------------------------------------------
+
 
 func _on_slot_used(slot: String) -> void:
 	match slot:
@@ -164,7 +166,7 @@ func _on_slot_used(slot: String) -> void:
 					p.global_position = t.global_position - p.facing * 26.0
 					_pointe_crit = true
 			if has("dust_buckshot"):
-				for i in 5:
+				for i: int in 5:
 					var d: Vector2 = p.facing.rotated((float(i) - 2.0) * 0.16)
 					p.spawn_boon_projectile(d, p.base_hit(0.4), "shard", C_DUST)
 		"cast":
@@ -190,14 +192,14 @@ func _on_dash_started(_dir: Vector2) -> void:
 	if has("veyra_shadowstep"):
 		p.health.set_invuln(0.35)
 		var decoy := afterimage(_dash_from, C_VEYRA, 1.0)
-		for e in foes_near(_dash_from, 240.0):
+		for e: Node2D in foes_near(_dash_from, 240.0):
 			if e.has_method("taunt"):
 				e.taunt(decoy, 1.0)
 	if has("church_cleanse"):
 		p.cleanse()
 	if _couture > 0:
 		_couture -= 1
-		for off in [0.0, 0.5]:
+		for off: float in [0.0, 0.5]:
 			_couture_image(_dash_from.lerp(p.global_position + p.velocity * 0.18, off))
 
 
@@ -208,7 +210,7 @@ func _on_dash_ended() -> void:
 		p.chambered = true
 	if has("church_procession"):
 		ring(p.global_position, 80.0, C_CHURCH)
-		for e in foes_near(p.global_position, 80.0):
+		for e: Node2D in foes_near(p.global_position, 80.0):
 			p.land_slot_hit(e, p.base_hit(0.8), "boon", false, 320.0)
 	if has("dust_devil") and _dash_passed.size() >= 3:
 		_dust_devil(p.global_position)
@@ -229,6 +231,7 @@ func _on_room_started() -> void:
 
 
 # --- Hits -------------------------------------------------------------------------
+
 
 ## Damage modifiers before the hit lands. Returns {dmg, crit}.
 func before_hit(foe: Node, dmg: float, slot: String) -> Dictionary:
@@ -272,7 +275,12 @@ func after_hit(foe: Node, dmg: float, slot: String, heavy: bool, crit: bool) -> 
 		if _sip_hits > 0:
 			_sip_hits -= 1
 			p.heal_hp(dmg * 0.3)
-		if has("veyra_duel") and _duelist == null and alive and (MWBoonStatus.is_elite(foe) or MWBoonStatus.is_general(foe)):
+		if (
+			has("veyra_duel")
+			and _duelist == null
+			and alive
+			and (MWBoonStatus.is_elite(foe) or MWBoonStatus.is_general(foe))
+		):
 			_duelist = foe as Node2D
 		if has("petition_manifest") and alive and _is_winding(foe):
 			sabotage(foe, 1.2)
@@ -329,7 +337,7 @@ func execute_threshold(foe: Node, mult: float = 1.0) -> float:
 		return 0.0
 	var t := 0.15 if has("petition_execute") else 0.0
 	if p.pact() == "red_petition":
-		t += 0.05 ## The Cell Rises
+		t += 0.05  ## The Cell Rises
 	if t <= 0.0:
 		return 0.0
 	t *= mult
@@ -358,7 +366,7 @@ func execute(foe: Node) -> void:
 	var pos: Vector2 = (foe as Node2D).global_position
 	ring(pos, 46.0, Color(0.55, 0.55, 0.6))
 	ring(pos, 30.0, C_PETITION)
-	h.kill() ## ignores Armored incoming_mult
+	h.kill()  ## ignores Armored incoming_mult
 	p.note_kill(foe, "execute", false)
 	print("MW006_EXECUTE foe=%s" % foe.name)
 	p.pacts.on_execute(pos)
@@ -366,14 +374,13 @@ func execute(foe: Node) -> void:
 		var f := field(pos, 14.0, 10.0, C_PETITION)
 		f.marker = true
 		f.pickup = true
-		f.on_player = func(pl: Node) -> void:
-			pl.heal_hp(8.0)
+		f.on_player = func(pl: Node) -> void: pl.heal_hp(8.0)
 	if has("petition_rally"):
-		for pl in players_near(p.global_position, 200.0):
+		for pl: Node in players_near(p.global_position, 200.0):
 			pl.chambered = true
 	if has("petition_chain") and _chain_depth < 6:
 		_chain_depth += 1
-		for e in foes_near(pos, 120.0):
+		for e: Node2D in foes_near(pos, 120.0):
 			try_execute(e)
 		_chain_depth -= 1
 
@@ -387,16 +394,16 @@ func on_kill(foe: Node, slot: String, crit: bool) -> void:
 		p.debt = maxf(0.0, p.debt - (7.0 if p.pact() == "house_veyra" else 2.0))
 	if has("dust_loot"):
 		if MWBoonStatus.is_general(foe):
-			for i in 3:
+			for i: int in 3:
 				_scrap_cache(pos + Vector2(30, 0).rotated(TAU * i / 3.0))
 		elif MWBoonStatus.is_elite(foe):
 			_scrap_cache(pos)
 	if has("dust_shrapnel") and st and st.bleed > 0:
 		ring(pos, 60.0, C_DUST)
-		for e in foes_near(pos, 60.0):
+		for e: Node2D in foes_near(pos, 60.0):
 			MWBoonStatus.of(e).add_bleed(2, p)
 	if has("veyra_spray") and crit:
-		for pl in players_near(pos, 100.0):
+		for pl: Node in players_near(pos, 100.0):
 			pl.heal_hp(3.0)
 	if has("veyra_collateral") and st and st.collateral:
 		p.debt = 0.0
@@ -426,12 +433,13 @@ func on_bleed_capped(foe: Node) -> void:
 	st.clear_bleed()
 	var pos: Vector2 = (foe as Node2D).global_position
 	ring(pos, 90.0, C_DUST)
-	for e in foes_near(pos, 90.0):
+	for e: Node2D in foes_near(pos, 90.0):
 		MWBoonStatus.of(e).blind(3.0)
 	p.land_slot_hit.call_deferred(foe, owed, "boon", true, 0.0)
 
 
 # --- Damage taken ------------------------------------------------------------------
+
 
 ## Returns the damage left after Wards and the Duel guard (0 = ignored).
 func before_hurt(amount: float, from: Vector2) -> float:
@@ -455,7 +463,7 @@ func after_hurt(_amount: float) -> void:
 	if has("petition_cell") and _cell_cd <= 0.0 and p.health.hp < p.health.max_hp * 0.3:
 		_cell_cd = 20.0
 		ring(p.global_position, 200.0, C_PETITION)
-		for pl in players_near(p.global_position, 200.0):
+		for pl: Node in players_near(p.global_position, 200.0):
 			pl.health.set_invuln(1.0)
 			pl.chambered = true
 
@@ -474,6 +482,7 @@ func try_lethal(amount: float) -> bool:
 
 # --- Debt ------------------------------------------------------------------------
 
+
 func add_debt(amount: float) -> void:
 	p.debt = minf(debt_cap(), p.debt + amount)
 	_debt_age = 0.0
@@ -489,6 +498,7 @@ func can_debt_cast() -> bool:
 
 # --- Verb objects -------------------------------------------------------------------
 
+
 ## Smite: light pillar after a 0.6 s telegraph ring (instant for Choir of Wards).
 func smite(pos: Vector2, instant: bool = false) -> void:
 	p.spawn_smite(pos, 42.0, p.base_hit(1.6), 0.0 if instant else SMITE_TELEGRAPH, C_CHURCH)
@@ -499,7 +509,9 @@ func _cast_arrive(pos: Vector2) -> void:
 	if has("dust_smoke"):
 		smoke(pos, 70.0, 3.0, 1.0)
 	if has("petition_trap"):
-		_snares.assign(_snares.filter(func(n: Node) -> bool: return is_instance_valid(n) and not n.is_queued_for_deletion()))
+		var still_up := func(n: Node) -> bool:
+			return is_instance_valid(n) and not n.is_queued_for_deletion()
+		_snares.assign(_snares.filter(still_up))
 		if _snares.size() >= 3:
 			_snares.pop_front().queue_free()
 		var c: Dictionary = p.slot_data("cast")
@@ -514,18 +526,15 @@ func _cast_arrive(pos: Vector2) -> void:
 		_snares.append(f)
 	if has("church_ward"):
 		var f := field(pos, 80.0, 3.0, C_CHURCH)
-		f.on_player = func(pl: Node) -> void:
-			pl.wards = mini(MAX_WARD, pl.wards + 1)
+		f.on_player = func(pl: Node) -> void: pl.wards = mini(MAX_WARD, pl.wards + 1)
 
 
 func smoke(pos: Vector2, r: float, seconds: float, blind_s: float) -> MWBoonField:
 	var f := field(pos, r, seconds, Color(0.72, 0.68, 0.6))
 	f.smoke = true
-	f.on_enemy = func(e: Node) -> void:
-		MWBoonStatus.of(e).blind(blind_s)
+	f.on_enemy = func(e: Node) -> void: MWBoonStatus.of(e).blind(blind_s)
 	if has("dust_doublehold"):
-		f.on_player = func(pl: Node) -> void:
-			pl.chambered = true
+		f.on_player = func(pl: Node) -> void: pl.chambered = true
 	return f
 
 
@@ -542,20 +551,18 @@ func _dust_devil(pos: Vector2) -> void:
 
 func _consecrate(pos: Vector2) -> void:
 	var f := field(pos, 60.0, 4.0, C_CHURCH)
-	f.on_enemy = func(e: Node) -> void:
-		MWBoonStatus.of(e).slow(0.4, 0.5)
-	f.on_player = func(pl: Node) -> void:
-		pl.cleanse()
+	f.on_enemy = func(e: Node) -> void: MWBoonStatus.of(e).slow(0.4, 0.5)
+	f.on_player = func(pl: Node) -> void: pl.cleanse()
 
 
 func _litany() -> void:
 	var dmg: float = p.base_hit(0.5)
-	for i in 3:
+	for i: int in 3:
 		await get_tree().create_timer(1.0 if i > 0 else 0.1).timeout
 		if p == null or p.dead or not is_inside_tree():
 			return
 		ring(p.global_position, 90.0, C_CHURCH)
-		for e in foes_near(p.global_position, 90.0):
+		for e: Node2D in foes_near(p.global_position, 90.0):
 			MWBoonStatus.of(e).slow(1.0, 0.55)
 			p.land_slot_hit(e, dmg, "boon", false, 0.0)
 
@@ -570,7 +577,7 @@ func _fuse(foe: Node) -> void:
 	st.fused = false
 	var pos: Vector2 = (foe as Node2D).global_position
 	ring(pos, 60.0, C_PETITION)
-	for e in foes_near(pos, 60.0):
+	for e: Node2D in foes_near(pos, 60.0):
 		p.land_slot_hit(e, dmg, "boon", false, 0.0)
 		sabotage(e, 0.6)
 
@@ -591,7 +598,7 @@ func _couture_image(pos: Vector2) -> void:
 	if p == null or not is_inside_tree():
 		return
 	_VFX.slash(p.get_parent(), pos, p.facing.angle())
-	for e in foes_near(pos, 64.0):
+	for e: Node2D in foes_near(pos, 64.0):
 		p.land_slot_hit(e, dmg, "echo", false, 160.0)
 
 
@@ -603,12 +610,13 @@ func sabotage(foe: Node, seconds: float) -> void:
 
 
 func _destroy_shots(pos: Vector2, r: float) -> void:
-	for s in get_tree().get_nodes_in_group("hostile_projectile"):
+	for s: Node in get_tree().get_nodes_in_group("hostile_projectile"):
 		if is_instance_valid(s) and (s as Node2D).global_position.distance_to(pos) <= r:
 			s.queue_free()
 
 
 # --- Queries ---------------------------------------------------------------------
+
 
 func _crit_condition(foe: Node, st: MWBoonStatus) -> bool:
 	if st and (st.blinded() or st.rooted()):
@@ -629,7 +637,7 @@ func _is_winding(foe: Node) -> bool:
 
 func foes_near(pos: Vector2, r: float) -> Array[Node2D]:
 	var out: Array[Node2D] = []
-	for e in get_tree().get_nodes_in_group("enemy"):
+	for e: Node in get_tree().get_nodes_in_group("enemy"):
 		if is_instance_valid(e) and e.global_position.distance_to(pos) <= r + 12.0:
 			out.append(e)
 	return out
@@ -637,8 +645,12 @@ func foes_near(pos: Vector2, r: float) -> Array[Node2D]:
 
 func players_near(pos: Vector2, r: float) -> Array[Node]:
 	var out: Array[Node] = []
-	for pl in get_tree().get_nodes_in_group("player"):
-		if is_instance_valid(pl) and not bool(pl.get("dead")) and pl.global_position.distance_to(pos) <= r:
+	for pl: Node in get_tree().get_nodes_in_group("player"):
+		if (
+			is_instance_valid(pl)
+			and not bool(pl.get("dead"))
+			and pl.global_position.distance_to(pos) <= r
+		):
 			out.append(pl)
 	return out
 
@@ -646,7 +658,7 @@ func players_near(pos: Vector2, r: float) -> Array[Node]:
 func nearest_foe(pos: Vector2, r: float, skip: Node = null) -> Node2D:
 	var best: Node2D = null
 	var best_d := r
-	for e in get_tree().get_nodes_in_group("enemy"):
+	for e: Node in get_tree().get_nodes_in_group("enemy"):
 		if not is_instance_valid(e) or e == skip:
 			continue
 		var d: float = e.global_position.distance_to(pos)
@@ -660,11 +672,14 @@ func nearest_foe(pos: Vector2, r: float, skip: Node = null) -> Node2D:
 func foe_ahead(r: float, half_arc: float) -> Node2D:
 	var best: Node2D = null
 	var best_d := r
-	for e in get_tree().get_nodes_in_group("enemy"):
+	for e: Node in get_tree().get_nodes_in_group("enemy"):
 		if not is_instance_valid(e):
 			continue
 		var off: Vector2 = e.global_position - p.global_position
-		if off.length() < best_d and (off.length() < 12.0 or absf(p.facing.angle_to(off)) <= half_arc):
+		if (
+			off.length() < best_d
+			and (off.length() < 12.0 or absf(p.facing.angle_to(off)) <= half_arc)
+		):
 			best_d = off.length()
 			best = e
 	return best
@@ -673,7 +688,7 @@ func foe_ahead(r: float, half_arc: float) -> Node2D:
 func _highest_hp_foe(r: float) -> Node2D:
 	var best: Node2D = null
 	var best_hp := 0.0
-	for e in foes_near(p.global_position, r):
+	for e: Node2D in foes_near(p.global_position, r):
 		var h: Health = e.get_node_or_null("Health")
 		if h and h.hp > best_hp:
 			best_hp = h.hp
@@ -682,6 +697,7 @@ func _highest_hp_foe(r: float) -> Node2D:
 
 
 # --- Visuals ---------------------------------------------------------------------
+
 
 func field(pos: Vector2, r: float, seconds: float, tint: Color) -> MWBoonField:
 	var f: MWBoonField = _FIELD.new()
@@ -697,7 +713,9 @@ func ring(pos: Vector2, r: float, tint: Color) -> void:
 ## Fading silhouette; stays in group "decoy" for `life` seconds (Ledger Step aggro).
 func afterimage(pos: Vector2, tint: Color, life: float = 0.35) -> Node2D:
 	var ghost := Polygon2D.new()
-	ghost.polygon = PackedVector2Array([Vector2(0, -22), Vector2(10, -4), Vector2(8, 14), Vector2(-8, 14), Vector2(-10, -4)])
+	ghost.polygon = PackedVector2Array(
+		[Vector2(0, -22), Vector2(10, -4), Vector2(8, 14), Vector2(-8, 14), Vector2(-10, -4)]
+	)
 	ghost.color = Color(tint, 0.6)
 	ghost.z_index = 10
 	ghost.add_to_group("decoy")

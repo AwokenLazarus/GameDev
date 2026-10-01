@@ -27,19 +27,21 @@ func _ready() -> void:
 
 func open_choices() -> void:
 	_choices = BoonDB.get_choices(3)
-	for c in buttons.get_children():
+	for c: Node in buttons.get_children():
 		c.queue_free()
 	var left := maxi(0, RunState.boon_picks_target - RunState.boon_picks_done)
 	title.text = "PICK A BOON"
 	if _subtitle:
-		_subtitle.text = "Combat is paused (%d picks left this run). Click one pact to continue fighting." % left
-	for boon in _choices:
+		_subtitle.text = (
+			"Combat is paused (%d picks left this run). Click one pact to continue fighting." % left
+		)
+	for boon: Dictionary in _choices:
 		var btn := Button.new()
 		btn.text = _label_for(boon)
 		btn.custom_minimum_size = Vector2(620, 96)
 		btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		var captured := boon
-		btn.pressed.connect(func(): _pick(captured))
+		btn.pressed.connect(func() -> void: _pick(captured))
 		buttons.add_child(btn)
 	visible = true
 	get_tree().paused = true
@@ -58,20 +60,23 @@ func _label_for(boon: Dictionary) -> String:
 	if bool(boon.get("is_fallback", false)):
 		return "%s\n%s" % [str(boon.get("name", "")), str(boon.get("desc", ""))]
 	var slot := str(boon.get("slot", "trigger"))
-	var head := "%s — %s  [%s · %s · %s]" % [
-		RunState.patron_display(str(boon.get("patron", ""))),
-		str(boon.get("name", "")),
-		slot.capitalize(),
-		str(boon.get("verb", "")),
-		str(boon.get("rarity", "common")).capitalize(),
-	]
+	var head := (
+		"%s — %s  [%s · %s · %s]"
+		% [
+			RunState.patron_display(str(boon.get("patron", ""))),
+			str(boon.get("name", "")),
+			slot.capitalize(),
+			str(boon.get("verb", "")),
+			str(boon.get("rarity", "common")).capitalize(),
+		]
+	)
 	var old := RunState.boon_in_slot(slot)
 	if not old.is_empty():
 		head += "\nReplaces %s" % str(old.get("name", ""))
 	var patron := str(boon.get("patron", ""))
 	if RunState.aligned_patron == "" and not RunState.PATRON_RIVALS.get(patron, []).is_empty():
 		var rivals: Array[String] = []
-		for r in RunState.PATRON_RIVALS[patron]:
+		for r: String in RunState.PATRON_RIVALS[patron]:
 			rivals.append(RunState.patron_display(str(r)))
 		head += "\nAligning blocks: %s (whole party)" % ", ".join(rivals)
 	return "%s\n%s" % [head, str(boon.get("desc", ""))]

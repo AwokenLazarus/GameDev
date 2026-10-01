@@ -3,7 +3,7 @@ const BiomePresenterScript = preload("res://scripts/visuals/biome_presenter.gd")
 const HubNpcScript = preload("res://scripts/hub/hub_npc.gd")
 ## Full Ashwick hub — factions, sector map, roster, meta, difficulty, co-op party.
 
-var _npcs: Dictionary = {} ## id -> HubNpc
+var _npcs: Dictionary = {}  ## id -> HubNpc
 var _prep_open: bool = false
 var _prep_btn: Button
 var _cta_label: Label
@@ -32,7 +32,7 @@ func _ready() -> void:
 	add_child(biome)
 	biome.present_ashwick()
 	## Hide old flat polygons if present
-	for n in ["BG", "Road", "Building1", "Building2", "Chapel", "Steeple"]:
+	for n: String in ["BG", "Road", "Building1", "Building2", "Chapel", "Steeple"]:
 		var node := get_node_or_null(n)
 		if node:
 			node.visible = false
@@ -44,7 +44,9 @@ func _ready() -> void:
 	_build_difficulty()
 	_setup_simple_hub_ui()
 	raid_btn.pressed.connect(_on_raid)
-	menu_btn.pressed.connect(func(): get_tree().change_scene_to_file("res://scenes/main.tscn"))
+	menu_btn.pressed.connect(
+		func() -> void: get_tree().change_scene_to_file("res://scenes/main.tscn")
+	)
 	add_p2_btn.pressed.connect(_on_add_p2)
 	GameState.currencies_changed.connect(_refresh)
 	GameState.unlocks_changed.connect(_on_unlocks)
@@ -111,31 +113,56 @@ func _build_difficulty() -> void:
 			diff_btn.select(2)
 		_:
 			diff_btn.select(0)
-	diff_btn.item_selected.connect(func(i):
-		GameState.selected_difficulty = ["dust", "blood", "eclipse"][i]
-		GameState.save_game()
-		_refresh()
+	diff_btn.item_selected.connect(
+		func(i: int) -> void:
+			GameState.selected_difficulty = ["dust", "blood", "eclipse"][i]
+			GameState.save_game()
+			_refresh()
 	)
 
 
 func _build_faction_buttons() -> void:
-	for c in buttons.get_children():
+	for c: Node in buttons.get_children():
 		c.queue_free()
 	_add_faction_btn("Mayor's Office", _on_mayor)
 	_add_faction_btn("Ashwick Kin", _on_kin)
 	_add_faction_btn("Dust Compact", _on_vendor_dust)
-	if GameState.hub_flags.get("vendor_church", false) or GameState.meta_rank("ash_vendor_church") > 0:
+	if (
+		GameState.hub_flags.get("vendor_church", false)
+		or GameState.meta_rank("ash_vendor_church") > 0
+	):
 		_add_faction_btn("Church of the Pale Sun", _on_church)
 	else:
-		_add_faction_btn("Church (rebuild with Ash)", func(): dialogue.text = "The chapel stall is ash and silence. Fund the Churchyard Stall rite.")
-	if GameState.hub_flags.get("vendor_petition", false) or GameState.meta_rank("ash_mission_petition") > 0 or GameState.hub_flags.get("mission_board", false) or GameState.hub_flags.get("unlock_mission_petition", false):
+		_add_faction_btn(
+			"Church (rebuild with Ash)",
+			func() -> void:
+				dialogue.text = "The chapel stall is ash and silence. Fund the Churchyard Stall rite."
+		)
+	if (
+		GameState.hub_flags.get("vendor_petition", false)
+		or GameState.meta_rank("ash_mission_petition") > 0
+		or GameState.hub_flags.get("mission_board", false)
+		or GameState.hub_flags.get("unlock_mission_petition", false)
+	):
 		_add_faction_btn("Red Petition", _on_petition)
 	else:
-		_add_faction_btn("Red Petition (locked)", func(): dialogue.text = "Rebels won't show until the Petition Board rises from ash.")
-	if GameState.hub_flags.get("vendor_veyra", false) or GameState.meta_rank("ash_veyra_eyes") > 0 or GameState.hub_flags.get("ashwick_vendor_veyra", false):
+		_add_faction_btn(
+			"Red Petition (locked)",
+			func() -> void:
+				dialogue.text = "Rebels won't show until the Petition Board rises from ash."
+		)
+	if (
+		GameState.hub_flags.get("vendor_veyra", false)
+		or GameState.meta_rank("ash_veyra_eyes") > 0
+		or GameState.hub_flags.get("ashwick_vendor_veyra", false)
+	):
 		_add_faction_btn("House Veyra's Eyes", _on_veyra)
 	else:
-		_add_faction_btn("Veyra Eyes (locked)", func(): dialogue.text = "A noble spy needs a rebuilt nest. Spend Ash on their safehouse.")
+		_add_faction_btn(
+			"Veyra Eyes (locked)",
+			func() -> void:
+				dialogue.text = "A noble spy needs a rebuilt nest. Spend Ash on their safehouse."
+		)
 	_add_faction_btn("Blood Rite Chamber", _on_rite_hint)
 
 
@@ -148,13 +175,13 @@ func _add_faction_btn(text: String, cb: Callable) -> void:
 
 
 func _build_sectors() -> void:
-	for c in sector_box.get_children():
+	for c: Node in sector_box.get_children():
 		c.queue_free()
 	var title := Label.new()
 	title.text = "Raids"
 	title.modulate = Color(0.86, 0.78, 0.7)
 	sector_box.add_child(title)
-	for s in SectorDB.all_raidable_sectors():
+	for s: Dictionary in SectorDB.all_raidable_sectors():
 		var id := str(s.get("id", ""))
 		var b := Button.new()
 		var clears := int(GameState.sectors_cleared.get(id, 0))
@@ -176,13 +203,13 @@ func _select_sector(id: String, desc: String) -> void:
 
 
 func _build_roster() -> void:
-	for c in roster_box.get_children():
+	for c: Node in roster_box.get_children():
 		c.queue_free()
 	var title := Label.new()
 	title.text = "Brood Roster"
 	title.modulate = Color(0.86, 0.78, 0.7)
 	roster_box.add_child(title)
-	for ch in CharacterDB.all_characters():
+	for ch: Dictionary in CharacterDB.all_characters():
 		var id := str(ch.get("id", ""))
 		var unlocked := CharacterDB.is_unlocked(id)
 		var b := Button.new()
@@ -191,7 +218,15 @@ func _build_roster() -> void:
 			b.pressed.connect(_select_character.bind(id))
 		else:
 			var cost: Dictionary = ch.get("unlock_cost", {})
-			b.text = "%s — unlock B%d/A%d/T%d" % [ch.get("name", id), int(cost.get("blood", 0)), int(cost.get("ash", 0)), int(cost.get("tech", 0))]
+			b.text = (
+				"%s — unlock B%d/A%d/T%d"
+				% [
+					ch.get("name", id),
+					int(cost.get("blood", 0)),
+					int(cost.get("ash", 0)),
+					int(cost.get("tech", 0))
+				]
+			)
 			b.pressed.connect(_unlock_character.bind(id))
 		b.custom_minimum_size = Vector2(260, 32)
 		if GameState.party.size() and str(GameState.party[0].get("character_id", "")) == id:
@@ -199,7 +234,7 @@ func _build_roster() -> void:
 		roster_box.add_child(b)
 		## Alts
 		if unlocked:
-			for alt in CharacterDB.get_alts(id):
+			for alt: Dictionary in CharacterDB.get_alts(id):
 				var aid := str(alt.get("id", ""))
 				var ab := Button.new()
 				if aid in GameState.unlocked_alts:
@@ -207,25 +242,33 @@ func _build_roster() -> void:
 					ab.pressed.connect(_select_alt.bind(id, aid))
 				else:
 					var ac: Dictionary = alt.get("unlock_cost", {})
-					ab.text = "  unlock alt %s (B%d/A%d/T%d)" % [alt.get("name", aid), int(ac.get("blood", 0)), int(ac.get("ash", 0)), int(ac.get("tech", 0))]
+					ab.text = (
+						"  unlock alt %s (B%d/A%d/T%d)"
+						% [
+							alt.get("name", aid),
+							int(ac.get("blood", 0)),
+							int(ac.get("ash", 0)),
+							int(ac.get("tech", 0))
+						]
+					)
 					ab.pressed.connect(_unlock_alt.bind(aid, ac))
 				ab.custom_minimum_size = Vector2(260, 28)
 				roster_box.add_child(ab)
 
 
 func _build_meta() -> void:
-	for c in meta_box.get_children():
+	for c: Node in meta_box.get_children():
 		c.queue_free()
 	var title := Label.new()
 	title.text = "Meta — Blood / Ash / Tech"
 	title.modulate = Color(0.86, 0.78, 0.7)
 	meta_box.add_child(title)
-	for branch in ["blood", "ash", "tech"]:
+	for branch: String in ["blood", "ash", "tech"]:
 		var bl := Label.new()
 		bl.text = branch.capitalize()
 		bl.modulate = Color(0.7, 0.65, 0.55)
 		meta_box.add_child(bl)
-		for up in MetaDB.get_branch(branch):
+		for up: Dictionary in MetaDB.get_branch(branch):
 			var id := str(up.get("id", ""))
 			var rank := GameState.meta_rank(id)
 			var max_r := int(up.get("max_rank", 1))
@@ -234,27 +277,34 @@ func _build_meta() -> void:
 			b.tooltip_text = str(up.get("desc", ""))
 			b.disabled = rank >= max_r
 			b.custom_minimum_size = Vector2(260, 28)
-			b.pressed.connect(func():
-				if GameState.buy_meta(id):
-					dialogue.text = "Rite taken: %s" % up.get("name", id)
-					_build_meta()
-					_build_faction_buttons()
-					_refresh()
-				else:
-					dialogue.text = "Not enough tribute for %s." % up.get("name", id)
+			b.pressed.connect(
+				func() -> void:
+					if GameState.buy_meta(id):
+						dialogue.text = "Rite taken: %s" % up.get("name", id)
+						_build_meta()
+						_build_faction_buttons()
+						_refresh()
+					else:
+						dialogue.text = "Not enough tribute for %s." % up.get("name", id)
 			)
 			meta_box.add_child(b)
 
 
 func _refresh() -> void:
-	currencies.text = "Blood %d   Ash %d   Tech %d   ·   Moons %d" % [
-		GameState.blood, GameState.ash, GameState.tech, GameState.moons_survived
-	]
+	currencies.text = (
+		"Blood %d   Ash %d   Tech %d   ·   Moons %d"
+		% [GameState.blood, GameState.ash, GameState.tech, GameState.moons_survived]
+	)
 	var heats := ", ".join(GameState.heat_modifiers) if GameState.heat_modifiers.size() else "none"
-	ng_label.text = "NG+ %d · Heats: %s · Diff: %s" % [GameState.ng_plus, heats, GameState.difficulty_label()]
-	status.text = "Ashwick — ruined family town · Sector: %s" % GameState.selected_sector.replace("_", " ").capitalize()
+	ng_label.text = (
+		"NG+ %d · Heats: %s · Diff: %s" % [GameState.ng_plus, heats, GameState.difficulty_label()]
+	)
+	status.text = (
+		"Ashwick — ruined family town · Sector: %s"
+		% GameState.selected_sector.replace("_", " ").capitalize()
+	)
 	var parts: PackedStringArray = []
-	for i in GameState.party.size():
+	for i: int in GameState.party.size():
 		var p: Dictionary = GameState.party[i]
 		parts.append("P%d:%s" % [i + 1, str(p.get("character_id", "?"))])
 	party_label.text = "Party (%d): %s" % [GameState.party.size(), ", ".join(parts)]
@@ -278,7 +328,9 @@ func _select_character(id: String) -> void:
 	var alt := ""
 	if GameState.party.size():
 		alt = str(GameState.party[0].get("alt_id", ""))
-	GameState.party[0] = {"character_id": id, "alt_id": alt if alt.begins_with(id) else "", "device": -1}
+	GameState.party[0] = {
+		"character_id": id, "alt_id": alt if alt.begins_with(id) else "", "device": -1
+	}
 	dialogue.text = str(CharacterDB.get_character(id).get("description", id))
 	_build_roster()
 	_refresh()
@@ -322,21 +374,25 @@ func _on_add_p2() -> void:
 		return
 	## Next unlocked character not in party, keyboard P2 / joypad
 	var used: Array[String] = []
-	for p in GameState.party:
+	for p: Dictionary in GameState.party:
 		used.append(str(p.get("character_id", "")))
 	var pick := "severin"
-	for ch in CharacterDB.all_characters():
+	for ch: Dictionary in CharacterDB.all_characters():
 		var id := str(ch.get("id", ""))
 		if CharacterDB.is_unlocked(id) and id not in used:
 			pick = id
 			break
 	var dev := 0 if GameState.party.size() == 1 else GameState.party.size() - 1
 	if GameState.party.size() == 1:
-		dev = -2 ## flag for arrow keys P2
-	GameState.party.append({"character_id": pick, "alt_id": "", "device": 0 if GameState.party.size() > 1 else -2})
+		dev = -2  ## flag for arrow keys P2
+	GameState.party.append(
+		{"character_id": pick, "alt_id": "", "device": 0 if GameState.party.size() > 1 else -2}
+	)
 	## Fix device: P1 keyboard -1, P2 arrows as index with device -2 handled in player as index 1
 	GameState.party[GameState.party.size() - 1]["device"] = 0 if GameState.party.size() > 2 else -2
-	dialogue.text = "P%d joins as %s. Arrows/Ctrl/Shift or gamepad." % [GameState.party.size(), pick]
+	dialogue.text = (
+		"P%d joins as %s. Arrows/Ctrl/Shift or gamepad." % [GameState.party.size(), pick]
+	)
 	_refresh()
 
 
@@ -349,7 +405,7 @@ func _spawn_hub_npcs() -> void:
 		{"id": "npc_petition", "name": "Red Petition", "pos": Vector2(260, -40)},
 		{"id": "npc_veyra", "name": "Veyra Eye", "pos": Vector2(-260, -20)},
 	]
-	for d in defs:
+	for d: Variant in defs:
 		var npc: Node2D = HubNpcScript.new()
 		npc.npc_id = str(d["id"])
 		npc.display_name = str(d["name"])
@@ -368,16 +424,16 @@ func _on_mayor() -> void:
 	GameState.save_game()
 	_talk_npc("npc_mayor")
 	if RunState.reputation <= -5:
-		dialogue.text = "Mayor: \"Monster. Raid if you must—the Church is watching.\""
+		dialogue.text = 'Mayor: "Monster. Raid if you must—the Church is watching."'
 	else:
-		dialogue.text = "Mayor: \"The Dominion wants bodies, not scandals. Clear a sector. Quietly.\""
+		dialogue.text = 'Mayor: "The Dominion wants bodies, not scandals. Clear a sector. Quietly."'
 
 
 func _on_kin() -> void:
 	GameState.kin_met = true
 	GameState.add_currency("ash", 2)
 	_talk_npc("npc_kin")
-	dialogue.text = "Kin: \"You look like him when the moon's wrong. Still—come home between hunts. (+2 Ash)\""
+	dialogue.text = 'Kin: "You look like him when the moon\'s wrong. Still—come home between hunts. (+2 Ash)"'
 	_refresh()
 
 
@@ -389,9 +445,9 @@ func _on_vendor_dust() -> void:
 		return
 	if GameState.spend("ash", cost):
 		GameState.add_currency("tech", 2)
-		dialogue.text = "Dust Compact: \"Rail scrap and a prayer.\" (-%d Ash, +2 Tech)" % cost
+		dialogue.text = 'Dust Compact: "Rail scrap and a prayer." (-%d Ash, +2 Tech)' % cost
 	else:
-		dialogue.text = "Dust Compact: \"Come back with ash.\""
+		dialogue.text = 'Dust Compact: "Come back with ash."'
 	_refresh()
 
 
@@ -399,11 +455,11 @@ func _on_church() -> void:
 	GameState.church_met = true
 	_talk_npc("npc_church")
 	if RunState.feed_count > 0 or RunState.reputation < 0:
-		dialogue.text = "Cantor's aide: \"We smell the feed on you. Tithe Blood or leave.\""
+		dialogue.text = 'Cantor\'s aide: "We smell the feed on you. Tithe Blood or leave."'
 		if GameState.spend("blood", 8):
-			dialogue.text = "Church: \"Absolved—thinly. Do not feed on a hymn-night.\""
+			dialogue.text = 'Church: "Absolved—thinly. Do not feed on a hymn-night."'
 	else:
-		dialogue.text = "Church: \"Aurelian's light judges. Buy a ward for 10 Blood?\""
+		dialogue.text = 'Church: "Aurelian\'s light judges. Buy a ward for 10 Blood?"'
 		if GameState.can_spend("blood", 10) and GameState.spend("blood", 10):
 			dialogue.text = "You carry a pale ward into the next raid. (+8 max HP via blood spent rite — flavor)"
 	GameState.save_game()
@@ -413,7 +469,7 @@ func _on_church() -> void:
 func _on_petition() -> void:
 	GameState.petition_met = true
 	_talk_npc("npc_petition")
-	dialogue.text = "Red Petition: \"Hit a sector general. We'll tip Ash your way.\" (+5 Ash retainer)"
+	dialogue.text = 'Red Petition: "Hit a sector general. We\'ll tip Ash your way." (+5 Ash retainer)'
 	GameState.add_currency("ash", 5)
 	_refresh()
 
@@ -423,9 +479,9 @@ func _on_veyra() -> void:
 	_talk_npc("npc_veyra")
 	if GameState.spend("tech", 8):
 		GameState.add_currency("blood", 6)
-		dialogue.text = "Veyra Eyes: \"Noble tech for imperial blood. Don't tell the Church.\" (-8 Tech, +6 Blood)"
+		dialogue.text = 'Veyra Eyes: "Noble tech for imperial blood. Don\'t tell the Church." (-8 Tech, +6 Blood)'
 	else:
-		dialogue.text = "Veyra Eyes: \"Bring tech. We don't barter in kindness.\""
+		dialogue.text = 'Veyra Eyes: "Bring tech. We don\'t barter in kindness."'
 	_refresh()
 
 

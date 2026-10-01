@@ -20,7 +20,7 @@ func _ready() -> void:
 func _ai_tick(delta: float) -> void:
 	if _player == null:
 		return
-	var dir := (_player.global_position - global_position)
+	var dir := _player.global_position - global_position
 	var dist := dir.length()
 	if _winding:
 		_windup -= delta
@@ -38,7 +38,9 @@ func _ai_tick(delta: float) -> void:
 	_attack_cd -= delta
 	if dist < 340.0 and _attack_cd <= 0.0:
 		_cast_pos = _pick_zone_pos(dir, dist)
-		_start_windup(CAST_WIND, Color(0.7, 0.4, 1.0), _cast_pos - global_position, Vector2(1.2, 1.2))
+		_start_windup(
+			CAST_WIND, Color(0.7, 0.4, 1.0), _cast_pos - global_position, Vector2(1.2, 1.2)
+		)
 
 
 func _pick_zone_pos(dir: Vector2, dist: float) -> Vector2:
@@ -50,7 +52,7 @@ func _pick_zone_pos(dir: Vector2, dist: float) -> Vector2:
 
 
 func _ally_nearby() -> bool:
-	for e in get_tree().get_nodes_in_group("enemy"):
+	for e: Node in get_tree().get_nodes_in_group("enemy"):
 		if e == self or not is_instance_valid(e):
 			continue
 		if global_position.distance_to(e.global_position) < 130.0:

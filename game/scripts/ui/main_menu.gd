@@ -14,7 +14,7 @@ func _ready() -> void:
 	start_btn.text = "PLAY RAID — Dust Meridian"
 	start_btn.custom_minimum_size = Vector2(360, 56)
 	start_btn.pressed.connect(_on_play_raid)
-	quit_btn.pressed.connect(func(): get_tree().quit())
+	quit_btn.pressed.connect(func() -> void: get_tree().quit())
 	subtitle.text = "Fight first. Town hub is optional."
 	_hub_btn = Button.new()
 	_hub_btn.text = "Ashwick Town Hub"
@@ -51,8 +51,12 @@ func _ready() -> void:
 		hero.scale = Vector2(1.8, 1.8)
 	if moon:
 		var tw := create_tween().set_loops()
-		tw.tween_property(moon, "position:y", moon.position.y - 8.0, 2.4).set_trans(Tween.TRANS_SINE)
-		tw.tween_property(moon, "position:y", moon.position.y + 8.0, 2.4).set_trans(Tween.TRANS_SINE)
+		tw.tween_property(moon, "position:y", moon.position.y - 8.0, 2.4).set_trans(
+			Tween.TRANS_SINE
+		)
+		tw.tween_property(moon, "position:y", moon.position.y + 8.0, 2.4).set_trans(
+			Tween.TRANS_SINE
+		)
 	if hero:
 		var tw2 := create_tween().set_loops()
 		tw2.tween_property(hero, "position:y", hero.position.y - 4.0, 1.2)

@@ -12,7 +12,7 @@ var _sprite: Sprite2D
 var _outline: Sprite2D
 var _shadow: Sprite2D
 var _marker: Polygon2D
-var _anims: Dictionary = {} ## String -> Array[Texture2D]
+var _anims: Dictionary = {}  ## String -> Array[Texture2D]
 var _anim: String = "idle"
 var _frames: Array[Texture2D] = []
 var _frame_i: int = 0
@@ -32,9 +32,7 @@ func _ready() -> void:
 	_marker = Polygon2D.new()
 	_marker.z_index = -2
 	_marker.color = Color(0.95, 0.35, 0.3, 0.55)
-	_marker.polygon = PackedVector2Array([
-		-22, 0, -16, 8, 16, 8, 22, 0, 16, -6, -16, -6
-	])
+	_marker.polygon = PackedVector2Array([-22, 0, -16, 8, 16, 8, 22, 0, 16, -6, -16, -6])
 	_marker.visible = show_marker
 	add_child(_marker)
 	_shadow = Sprite2D.new()
@@ -63,9 +61,9 @@ func load_sprite(folder: String, name: String) -> void:
 	sprite_folder = folder
 	sprite_name = name
 	_anims.clear()
-	for anim in ["idle", "walk", "run", "attack", "dodge", "talk"]:
+	for anim: String in ["idle", "walk", "run", "attack", "dodge", "talk"]:
 		var frames: Array[Texture2D] = []
-		for i in 8:
+		for i: int in 8:
 			var path := "res://assets/textures/%s/%s_%s_f%d.png" % [folder, name, anim, i]
 			if ResourceLoader.exists(path):
 				frames.append(load(path))
@@ -76,7 +74,7 @@ func load_sprite(folder: String, name: String) -> void:
 	## Legacy fallback: name_f0..f3 as walk/idle
 	if not _anims.has("walk"):
 		var legacy: Array[Texture2D] = []
-		for i in 4:
+		for i: int in 4:
 			var path := "res://assets/textures/%s/%s_f%d.png" % [folder, name, i]
 			if ResourceLoader.exists(path):
 				legacy.append(load(path))

@@ -168,24 +168,40 @@ func _on_pact_formed(patron: String) -> void:
 	var p := get_tree().get_first_node_in_group("player")
 	var kit: String = str(p.get("kit_type")) if p else ""
 	var transform: String = str((MWPactKit.TRANSFORMS.get(patron, {}) as Dictionary).get(kit, ""))
-	_show_card("DEEP PACT · %s\n%s" % [MWPactKit.PACT_NAMES.get(patron, patron),
-		transform if transform != "" else RunState.patron_display(patron)])
+	_show_card(
+		(
+			"DEEP PACT · %s\n%s"
+			% [
+				MWPactKit.PACT_NAMES.get(patron, patron),
+				transform if transform != "" else RunState.patron_display(patron)
+			]
+		)
+	)
 	var tw := create_tween()
 	title_card.add_theme_color_override("font_color", MWPactKit.COLORS.get(patron, Color.WHITE))
 	tw.tween_interval(2.7)
-	tw.tween_callback(func() -> void: title_card.add_theme_color_override("font_color", Color(0.95, 0.85, 0.72)))
+	tw.tween_callback(
+		func() -> void: title_card.add_theme_color_override("font_color", Color(0.95, 0.85, 0.72))
+	)
 
 
 func _on_boons() -> void:
 	var pact := ""
 	if RunState.pact_patron != "":
 		pact = " · PACT: %s" % MWPactKit.PACT_NAMES.get(RunState.pact_patron, "")
-	boon_label.text = "Boons %d/%d · %s%s" % [
-		RunState.boon_picks_done,
-		RunState.boon_picks_target,
-		RunState.patron_display(RunState.aligned_patron) if RunState.aligned_patron != "" else "Unaligned",
-		pact,
-	]
+	boon_label.text = (
+		"Boons %d/%d · %s%s"
+		% [
+			RunState.boon_picks_done,
+			RunState.boon_picks_target,
+			(
+				RunState.patron_display(RunState.aligned_patron)
+				if RunState.aligned_patron != ""
+				else "Unaligned"
+			),
+			pact,
+		]
+	)
 
 
 func _on_rep(value: int) -> void:

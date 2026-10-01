@@ -67,20 +67,35 @@ func _build_visual() -> void:
 	add_child(shape)
 
 	var arch := Polygon2D.new()
-	arch.color = Color(0.42, 0.22, 0.2, 0.92) if reward.begins_with("wild") else Color(0.28, 0.18, 0.14, 0.95)
-	arch.polygon = PackedVector2Array([
-		Vector2(-26, 38), Vector2(-26, -18), Vector2(-12, -36),
-		Vector2(12, -36), Vector2(26, -18), Vector2(26, 38),
-	])
+	arch.color = (
+		Color(0.42, 0.22, 0.2, 0.92)
+		if reward.begins_with("wild")
+		else Color(0.28, 0.18, 0.14, 0.95)
+	)
+	arch.polygon = PackedVector2Array(
+		[
+			Vector2(-26, 38),
+			Vector2(-26, -18),
+			Vector2(-12, -36),
+			Vector2(12, -36),
+			Vector2(26, -18),
+			Vector2(26, 38),
+		]
+	)
 	add_child(arch)
 
 	var slit := Polygon2D.new()
 	slit.color = Color(0.85, 0.62, 0.28, 0.85) if reward == "boon" else Color(0.55, 0.72, 0.85, 0.8)
 	if reward.begins_with("wild"):
 		slit.color = Color(0.75, 0.35, 0.28, 0.9)
-	slit.polygon = PackedVector2Array([
-		Vector2(-8, 22), Vector2(-8, -10), Vector2(8, -10), Vector2(8, 22),
-	])
+	slit.polygon = PackedVector2Array(
+		[
+			Vector2(-8, 22),
+			Vector2(-8, -10),
+			Vector2(8, -10),
+			Vector2(8, 22),
+		]
+	)
 	add_child(slit)
 
 	_label = Label.new()

@@ -73,9 +73,10 @@ func _ready() -> void:
 	_build_arena(Vector2(900, 600), [])
 	_spawn_party(party)
 	_start_dungeon_burst()
-	banner.text = "FIGHT — %s · Burst 1/%d · red rings = you/enemies" % [
-		str(_sector.get("name", "Sector")), RunState.dungeons_total
-	]
+	banner.text = (
+		"FIGHT — %s · Burst 1/%d · red rings = you/enemies"
+		% [str(_sector.get("name", "Sector")), RunState.dungeons_total]
+	)
 
 
 func _paint_biome() -> void:
@@ -88,17 +89,17 @@ func _paint_biome() -> void:
 
 func _build_arena(size: Vector2, inner_walls: Array = []) -> void:
 	_arena_half = size
-	ground.polygon = PackedVector2Array([
-		-size.x, -size.y, size.x, -size.y, size.x, size.y, -size.x, size.y
-	])
+	ground.polygon = PackedVector2Array(
+		[-size.x, -size.y, size.x, -size.y, size.x, size.y, -size.x, size.y]
+	)
 	ground.visible = false
-	for c in walls.get_children():
+	for c: Node in walls.get_children():
 		c.queue_free()
 	_add_wall(Vector2(0, -size.y), Vector2(size.x * 2, 24))
 	_add_wall(Vector2(0, size.y), Vector2(size.x * 2, 24))
 	_add_wall(Vector2(-size.x, 0), Vector2(24, size.y * 2))
 	_add_wall(Vector2(size.x, 0), Vector2(24, size.y * 2))
-	for w in inner_walls:
+	for w: Variant in inner_walls:
 		if typeof(w) != TYPE_DICTIONARY:
 			continue
 		_add_wall(w.get("pos", Vector2.ZERO), w.get("size", Vector2(40, 40)))
@@ -116,8 +117,12 @@ func _build_arena(size: Vector2, inner_walls: Array = []) -> void:
 
 
 func _apply_party_camera() -> void:
-	var zoom := StageLayout.WILD_CAM_ZOOM if RunState.phase == RunState.Phase.WILD else StageLayout.BURST_CAM_ZOOM
-	for p in players:
+	var zoom := (
+		StageLayout.WILD_CAM_ZOOM
+		if RunState.phase == RunState.Phase.WILD
+		else StageLayout.BURST_CAM_ZOOM
+	)
+	for p: CharacterBody2D in players:
 		if is_instance_valid(p) and p.has_method("configure_stage_camera"):
 			p.configure_stage_camera(_arena_half, zoom)
 
@@ -140,47 +145,52 @@ func _add_wall(pos: Vector2, size: Vector2) -> void:
 
 func _spawn_party(party: Array) -> void:
 	players.clear()
-	for i in party.size():
+	for i: int in party.size():
 		var slot: Dictionary = party[i]
 		var p: CharacterBody2D = PLAYER_SCENE.instantiate()
 		p.global_position = Vector2(i * 36.0 - (party.size() - 1) * 18.0, 0)
 		entities.add_child(p)
 		if p.has_method("configure"):
-			p.configure(i, str(slot.get("character_id", "severin")), str(slot.get("alt_id", "")), int(slot.get("device", -1)))
+			p.configure(
+				i,
+				str(slot.get("character_id", "severin")),
+				str(slot.get("alt_id", "")),
+				int(slot.get("device", -1))
+			)
 		p.died.connect(_on_player_died.bind(p))
 		players.append(p)
 	_apply_party_camera()
 
 
 func _lead() -> CharacterBody2D:
-	for p in players:
+	for p: CharacterBody2D in players:
 		if is_instance_valid(p) and not p.dead:
 			return p
 	return players[0] if players.size() else null
 
 
 func _place_party(at: Vector2) -> void:
-	for i in players.size():
+	for i: int in players.size():
 		var p: CharacterBody2D = players[i]
 		if is_instance_valid(p):
 			p.global_position = at + Vector2(i * 36.0 - (players.size() - 1) * 18.0, 0)
 
 
 func _clear_enemies() -> void:
-	for e in get_tree().get_nodes_in_group("enemy"):
+	for e: Node in get_tree().get_nodes_in_group("enemy"):
 		e.queue_free()
-	for c in get_tree().get_nodes_in_group("feedable_corpse"):
+	for c: Node in get_tree().get_nodes_in_group("feedable_corpse"):
 		c.queue_free()
 
 
 func _clear_exits() -> void:
-	for d in get_tree().get_nodes_in_group("exit_door"):
+	for d: Node in get_tree().get_nodes_in_group("exit_door"):
 		d.queue_free()
 	_awaiting_exit = false
 
 
 func _clear_hooks() -> void:
-	for n in get_tree().get_nodes_in_group("greed_hook"):
+	for n: Node in get_tree().get_nodes_in_group("greed_hook"):
 		n.queue_free()
 	chest_points.clear()
 	shrine_points.clear()
@@ -193,12 +203,17 @@ func _start_dungeon_burst() -> void:
 	_awaiting_exit = false
 	_clear_exits()
 	_clear_hooks()
-	var rid := _queued_room_id if not _queued_room_id.is_empty() else StageLayout.room_id_for_index(RunState.dungeon_index)
+	var rid := (
+		_queued_room_id
+		if not _queued_room_id.is_empty()
+		else StageLayout.room_id_for_index(RunState.dungeon_index)
+	)
 	_room = StageLayout.room(rid)
 	var sname := str(_sector.get("name", "Sector"))
-	banner.text = "%s — Burst %d / %d · %s" % [
-		sname, RunState.dungeon_index + 1, RunState.dungeons_total, str(_room.get("id", "room"))
-	]
+	banner.text = (
+		"%s — Burst %d / %d · %s"
+		% [sname, RunState.dungeon_index + 1, RunState.dungeons_total, str(_room.get("id", "room"))]
+	)
 	_build_arena(_room.get("half", Vector2(480, 320)), _room.get("inner_walls", []))
 	_place_party(_room.get("entry", Vector2.ZERO))
 	_clear_enemies()
@@ -211,8 +226,17 @@ func _start_dungeon_burst() -> void:
 	_pending_spawns = 0
 	_burst_archetypes.clear()
 	print(
-		"STAGE_LAYOUT phase=dungeon room=%s half=%.0fx%.0f burst=%d/%d enemies=%d"
-		% [str(_room.get("id", "")), _arena_half.x, _arena_half.y, RunState.dungeon_index + 1, RunState.dungeons_total, count]
+		(
+			"STAGE_LAYOUT phase=dungeon room=%s half=%.0fx%.0f burst=%d/%d enemies=%d"
+			% [
+				str(_room.get("id", "")),
+				_arena_half.x,
+				_arena_half.y,
+				RunState.dungeon_index + 1,
+				RunState.dungeons_total,
+				count
+			]
+		)
 	)
 	_spawn_burst_wave()
 	RunState.begin_room()
@@ -225,7 +249,7 @@ func _spawn_burst_wave() -> void:
 	var offset := _burst_total - _burst_left
 	_burst_left -= n
 	_pending_spawns += n
-	for i in n:
+	for i: int in n:
 		_kick_burst_spawn(offset + i, n, i)
 
 
@@ -265,13 +289,21 @@ func _room_spawn_pos(i: int) -> Vector2:
 
 func _spawn_burst_enemy(i: int, _total: int) -> void:
 	var lead := _lead()
-	var e: Node2D = MWEnemyFactory.spawn(entities, _room_spawn_pos(i), lead, {
-		"sector_id": str(_sector.get("id", RunState.sector_id)),
-		"elite": MWEnemyFactory.burst_elite(),
-		"avoid_archetypes": _burst_archetypes,
-		"telegraph": true,
-		"telegraph_s": 0.45,
-	})
+	var e: Node2D = (
+		MWEnemyFactory
+		. spawn(
+			entities,
+			_room_spawn_pos(i),
+			lead,
+			{
+				"sector_id": str(_sector.get("id", RunState.sector_id)),
+				"elite": MWEnemyFactory.burst_elite(),
+				"avoid_archetypes": _burst_archetypes,
+				"telegraph": true,
+				"telegraph_s": 0.45,
+			}
+		)
+	)
 	var arch := str(e.get("archetype"))
 	if arch != "" and not _burst_archetypes.has(arch):
 		_burst_archetypes.append(arch)
@@ -314,7 +346,7 @@ func _open_exit_doors() -> void:
 	var specs: Array = StageLayout.last_burst_doors(_arena_half) if last else _room.get("doors", [])
 	if specs.size() < 2:
 		specs = StageLayout.room("chamber").get("doors", [])
-	for spec in specs:
+	for spec: Variant in specs:
 		if typeof(spec) != TYPE_DICTIONARY:
 			continue
 		var door: ExitDoor = ExitDoorScript.new()
@@ -349,7 +381,9 @@ func _apply_door_reward(reward: String, next_id: String) -> void:
 		await _offer_boon_if_needed()
 	elif reward.begins_with("wild"):
 		_wild_reward = reward
-		_wild_start = StageLayout.wild_start(reward, StageLayout.wild_half(bool(_sector.get("nightmare", false))))
+		_wild_start = StageLayout.wild_start(
+			reward, StageLayout.wild_half(bool(_sector.get("nightmare", false)))
+		)
 	RunState.dungeon_index += 1
 	if RunState.dungeon_index >= RunState.dungeons_total:
 		_start_wild()
@@ -378,8 +412,10 @@ func _start_wild() -> void:
 	_clear_enemies()
 	var view := get_viewport().get_visible_rect().size / StageLayout.WILD_CAM_ZOOM
 	print(
-		"STAGE_LAYOUT phase=wild half=%.0fx%.0f zoom=%.2f view≈%.0fx%.0f travel=1 start=%s"
-		% [wild_size.x, wild_size.y, StageLayout.WILD_CAM_ZOOM, view.x, view.y, _wild_reward]
+		(
+			"STAGE_LAYOUT phase=wild half=%.0fx%.0f zoom=%.2f view≈%.0fx%.0f travel=1 start=%s"
+			% [wild_size.x, wild_size.y, StageLayout.WILD_CAM_ZOOM, view.x, view.y, _wild_reward]
+		)
 	)
 	await _offer_boon_if_needed()
 	RunState.begin_room()
@@ -390,14 +426,14 @@ func _place_greed_hooks(half: Vector2) -> void:
 	var hooks: Dictionary = StageLayout.greed_hooks(half)
 	chest_points.clear()
 	shrine_points.clear()
-	for p in hooks.get("chest", []):
+	for p: Variant in hooks.get("chest", []):
 		chest_points.append(p)
-	for p in hooks.get("shrine", []):
+	for p: Variant in hooks.get("shrine", []):
 		shrine_points.append(p)
-	for pos in chest_points:
+	for pos: Vector2 in chest_points:
 		_spawn_greed(pos, "chest")
 	var shrine_kinds: PackedStringArray = StageLayout.SHRINE_KINDS
-	for i in shrine_points.size():
+	for i: int in shrine_points.size():
 		_spawn_greed(shrine_points[i], shrine_kinds[i % shrine_kinds.size()])
 	print("WILD_GREED_HOOKS chests=%d shrines=%d" % [chest_points.size(), shrine_points.size()])
 
@@ -453,7 +489,12 @@ func _on_greed_activated(shrine: GreedShrine, who: Node) -> void:
 					detail = "bleed-%.0f" % cost
 			banner.text = "The well drinks — %s" % detail
 	RunState.note_greed(kind)
-	print("GREED_USED kind=%s detail=%s t=%.1f wild_kills=%d" % [kind, detail, RunState.run_time, RunState.wild_kills])
+	print(
+		(
+			"GREED_USED kind=%s detail=%s t=%.1f wild_kills=%d"
+			% [kind, detail, RunState.run_time, RunState.wild_kills]
+		)
+	)
 	if kind != "chest":
 		await _offer_boon_if_needed(true)
 
@@ -485,8 +526,10 @@ func _on_general_defeated() -> void:
 	banner.text = "Sector seized — returning to Ashwick"
 	director.stop()
 	print(
-		"SECTOR_CLEAR_TIME sector=%s seconds=%.1f target=%.1f"
-		% [RunState.sector_id, RunState.run_time, SECTOR_CLEAR_TARGET]
+		(
+			"SECTOR_CLEAR_TIME sector=%s seconds=%.1f target=%.1f"
+			% [RunState.sector_id, RunState.run_time, SECTOR_CLEAR_TARGET]
+		)
 	)
 	_spawn_gear_drop(Vector2.ZERO if _lead() == null else _lead().global_position)
 	## The general always pays a pact, even past the soft target.
@@ -536,7 +579,7 @@ func _on_boon_chosen(_boon: Dictionary) -> void:
 func _on_player_died(p: CharacterBody2D) -> void:
 	## Co-op: wipe only if all dead
 	var any_alive := false
-	for pl in players:
+	for pl: CharacterBody2D in players:
 		if is_instance_valid(pl) and not pl.dead:
 			any_alive = true
 			break

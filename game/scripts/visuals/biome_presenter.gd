@@ -12,7 +12,7 @@ var _particles: GPUParticles2D
 
 
 func clear() -> void:
-	for c in get_children():
+	for c: Node in get_children():
 		c.queue_free()
 
 
@@ -99,18 +99,18 @@ func _build_ground(sid: String, half_size: Vector2) -> void:
 	var tile_tex: Texture2D = load(tile_path)
 	var ny := mini(18, maxi(3, int(half_size.y / 70.0)))
 	var nx := mini(22, maxi(4, int(half_size.x / 90.0)))
-	for iy in range(-ny, ny + 1):
-		for ix in range(-nx, nx + 1):
+	for iy: int in range(-ny, ny + 1):
+		for ix: int in range(-nx, nx + 1):
 			var s := Sprite2D.new()
 			s.texture = tile_tex
 			s.modulate = Color(1, 1, 1, 0.18)
 			s.position = Vector2(ix * 90 + (iy % 2) * 45, iy * 50)
-			s.scale = Vector2(0.7, 0.45) ## flatten into faux-iso
+			s.scale = Vector2(0.7, 0.45)  ## flatten into faux-iso
 			s.z_index = -19
 			_tiles.add_child(s)
 
 
-func _build_props(sid: String, half_size: Vector2) -> void:
+func _build_props(sid: String, _half_size: Vector2) -> void:
 	_props = Node2D.new()
 	_props.z_index = -5
 	_props.y_sort_enabled = true
@@ -127,8 +127,10 @@ func _build_props(sid: String, half_size: Vector2) -> void:
 			_spawn_prop("ruin", Vector2(300, -120), 0.95)
 			_spawn_prop("crate", Vector2(40, 160), 1.2)
 		"gloampine":
-			for i in 6:
-				_spawn_prop("ruin", Vector2(-300 + i * 110, -150 + (i % 2) * 80), 0.7 + (i % 3) * 0.15)
+			for i: int in 6:
+				_spawn_prop(
+					"ruin", Vector2(-300 + i * 110, -150 + (i % 2) * 80), 0.7 + (i % 3) * 0.15
+				)
 		"salt_choir":
 			_spawn_prop("chapel", Vector2(0, -200), 1.0)
 			_spawn_prop("ruin", Vector2(-260, 40), 0.9)
@@ -155,10 +157,14 @@ func _build_props_wild(sid: String, half_size: Vector2) -> void:
 	_props.z_index = -5
 	_props.y_sort_enabled = true
 	add_child(_props)
-	for spec in StageLayout.wild_landmarks(sid, half_size):
+	for spec: Variant in StageLayout.wild_landmarks(sid, half_size):
 		if typeof(spec) != TYPE_DICTIONARY:
 			continue
-		_spawn_prop(str(spec.get("kind", "ruin")), spec.get("pos", Vector2.ZERO), float(spec.get("scale", 1.0)))
+		_spawn_prop(
+			str(spec.get("kind", "ruin")),
+			spec.get("pos", Vector2.ZERO),
+			float(spec.get("scale", 1.0))
+		)
 
 
 func place_landmarks(landmarks: Array) -> void:
@@ -167,10 +173,14 @@ func place_landmarks(landmarks: Array) -> void:
 		_props.z_index = -5
 		_props.y_sort_enabled = true
 		add_child(_props)
-	for spec in landmarks:
+	for spec: Variant in landmarks:
 		if typeof(spec) != TYPE_DICTIONARY:
 			continue
-		_spawn_prop(str(spec.get("kind", "ruin")), spec.get("pos", Vector2.ZERO), float(spec.get("scale", 1.0)))
+		_spawn_prop(
+			str(spec.get("kind", "ruin")),
+			spec.get("pos", Vector2.ZERO),
+			float(spec.get("scale", 1.0))
+		)
 
 
 func _spawn_prop(kind: String, pos: Vector2, scl: float) -> void:
@@ -222,8 +232,8 @@ func _build_atmosphere(sid: String, sector: Dictionary) -> void:
 	_light.texture_scale = 2.5
 	## Soft circular light via gradient texture
 	var img := Image.create(128, 128, false, Image.FORMAT_RGBA8)
-	for y in 128:
-		for x in 128:
+	for y: int in 128:
+		for x: int in 128:
 			var d := Vector2(x - 64, y - 64).length() / 64.0
 			var a := clampf(1.0 - d, 0.0, 1.0)
 			a = a * a
@@ -252,7 +262,7 @@ func _build_atmosphere(sid: String, sector: Dictionary) -> void:
 	corners.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	corners.color = Color(0, 0, 0, 0.25)
 	## Use shader-less edge: four dark edge rects
-	for data in [
+	for data: Array in [
 		[0, 0, 1, 0.12],
 		[0, 0.88, 1, 0.12],
 		[0, 0, 0.08, 1],

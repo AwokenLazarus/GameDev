@@ -6,7 +6,9 @@ func _ready() -> void:
 	print("BOOT_SMOKE_START")
 	var ok := true
 
-	for autoload_name in ["GameState", "RunState", "CharacterDB", "SectorDB", "MetaDB", "BoonDB"]:
+	for autoload_name: String in [
+		"GameState", "RunState", "CharacterDB", "SectorDB", "MetaDB", "BoonDB"
+	]:
 		if get_node_or_null("/root/" + autoload_name) == null:
 			push_error("Missing autoload " + autoload_name)
 			ok = false
@@ -29,7 +31,7 @@ func _ready() -> void:
 
 	## Per-sector families must exist, differ, and Dust must field all 4 archetypes.
 	var dust_archs := {}
-	for row in SectorDB.enemy_families("dust_meridian"):
+	for row: Variant in SectorDB.enemy_families("dust_meridian"):
 		if typeof(row) == TYPE_DICTIONARY:
 			dust_archs[str(row.get("archetype", ""))] = true
 	if dust_archs.size() < 4:
@@ -38,7 +40,7 @@ func _ready() -> void:
 	else:
 		print("DUST_ARCHETYPES ", dust_archs.keys())
 	var by_sig := {}
-	for s in sectors:
+	for s: Variant in sectors:
 		var sid := str(s.get("id", ""))
 		var fams: Array = s.get("enemy_families", [])
 		if fams.size() < 4:
@@ -60,18 +62,18 @@ func _ready() -> void:
 
 	## Boons per patron
 	var counts := {"dust_compact": 0, "red_petition": 0, "house_veyra": 0, "church": 0}
-	for b in BoonDB.boons:
+	for b: Dictionary in BoonDB.boons:
 		var p := str(b.get("patron", ""))
 		if counts.has(p):
 			counts[p] = int(counts[p]) + 1
-	for p in counts.keys():
+	for p: String in counts.keys():
 		if int(counts[p]) < 6:
 			push_error("Patron %s has %d boons" % [p, counts[p]])
 			ok = false
 	print("BOONS ", counts)
 
 	## Meta branches
-	for branch in ["blood", "ash", "tech"]:
+	for branch: String in ["blood", "ash", "tech"]:
 		var nodes: Array = MetaDB.get_branch(branch)
 		if nodes.is_empty():
 			push_error("Empty meta branch " + branch)
@@ -99,21 +101,42 @@ func _ready() -> void:
 	var e: Node = enemy_ps.instantiate()
 	add_child(e)
 	e.setup(p, true, true)
-	for arch in ["melee", "ranged", "charger", "caster"]:
-		var fe: Node = MWEnemyFactory.spawn(self, Vector2(24.0 * ["melee", "ranged", "charger", "caster"].find(arch), 20.0), p, {
-			"archetype": arch,
-			"elite": true,
-			"telegraph": false,
-			"family": {"id": "smoke_%s" % arch, "archetype": arch, "sprite": "dominion_grub", "human": false},
-		})
-		print("ARCH ", fe.get("archetype"), " AFFIX ", fe.get("affix_id"), " AURA ", fe.get("affix_name"))
+	for arch: String in ["melee", "ranged", "charger", "caster"]:
+		var fe: Node = (
+			MWEnemyFactory
+			. spawn(
+				self,
+				Vector2(24.0 * ["melee", "ranged", "charger", "caster"].find(arch), 20.0),
+				p,
+				{
+					"archetype": arch,
+					"elite": true,
+					"telegraph": false,
+					"family":
+					{
+						"id": "smoke_%s" % arch,
+						"archetype": arch,
+						"sprite": "dominion_grub",
+						"human": false
+					},
+				}
+			)
+		)
+		print(
+			"ARCH ",
+			fe.get("archetype"),
+			" AFFIX ",
+			fe.get("affix_id"),
+			" AURA ",
+			fe.get("affix_name")
+		)
 	var g: Node = general_ps.instantiate()
 	add_child(g)
 	g.configure("aurelian")
 	await get_tree().process_frame
 	print("ENTITIES_OK kit=", p.kit_type, " general=", g.display_name)
 
-	for path in [
+	for path: String in [
 		"res://scenes/hub/ashwick.tscn",
 		"res://scenes/sector/sector_run.tscn",
 		"res://scenes/main.tscn",
@@ -126,7 +149,16 @@ func _ready() -> void:
 			print("SCENE_OK ", path)
 
 	## Generals all resolve
-	for gid in ["marshal_hale", "lady_sable", "marrowfang", "cantor_belis", "provost_rhea", "duke_orlokis", "admiral_drus", "aurelian"]:
+	for gid: String in [
+		"marshal_hale",
+		"lady_sable",
+		"marrowfang",
+		"cantor_belis",
+		"provost_rhea",
+		"duke_orlokis",
+		"admiral_drus",
+		"aurelian"
+	]:
 		var gd: Dictionary = SectorDB.get_general(gid)
 		if gd.is_empty() or not gd.has("pattern"):
 			push_error("General incomplete " + gid)

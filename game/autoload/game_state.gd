@@ -11,9 +11,9 @@ var ash: int = 0
 var tech: int = 0
 
 var unlocked_characters: Array[String] = ["severin"]
-var unlocked_alts: Array[String] = [] ## alt kit ids
+var unlocked_alts: Array[String] = []  ## alt kit ids
 var unlocked_skins: Array[String] = []
-var meta_ranks: Dictionary = {} ## upgrade_id -> rank
+var meta_ranks: Dictionary = {}  ## upgrade_id -> rank
 
 var kin_met: bool = false
 var mayor_met: bool = false
@@ -30,8 +30,8 @@ var selected_sector: String = "dust_meridian"
 
 var ng_plus: int = 0
 var aurelian_defeated: bool = false
-var sectors_cleared: Dictionary = {} ## sector_id -> clear count
-var heat_modifiers: Array[String] = [] ## active NG+ heats
+var sectors_cleared: Dictionary = {}  ## sector_id -> clear count
+var heat_modifiers: Array[String] = []  ## active NG+ heats
 
 ## Ashwick rebuild unlocks from ash branch
 var hub_flags: Dictionary = {
@@ -62,7 +62,7 @@ func _ready() -> void:
 func difficulty_enemy_mult() -> float:
 	var m := float(DIFFICULTY_MULT.get(selected_difficulty, 1.0))
 	m *= 1.0 + 0.2 * float(ng_plus)
-	for h in heat_modifiers:
+	for h: String in heat_modifiers:
 		if h == "swarm":
 			m *= 1.1
 		elif h == "iron":
@@ -97,9 +97,11 @@ func add_currency(kind: String, amount: int) -> void:
 
 
 func can_spend_cost(cost: Dictionary) -> bool:
-	return blood >= int(cost.get("blood", 0)) \
-		and ash >= int(cost.get("ash", 0)) \
+	return (
+		blood >= int(cost.get("blood", 0))
+		and ash >= int(cost.get("ash", 0))
 		and tech >= int(cost.get("tech", 0))
+	)
 
 
 func spend_cost(cost: Dictionary) -> bool:
@@ -185,11 +187,16 @@ func buy_meta(id: String) -> bool:
 
 
 func _apply_hub_flags_from_meta() -> void:
-	for id in meta_ranks.keys():
+	for id: Variant in meta_ranks.keys():
 		var up: Dictionary = MetaDB.get_upgrade(str(id)) if MetaDB.has_method("get_upgrade") else {}
 		var effects: Dictionary = up.get("effects", {})
-		for k in effects.keys():
-			if str(k).begins_with("ashwick_") or str(k).begins_with("vendor_") or str(k).begins_with("mission_") or str(k) in hub_flags:
+		for k: Variant in effects.keys():
+			if (
+				str(k).begins_with("ashwick_")
+				or str(k).begins_with("vendor_")
+				or str(k).begins_with("mission_")
+				or str(k) in hub_flags
+			):
 				hub_flags[str(k).replace("ashwick_", "")] = true
 				if str(k).begins_with("vendor_"):
 					hub_flags[str(k)] = true
@@ -220,7 +227,7 @@ func _roll_new_heats() -> void:
 	pool.shuffle()
 	heat_modifiers.clear()
 	var n := mini(ng_plus, 3)
-	for i in n:
+	for i: int in n:
 		heat_modifiers.append(pool[i])
 
 
@@ -288,13 +295,13 @@ func load_game() -> void:
 	ash = int(data.get("ash", 0))
 	tech = int(data.get("tech", 0))
 	unlocked_characters.clear()
-	for c in data.get("unlocked_characters", ["severin"]):
+	for c: Variant in data.get("unlocked_characters", ["severin"]):
 		unlocked_characters.append(str(c))
 	unlocked_alts.clear()
-	for a in data.get("unlocked_alts", []):
+	for a: Variant in data.get("unlocked_alts", []):
 		unlocked_alts.append(str(a))
 	unlocked_skins.clear()
-	for s in data.get("unlocked_skins", []):
+	for s: Variant in data.get("unlocked_skins", []):
 		unlocked_skins.append(str(s))
 	meta_ranks = data.get("meta_ranks", {})
 	kin_met = bool(data.get("kin_met", false))
@@ -308,10 +315,10 @@ func load_game() -> void:
 	aurelian_defeated = bool(data.get("aurelian_defeated", false))
 	sectors_cleared = data.get("sectors_cleared", {})
 	heat_modifiers.clear()
-	for h in data.get("heat_modifiers", []):
+	for h: Variant in data.get("heat_modifiers", []):
 		heat_modifiers.append(str(h))
-	var flags = data.get("hub_flags", {})
+	var flags: Variant = data.get("hub_flags", {})
 	if typeof(flags) == TYPE_DICTIONARY:
-		for k in flags.keys():
+		for k: Variant in flags.keys():
 			hub_flags[str(k)] = flags[k]
 	_apply_hub_flags_from_meta()
