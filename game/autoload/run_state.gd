@@ -6,6 +6,8 @@ signal kills_changed(current: int, needed: int)
 signal boons_changed
 signal alignment_changed(patron_id: String)
 signal reputation_changed(value: int)
+## Neutral / Wary / Feared / Hated changed. The HUD toasts this once.
+signal reputation_tier_changed(label: String)
 signal phase_changed(phase: String)
 signal feed_buff_changed(stacks: int)
 signal gear_changed
@@ -27,6 +29,13 @@ const PATRON_RIVALS := {
 	"house_veyra": ["church", "red_petition"],
 	"church": ["dust_compact", "red_petition", "house_veyra"],
 }
+const CLOCK_FULL := 1500.0  ## director / enemy scaling reaches 1.0 at 25 min
+const GATE_PER_EXTRA_PLAYER := 0.35
+## How far a Wary human stays back. Church-aligned townsfolk give you a wider berth.
+const WARY_STANDOFF := 96.0
+const WARY_STANDOFF_CHURCH := 140.0
+const FLEE_CHECK_S := 1.1
+const FLEE_DURATION := 1.35
 
 var phase: Phase = Phase.HUB
 var character_id: String = "severin"
@@ -169,10 +178,6 @@ func start_run(
 
 ## Tuning (MW-025): ~30 min sector at a human kill rate (~1 kill / 1.2 s);
 ## the wild stage is ~80 % of it. See game/README.md "Pacing".
-const CLOCK_FULL := 1500.0  ## director / enemy scaling reaches 1.0 at 25 min
-const GATE_PER_EXTRA_PLAYER := 0.35
-
-
 func _scaled_kill_gate(base: int, players: int) -> int:
 	## Co-op kills faster; the director also spawns more per player (see get_director_intensity).
 	var g: int = int(float(base) * (1.0 + GATE_PER_EXTRA_PLAYER * float(maxi(players - 1, 0))))
@@ -321,10 +326,8 @@ func add_boon(boon: Dictionary) -> void:
 	patron_counts[patron] = int(patron_counts.get(patron, 0)) + 1
 	if pact_patron == "" and int(patron_counts.get(patron, 0)) >= 3:
 		_apply_pact_transform(patron)
-	## Church hates feeding more
-	if patron == "church" and feed_count > 0:
-		reputation -= 1
-		reputation_changed.emit(reputation)
+	## Church's extra feed cost lives only in feed_on_human. Subtracting here too
+	## double-counted every Church boon taken after a feed (MW-028).
 	if not old.is_empty():
 		boon_replaced.emit(old, boon)
 	boons_changed.emit()
@@ -396,15 +399,33 @@ func patron_display(patron: String) -> String:
 	return patron
 
 
+## L7: never in Ashwick. The hub phase is Ashwick; a raid whose sector id is ashwick is too.
+func feeding_allowed() -> bool:
+	return phase != Phase.HUB and sector_id != "ashwick"
+
+
 func feed_on_human() -> void:
+	if not feeding_allowed():
+		print("FEED_REFUSED phase=%s sector=%s" % [phase, sector_id])
+		return
 	feed_count += 1
-	reputation -= 1
+	## −1, or −2 when already Church-aligned. Not also charged in add_boon.
+	var penalty := 1
 	if aligned_patron == "church":
-		reputation -= 1
+		penalty = 2
 	feed_buff_stacks = mini(feed_buff_stacks + 1, 5)
 	feed_buff_timer = 20.0
-	reputation_changed.emit(reputation)
+	set_reputation(reputation - penalty)
 	feed_buff_changed.emit(feed_buff_stacks)
+
+
+func set_reputation(value: int) -> void:
+	var before := reputation_label()
+	reputation = value
+	reputation_changed.emit(reputation)
+	var after := reputation_label()
+	if after != before:
+		reputation_tier_changed.emit(after)
 
 
 func get_feed_damage_bonus() -> float:
@@ -423,6 +444,61 @@ func reputation_label() -> String:
 	if reputation >= -5:
 		return "Feared"
 	return "Hated"
+
+
+func _church_aligned() -> bool:
+	return aligned_patron == "church"
+
+
+## 0 when this tier does not make humans keep distance.
+func human_standoff() -> float:
+	if reputation_label() != "Wary":
+		return 0.0
+	if _church_aligned():
+		return WARY_STANDOFF_CHURCH
+	return WARY_STANDOFF
+
+
+## Chance a human breaks and flees on each check. 0 below Feared.
+func human_flee_chance() -> float:
+	var church := _church_aligned()
+	match reputation_label():
+		"Feared":
+			return 0.70 if church else 0.40
+		"Hated":
+			return 0.85 if church else 0.60
+		_:
+			return 0.0
+
+
+## Extra chance a spawn is a human militia elite. Only Hated.
+func militia_chance() -> float:
+	if reputation_label() != "Hated":
+		return 0.0
+	return 0.65 if _church_aligned() else 0.40
+
+
+func wants_militia(roll: float) -> bool:
+	var chance := militia_chance()
+	return chance > 0.0 and roll < chance
+
+
+## Wild shrines (and their payouts) cost this much more. 1 below Hated.
+func shrine_cost_mult() -> float:
+	if reputation_label() != "Hated":
+		return 1.0
+	return 2.0 if _church_aligned() else 1.5
+
+
+func scaled_shrine_cost(base: float) -> float:
+	return base * shrine_cost_mult()
+
+
+func tax_shrine_payout(amount: int) -> int:
+	var mult := shrine_cost_mult()
+	if mult <= 1.0:
+		return amount
+	return maxi(1, int(float(amount) / mult))
 
 
 func note_hit(amount: float) -> void:

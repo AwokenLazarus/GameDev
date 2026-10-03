@@ -31,10 +31,24 @@ static func spawn(parent: Node, pos: Vector2, player: Node2D, opts: Dictionary =
 	var human := bool(family.get("human", false))
 	if not family.has("human"):
 		human = randf() < float(SectorDB.get_sector(sector_id).get("enemy_human_chance", 0.35))
+	var social_roll := randf()
+	if opts.has("social_roll"):
+		social_roll = float(opts["social_roll"])
+	var militia := RunState.wants_militia(social_roll) if RunState else false
+	var family_row := family
+	if militia:
+		## Hated: a human militia elite, whatever the table rolled.
+		elite = true
+		human = true
+		family_row = family.duplicate(true)
+		family_row["human"] = true
+		family_row["id"] = "militia"
 	if e.has_method("setup_family"):
-		e.setup_family(player, family, human, elite)
+		e.setup_family(player, family_row, human, elite)
 	elif e.has_method("setup"):
 		e.setup(player, human, elite)
+	if militia:
+		e.set_meta("militia", true)
 	if bool(opts.get("telegraph", true)) and e.has_method("begin_spawn_telegraph"):
 		e.begin_spawn_telegraph(float(opts.get("telegraph_s", 0.45)))
 	return e

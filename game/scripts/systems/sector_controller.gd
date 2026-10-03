@@ -455,7 +455,7 @@ func _on_greed_activated(shrine: GreedShrine, who: Node) -> void:
 				detail = "gear"
 			else:
 				var roll := randi() % 3
-				var amt := 6 + randi() % 5
+				var amt := RunState.tax_shrine_payout(6 + randi() % 5)
 				match roll:
 					0:
 						RunState.add_cache(amt, 0, 0)
@@ -469,8 +469,10 @@ func _on_greed_activated(shrine: GreedShrine, who: Node) -> void:
 			banner.text = "Strongbox pried — %s" % detail
 		"moon_altar":
 			## Boon now; the director clock jumps ahead for the whole party.
-			RunState.clock_bonus += MOON_ALTAR_CLOCK
-			detail = "clock+%.0f" % MOON_ALTAR_CLOCK
+			## Hated taxes the debt (Church-aligned taxes it harder).
+			var clock := RunState.scaled_shrine_cost(MOON_ALTAR_CLOCK)
+			RunState.clock_bonus += clock
+			detail = "clock+%.0f" % clock
 			banner.text = "The moon hurries — %s" % RunState.get_difficulty_label()
 		"blood_well":
 			## Feed-for-power: pour hunger (feed stacks earned on humans in combat) or bleed.
@@ -482,7 +484,7 @@ func _on_greed_activated(shrine: GreedShrine, who: Node) -> void:
 			else:
 				var h: Health = who.get_node_or_null("Health") if who else null
 				if h:
-					var cost := h.max_hp * BLOOD_WELL_BLEED
+					var cost := RunState.scaled_shrine_cost(h.max_hp * BLOOD_WELL_BLEED)
 					h.hp = maxf(1.0, h.hp - cost)
 					if players.size() and who == players[0]:
 						RunState.player_hp = h.hp
