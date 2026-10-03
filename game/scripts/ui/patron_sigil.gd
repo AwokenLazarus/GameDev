@@ -62,17 +62,23 @@ func _lozenge(c: Vector2, r: float, w: float) -> void:
 	_path(c, r, [Vector2(0, -1), Vector2(0.7, 0), Vector2(0, 1), Vector2(-0.7, 0)], w)
 
 
+## Dust Compact: a spur rowel on its rail. Frontier iron, deliberately not a
+## hexagram or any other religious star (lead review, 2026-10-03).
 func _star(c: Vector2, r: float, w: float) -> void:
-	var up: Array[Vector2] = []
-	var down: Array[Vector2] = []
-	for i: int in 3:
-		var a := TAU * float(i) / 3.0 - PI * 0.5
-		up.append(Vector2(cos(a), sin(a)) * 0.92)
-		down.append(Vector2(cos(a + PI), sin(a + PI)) * 0.92)
-	_fill(c, r, up, 0.16)
-	_path(c, r, up, w)
-	_path(c, r, down, w)
-	draw_circle(c, r * 0.17, tint, true, -1.0, true)
+	var spikes: int = 10
+	var hub: float = 0.3
+	for i: int in spikes:
+		var a := TAU * float(i) / float(spikes) - PI * 0.5
+		var tip := Vector2(cos(a), sin(a)) * 0.9
+		var side := Vector2(-sin(a), cos(a)) * 0.07
+		var base := Vector2(cos(a), sin(a)) * hub
+		var spike: Array[Vector2] = [base + side, tip, base - side]
+		_fill(c, r, spike, 0.5)
+		_path(c, r, spike, w * 0.6)
+	draw_arc(c, r * hub, 0.0, TAU, 32, tint, w, true)
+	draw_circle(c, r * 0.1, tint, true, -1.0, true)
+	## The axle the rowel turns on.
+	draw_line(c + Vector2(-0.5, 0.0) * r, c + Vector2(-0.12, 0.0) * r, Color(tint, 0.8), w, true)
 	## The rail it rides.
 	draw_line(c + Vector2(-0.95, 0.98) * r, c + Vector2(0.95, 0.98) * r, Color(tint, 0.7), w, true)
 
