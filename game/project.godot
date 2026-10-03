@@ -109,3 +109,4 @@ gdscript/warnings/untyped_declaration=2
 
 textures/canvas_textures/default_texture_filter=0
 environment/defaults/default_clear_color=Color(0.08, 0.07, 0.09, 1)
+rendering_device/fallback_to_opengl3=false
