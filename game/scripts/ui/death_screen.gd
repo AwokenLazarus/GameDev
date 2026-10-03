@@ -45,5 +45,6 @@ func _ready() -> void:
 
 
 func _on_continue() -> void:
+	get_tree().paused = false
 	RunState.end_to_hub()
 	get_tree().change_scene_to_file("res://scenes/hub/ashwick.tscn")

@@ -237,7 +237,7 @@ func _build_roster() -> void:
 			for alt: Dictionary in CharacterDB.get_alts(id):
 				var aid := str(alt.get("id", ""))
 				var ab := Button.new()
-				if aid in GameState.unlocked_alts:
+				if CharacterDB.is_alt_unlocked(aid):
 					ab.text = "  alt: %s" % alt.get("name", aid)
 					ab.pressed.connect(_select_alt.bind(id, aid))
 				else:

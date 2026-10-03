@@ -6,6 +6,14 @@ signal unlocks_changed
 signal ashwick_changed
 signal ng_changed
 
+const SAVE_PATH := "user://moonwake_save.json"
+
+const DIFFICULTY_MULT := {
+	"dust": 1.0,
+	"blood": 1.35,
+	"eclipse": 1.75,
+}
+
 var blood: int = 0
 var ash: int = 0
 var tech: int = 0
@@ -28,6 +36,9 @@ var selected_difficulty: String = "dust"
 var party: Array[Dictionary] = [{"character_id": "severin", "alt_id": "", "device": -1}]
 var selected_sector: String = "dust_meridian"
 
+## Title-screen playtest. Unlocks live in queries only; save_game never writes this.
+var playtest_mode: bool = false
+
 var ng_plus: int = 0
 var aurelian_defeated: bool = false
 var sectors_cleared: Dictionary = {}  ## sector_id -> clear count
@@ -44,19 +55,68 @@ var hub_flags: Dictionary = {
 	"tech_bench": false,
 }
 
-const SAVE_PATH := "user://moonwake_save.json"
-
-const DIFFICULTY_MULT := {
-	"dust": 1.0,
-	"blood": 1.35,
-	"eclipse": 1.75,
-}
+var _party_before: Array[Dictionary] = []
+var _sector_before: String = ""
+var _has_playtest_snapshot: bool = false
 
 
 func _ready() -> void:
 	load_game()
 	if "severin" not in unlocked_characters:
 		unlocked_characters.append("severin")
+	if playtest_arg(OS.get_cmdline_user_args()):
+		set_playtest(true)
+
+
+func playtest_arg(args: PackedStringArray) -> bool:
+	for arg: String in args:
+		if arg == "--playtest" or arg == "playtest":
+			return true
+	return false
+
+
+func set_playtest(on: bool) -> void:
+	if on == playtest_mode:
+		return
+	if on:
+		_party_before = _copy_party(party)
+		_sector_before = selected_sector
+		_has_playtest_snapshot = true
+		playtest_mode = true
+	else:
+		playtest_mode = false
+		if _has_playtest_snapshot:
+			party = _copy_party(_party_before)
+			selected_sector = _sector_before
+			_has_playtest_snapshot = false
+		_clamp_party()
+	unlocks_changed.emit()
+
+
+func _copy_party(src: Array) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	for item: Variant in src:
+		if typeof(item) == TYPE_DICTIONARY:
+			out.append((item as Dictionary).duplicate(true))
+	return out
+
+
+func _clamp_party() -> void:
+	var next: Array[Dictionary] = []
+	for item: Variant in party:
+		if typeof(item) != TYPE_DICTIONARY:
+			continue
+		var row: Dictionary = item
+		var cid := str(row.get("character_id", "severin"))
+		if not CharacterDB.is_unlocked(cid):
+			cid = "severin"
+		var alt := str(row.get("alt_id", ""))
+		if alt != "" and (not alt.begins_with(cid) or not CharacterDB.is_alt_unlocked(alt)):
+			alt = ""
+		next.append({"character_id": cid, "alt_id": alt, "device": int(row.get("device", -1))})
+	if next.is_empty():
+		next.append({"character_id": "severin", "alt_id": "", "device": -1})
+	party = next
 
 
 func difficulty_enemy_mult() -> float:
