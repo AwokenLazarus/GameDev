@@ -28,13 +28,13 @@ godot --headless --path game --export-release "Linux x86_64" "$OUT/Moonwake.x86_
 godot --headless --path game --export-release "Windows x86_64" "$OUT/Moonwake.exe"
 ```
 
-Double-click `Moonwake.exe` on Windows, or run `./Moonwake.x86_64` on Linux. Both need the `Moonwake.pck` that sits next to them. Local co-op (keyboard player 2 and gamepads, up to 4) is the same binary. Headless check of the Linux export:
+Double-click `Moonwake.exe` on Windows, or run `./Moonwake.x86_64` on Linux. Both need the `Moonwake.pck` that sits next to them (one pack; the Linux and Windows exports write the same bytes). Local co-op (keyboard player 2 and gamepads, up to 4) is the same binary. Official templates refuse a scene path in front of the binary, so the headless check passes the scene after `--`:
 
 ```bash
-"$OUT/Moonwake.x86_64" --headless res://scenes/tests/boot_smoke.tscn
+"$OUT/Moonwake.x86_64" --headless -- res://scenes/tests/boot_smoke.tscn
 ```
 
-That prints `BOOT_SMOKE_PASS`.
+That prints `BOOT_SMOKE_PASS`. Only `res://scenes/tests/` and `res://tests/` scenes are accepted.
 
 ## Run
 
