@@ -178,8 +178,14 @@ func _setup_kit_visuals() -> void:
 	if spirit_visual is Sprite2D:
 		var path := "res://assets/textures/characters/vesper.png"
 		if ResourceLoader.exists(path):
-			(spirit_visual as Sprite2D).texture = load(path)
-			(spirit_visual as Sprite2D).modulate = Color(0.75, 0.85, 1.0, 0.55)
+			var spirit := spirit_visual as Sprite2D
+			spirit.texture = load(path)
+			spirit.modulate = Color(0.75, 0.85, 1.0, 0.55)
+			## Stands on the iso floor like the body: feet on its position, ~120 px tall.
+			spirit.centered = false
+			spirit.offset = Vector2(-spirit.texture.get_width() * 0.5, -spirit.texture.get_height())
+			var tall := 120.0 / float(spirit.texture.get_height())
+			IsoView.stand(spirit, Vector2(tall, tall))
 	match kit_type:
 		"orbit":
 			_spawn_crescents()
@@ -839,8 +845,9 @@ func apply_mark(node: Node, seconds: float, bonus: float) -> void:
 			[Vector2(0, -7), Vector2(5, 0), Vector2(0, 7), Vector2(-5, 0)]
 		)
 		(icon as Polygon2D).color = Color(0.9, 0.12, 0.2, 0.95)
-		icon.position = Vector2(0, -38)
-		icon.z_index = 30
+		icon.position = IsoView.up(104.0)
+		IsoView.stand(icon)
+		IsoView.lift(icon)
 		var timer := Timer.new()
 		timer.name = "Expire"
 		timer.one_shot = true
@@ -1251,9 +1258,8 @@ func _astral_collapse() -> void:
 		land_slot_hit(e, _slot_dmg("special", float(s.get("damage", 1.6))), "special", true, 260.0)
 	var flash := Polygon2D.new()
 	flash.color = Color(0.8, 0.9, 1.0, 0.4)
-	flash.polygon = PackedVector2Array(
-		[-radius, -radius * 0.6, radius, -radius * 0.6, radius, radius * 0.6, -radius, radius * 0.6]
-	)
+	flash.polygon = _VFX.ellipse(radius, 28)
+	IsoView.lay(flash)
 	get_parent().add_child(flash)
 	flash.global_position = _spirit_pos
 	## The spirit reforms at the body.

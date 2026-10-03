@@ -1,6 +1,6 @@
 extends Node2D
-const ExitDoorScript = preload("res://scripts/systems/exit_door.gd")
-const GreedShrineScript = preload("res://scripts/systems/greed_shrine.gd")
+const EXIT_DOOR_SCENE := preload("res://scenes/entities/exit_door.tscn")
+const GREED_SHRINE_SCENE := preload("res://scenes/entities/greed_shrine.tscn")
 ## Generic sector runner: burst rooms → wild expanse → kill-gated general → Ashwick.
 
 const PLAYER_SCENE := preload("res://scenes/entities/player.tscn")
@@ -315,7 +315,7 @@ func _open_exit_doors() -> void:
 	for spec: Variant in specs:
 		if typeof(spec) != TYPE_DICTIONARY:
 			continue
-		var door: ExitDoor = ExitDoorScript.new()
+		var door: ExitDoor = EXIT_DOOR_SCENE.instantiate()
 		entities.add_child(door)
 		door.setup(
 			str(spec.get("reward", "boon")),
@@ -404,7 +404,7 @@ func _place_greed_hooks(half: Vector2) -> void:
 
 
 func _spawn_greed(pos: Vector2, kind: String) -> void:
-	var g: GreedShrine = GreedShrineScript.new()
+	var g: GreedShrine = GREED_SHRINE_SCENE.instantiate()
 	g.setup(kind, pos)
 	entities.add_child(g)
 	g.activated.connect(_on_greed_activated)

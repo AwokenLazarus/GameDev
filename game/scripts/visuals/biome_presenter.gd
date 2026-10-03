@@ -8,6 +8,7 @@ const BLOCK_SCENE := preload("res://scenes/visuals/wall_block.tscn")
 const PROP_SCENE := preload("res://scenes/visuals/stage_prop.tscn")
 const LIGHT_SCENE := preload("res://scenes/visuals/votive_light.tscn")
 const WALL_SHADER := preload("res://assets/shaders/wall.gdshader")
+const GRAIN := preload("res://assets/visuals/grain_noise.tres")
 ## Niche spacing along the far walls; every second niche carries a real light.
 const BAY := 150.0
 const BLOCK_HEIGHT := 60.0
@@ -122,11 +123,12 @@ func _apply_look(sid: String) -> void:
 	wm.set_shader_parameter("bay", BAY)
 	_block_material = ShaderMaterial.new()
 	_block_material.shader = WALL_SHADER
+	_block_material.set_shader_parameter("grain", GRAIN)
 	_block_material.set_shader_parameter("stone", _look.wall_stone.lightened(0.06))
 	_block_material.set_shader_parameter("height", BLOCK_HEIGHT)
 	_block_material.set_shader_parameter("bay", 0.0)
-	ambient.color = _look.ambient
 	moon_wash.color = _look.moon
+	moon_wash.energy = 0.6
 	motes.modulate = _look.mote
 	var gm := grade.material as ShaderMaterial
 	gm.set_shader_parameter("shadow_tint", _look.shadow_tint)
@@ -150,7 +152,10 @@ func _lay_floor(half: Vector2) -> void:
 	)
 	(floor_poly.material as ShaderMaterial).set_shader_parameter("half_size", half)
 	moon_wash.texture_scale = maxf(half.x, half.y) * 2.6 / 128.0
-	moon_wash.energy = 0.5 if half.x < 1000.0 else 0.3
+	## One pool of moonlight suits a room; the open wild is lit evenly instead.
+	var open := half.x >= 1000.0
+	moon_wash.visible = not open
+	ambient.color = _look.ambient.lerp(Color.WHITE, 0.28) if open else _look.ambient
 
 
 ## A real light at the foot of every second niche on both far walls.

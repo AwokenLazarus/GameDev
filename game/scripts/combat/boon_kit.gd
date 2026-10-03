@@ -713,14 +713,15 @@ func ring(pos: Vector2, r: float, tint: Color) -> void:
 ## Fading silhouette; stays in group "decoy" for `life` seconds (Ledger Step aggro).
 func afterimage(pos: Vector2, tint: Color, life: float = 0.35) -> Node2D:
 	var ghost := Polygon2D.new()
+	## Standing silhouette, feet on `pos`.
 	ghost.polygon = PackedVector2Array(
-		[Vector2(0, -22), Vector2(10, -4), Vector2(8, 14), Vector2(-8, 14), Vector2(-10, -4)]
+		[Vector2(0, -36), Vector2(10, -18), Vector2(8, 0), Vector2(-8, 0), Vector2(-10, -18)]
 	)
 	ghost.color = Color(tint, 0.6)
-	ghost.z_index = 10
 	ghost.add_to_group("decoy")
 	p.get_parent().add_child(ghost)
 	ghost.global_position = pos
+	IsoView.stand(ghost, Vector2(2.6, 2.6))
 	var tw := ghost.create_tween()
 	tw.tween_property(ghost, "modulate:a", 0.0, life)
 	tw.tween_callback(ghost.queue_free)

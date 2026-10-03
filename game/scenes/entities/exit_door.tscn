@@ -1,0 +1,25 @@
+[gd_scene load_steps=6 format=3 uid="uid://mw_exit_door"]
+
+[ext_resource type="Script" path="res://scripts/systems/exit_door.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/visuals/set_piece.gd" id="2"]
+[ext_resource type="PackedScene" uid="uid://mw_votive_light" path="res://scenes/visuals/votive_light.tscn" id="3"]
+[ext_resource type="PackedScene" uid="uid://mw_world_label" path="res://scenes/ui/world_label.tscn" id="4"]
+
+[sub_resource type="RectangleShape2D" id="Shape_door"]
+size = Vector2(56, 80)
+
+[node name="ExitDoor" type="Area2D"]
+collision_layer = 0
+collision_mask = 2
+monitorable = false
+script = ExtResource("1")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("Shape_door")
+
+[node name="Arch" type="Node2D" parent="."]
+script = ExtResource("2")
+
+[node name="Light" parent="." instance=ExtResource("3")]
+
+[node name="Caption" parent="." instance=ExtResource("4")]

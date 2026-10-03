@@ -25,18 +25,17 @@ void vertex() {
 
 void fragment() {
 	vec2 p = world;
-	float fine = fbm(p / 9.0);
-	float mottle = fbm(p / 64.0 + 5.0);
-	float drift = fbm(p / 300.0 + 3.0);
+	float fine = FBM(p / 14.0);
+	float mottle = FBM(p / 64.0 + 5.3);
+	float drift = FBM(p / 300.0 + 3.1);
 
-	// Hardpan: wide cracks, hairlines inside them, scattered pebbles.
-	vec2 warp = vec2(fbm(p / 130.0), fbm(p / 130.0 + 19.0)) - 0.5;
+	// Hardpan: wide cracks, hairlines between them, scattered pebbles.
+	vec2 warp = vec2(FBM(p / 130.0 + 0.7), FBM(p / 130.0 + 19.3)) - 0.5;
 	vec2 big = voronoi(p / 68.0 + warp * 0.9);
-	vec2 hair = voronoi(p / 23.0 + warp * 2.0);
 	float crack = smoothstep(0.0, 0.05, big.x);
-	float hairline = smoothstep(0.0, 0.05, hair.x);
+	float hairline = smoothstep(0.0, 0.012, abs(FBM(p / 46.0 + 11.9) - 0.5));
 	vec3 earth = mix(earth_b.rgb, earth_a.rgb, clamp(mottle * 0.9 + big.y * 0.3 + fine * 0.25, 0.0, 1.0));
-	earth *= mix(0.3, 1.0, crack) * mix(0.78, 1.0, hairline);
+	earth *= mix(0.3, 1.0, crack) * mix(0.72, 1.0, hairline);
 	vec2 pc = p / 15.0;
 	vec2 pid = floor(pc);
 	float pebble = step(0.9, hash21(pid)) * smoothstep(0.24, 0.1, length(fract(pc) - 0.3 - 0.4 * hash22(pid)));
@@ -66,18 +65,17 @@ void fragment() {
 	float rnd = hash21(sid + 0.37);
 	vec2 centre = (gid + (sub + 0.5) * span * 0.5) * tile * 2.0;
 	// A stone is laid or lost as a whole, by the paving noise at its centre.
-	float keep = step(fbm(centre / 380.0 + 7.0) + (rnd - 0.5) * 0.3, 0.16 + paving * 0.72);
+	float keep = step(FBM(centre / 380.0 + 7.0) + (rnd - 0.5) * 0.3, 0.2 + paving * 0.62);
 	vec2 e = min(f, 1.0 - f) * span * tile;
-	float worn = (fbm(p / 11.0 + rnd * 30.0) - 0.5) * 5.0;
+	float worn = (FBM(p / 17.0 + rnd * 30.0) - 0.5) * 7.0;
 	float edge = min(e.x, e.y) + worn;
 	float body = smoothstep(1.6, 4.2, edge);
 	float bevel = smoothstep(4.2, 11.0, edge);
 	vec3 stone = mix(stone_b.rgb, stone_a.rgb, clamp(rnd * 0.75 + mottle * 0.4, 0.0, 1.0));
-	stone *= 0.78 + 0.34 * fine + 0.12 * fbm(p / 3.5);
+	stone *= 0.74 + 0.5 * fine;
 	stone *= mix(0.72, 1.0, bevel);
 	// Hairline fracture across some stones.
-	float split = smoothstep(0.0, 0.03, abs(hair.x - 0.02)) ;
-	stone *= mix(1.0, mix(0.7, 1.0, split), step(0.7, rnd));
+	stone *= mix(1.0, mix(0.7, 1.0, hairline), step(0.7, rnd));
 	float stone_h = body * (0.62 + 0.3 * bevel + 0.08 * rnd);
 	float laid = keep * body;
 
@@ -86,7 +84,7 @@ void fragment() {
 	// Dust settles over everything in drifts; old blood soaks in.
 	float dust = smoothstep(0.52, 0.78, drift + fine * 0.12) * (1.0 - 0.45 * laid);
 	albedo = mix(albedo, earth_a.rgb * (0.92 + 0.3 * fine), dust * 0.62);
-	float blot = smoothstep(0.6, 0.76, fbm(p / 170.0 + 31.0) + fine * 0.08) * stain_amount;
+	float blot = smoothstep(0.6, 0.76, FBM(p / 170.0 + 31.0) + fine * 0.08) * stain_amount;
 	albedo = mix(albedo, stain.rgb * (0.55 + 0.6 * fine), blot * 0.85);
 
 	// Relief from screen derivatives, taken back to world space for the 2D lights.

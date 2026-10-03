@@ -21,11 +21,11 @@ void fragment() {
 	vec2 f = fract(b);
 	float rnd = hash21(cell);
 	vec2 e = min(f, 1.0 - f) * vec2(len, course);
-	float joint = smoothstep(0.3, 1.5, min(e.x, e.y) - fbm(p / 6.0) * 0.9);
-	vec3 col = stone.rgb * (0.8 + 0.3 * rnd) * (0.78 + 0.4 * fbm(p / 23.0 + rnd * 11.0));
+	float joint = smoothstep(0.3, 1.5, min(e.x, e.y) - FBM(p / 6.0) * 0.9);
+	vec3 col = stone.rgb * (0.8 + 0.3 * rnd) * (0.78 + 0.4 * FBM(p / 23.0 + rnd * 11.0));
 	col *= mix(0.42, 1.0, joint);
 	// Rain streaks and soot.
-	col *= 0.74 + 0.4 * fbm(vec2(p.x / 14.0, p.y / 90.0));
+	col *= 0.74 + 0.4 * FBM(vec2(p.x / 14.0, p.y / 90.0));
 	// Coping, its shadow line, and grime climbing from the foot.
 	col *= 1.0 + 0.55 * smoothstep(0.93, 0.96, y);
 	col *= 1.0 - 0.45 * smoothstep(0.88, 0.92, y) * smoothstep(0.945, 0.92, y);

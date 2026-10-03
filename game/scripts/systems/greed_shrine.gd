@@ -18,23 +18,26 @@ const HINTS := {
 	"blood_well": "a boon · pay in hunger or blood",
 }
 
+const TINTS := {
+	"chest": Color(0.95, 0.75, 0.35),
+	"moon_altar": Color(0.72, 0.82, 1.0),
+	"blood_well": Color(0.9, 0.14, 0.18),
+}
+const RADIUS := 46.0
+
 var kind: String = "chest"
 var used: bool = false
 var _channel: float = 0.0
 var _inside: Array[Node] = []
-var _base: Polygon2D
-var _glow: Polygon2D
-var _bar: Polygon2D
-var _label: Label
+
+@onready var body_piece: SetPiece = $Body
+@onready var light: VotiveLight = $Light
+@onready var caption: WorldLabel = $Caption
 
 
 func _ready() -> void:
 	add_to_group("greed_hook")
 	add_to_group("greed_shrine")
-	collision_layer = 0
-	collision_mask = 2
-	monitoring = true
-	monitorable = false
 	body_entered.connect(_on_body_entered)
 	body_exited.connect(_on_body_exited)
 	_build_visual()
@@ -44,7 +47,7 @@ func setup(kind_id: String, pos: Vector2) -> void:
 	kind = kind_id
 	position = pos
 	set_meta("kind", kind)
-	if is_inside_tree():
+	if is_node_ready():
 		_build_visual()
 
 
@@ -72,13 +75,11 @@ func _physics_process(delta: float) -> void:
 func _activate(who: Node) -> void:
 	used = true
 	_channel = 0.0
-	if _base:
-		_base.modulate = Color(0.45, 0.45, 0.45, 0.7)
-	if _glow:
-		_glow.visible = false
-	if _label:
-		_label.text = "%s (spent)" % str(TITLES.get(kind, kind))
-		_label.modulate = Color(0.6, 0.55, 0.5, 0.6)
+	body_piece.spent = true
+	light.visible = false
+	caption.text = "%s\nSPENT" % str(TITLES.get(kind, kind)).to_upper()
+	caption.tint = Color(MWPalette.ASH, 0.6)
+	queue_redraw()
 	activated.emit(self, who)
 
 
@@ -92,80 +93,42 @@ func _on_body_exited(body: Node) -> void:
 
 
 func _update_bar() -> void:
-	if _bar == null:
-		return
-	var f := clampf(_channel / maxf(channel_seconds(), 0.01), 0.0, 1.0)
-	_bar.visible = f > 0.0 and not used
-	_bar.scale = Vector2(f, 1.0)
+	queue_redraw()
+
+
+func _tint() -> Color:
+	return TINTS.get(kind, MWPalette.GILT)
 
 
 func _build_visual() -> void:
-	for c: Node in get_children():
-		c.queue_free()
-	var shape := CollisionShape2D.new()
-	var circle := CircleShape2D.new()
-	circle.radius = 46.0
-	shape.shape = circle
-	add_child(shape)
+	var tint := _tint()
+	body_piece.kind = kind
+	body_piece.tint = tint
+	light.setup(tint, 1.0, 300.0)
+	caption.text = "%s\n%s" % [str(TITLES.get(kind, kind)), str(HINTS.get(kind, ""))]
+	caption.text = caption.text.to_upper()
+	caption.tint = tint.lightened(0.4)
+	caption.position = IsoView.up(104.0)
+	queue_redraw()
 
-	var col := Color(0.62, 0.48, 0.24, 0.95)
-	var glow := Color(0.95, 0.75, 0.35, 0.35)
-	var poly := PackedVector2Array(
-		[Vector2(-18, 12), Vector2(18, 12), Vector2(18, -8), Vector2(-18, -8)]
-	)
-	match kind:
-		"moon_altar":
-			col = Color(0.55, 0.58, 0.66, 0.95)
-			glow = Color(0.75, 0.82, 1.0, 0.35)
-			poly = PackedVector2Array(
-				[
-					Vector2(-16, 14),
-					Vector2(16, 14),
-					Vector2(10, -22),
-					Vector2(0, -30),
-					Vector2(-10, -22)
-				]
-			)
-		"blood_well":
-			col = Color(0.36, 0.1, 0.12, 0.95)
-			glow = Color(0.85, 0.12, 0.16, 0.4)
-			poly = PackedVector2Array(
-				[
-					Vector2(-22, 6),
-					Vector2(-14, -10),
-					Vector2(14, -10),
-					Vector2(22, 6),
-					Vector2(14, 16),
-					Vector2(-14, 16)
-				]
-			)
-	_glow = Polygon2D.new()
-	_glow.color = glow
-	var ring := PackedVector2Array()
-	for i: int in 20:
-		var a := TAU * float(i) / 20.0
-		ring.append(Vector2(cos(a) * 44.0, sin(a) * 26.0))
-	_glow.polygon = ring
-	add_child(_glow)
-	_base = Polygon2D.new()
-	_base.color = col
-	_base.polygon = poly
-	add_child(_base)
 
-	_bar = Polygon2D.new()
-	_bar.color = Color(0.95, 0.85, 0.6, 0.9)
-	_bar.polygon = PackedVector2Array(
-		[Vector2(0, 0), Vector2(60, 0), Vector2(60, 5), Vector2(0, 5)]
-	)
-	_bar.position = Vector2(-30, 22)
-	_bar.visible = false
-	add_child(_bar)
-
-	_label = Label.new()
-	_label.text = "%s\n%s" % [str(TITLES.get(kind, kind)), str(HINTS.get(kind, ""))]
-	_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_label.position = Vector2(-80, -66)
-	_label.size = Vector2(160, 34)
-	_label.add_theme_font_size_override("font_size", 11)
-	_label.modulate = Color(0.92, 0.85, 0.72, 0.9)
-	add_child(_label)
+## Flat on the floor: the reach of the shrine, and the channel filling round it.
+func _draw() -> void:
+	if used:
+		draw_arc(Vector2.ZERO, RADIUS, 0.0, TAU, 40, Color(MWPalette.ASH, 0.2), 1.2, true)
+		return
+	var tint := _tint()
+	draw_circle(Vector2.ZERO, RADIUS, Color(tint, 0.1))
+	draw_arc(Vector2.ZERO, RADIUS, 0.0, TAU, 48, Color(tint, 0.5), 1.4, true)
+	var f := clampf(_channel / maxf(channel_seconds(), 0.01), 0.0, 1.0)
+	if f > 0.0:
+		draw_arc(
+			Vector2.ZERO,
+			RADIUS + 5.0,
+			-PI * 0.5,
+			-PI * 0.5 + TAU * f,
+			48,
+			MWPalette.BONE,
+			3.0,
+			true
+		)

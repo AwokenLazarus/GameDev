@@ -8,8 +8,8 @@ uniform vec4 mist : source_color = vec4(0.1, 0.09, 0.13, 1.0);
 
 void fragment() {
 	vec2 p = vec2(UV.x, UV.y * 120.0);
-	float strata = fbm(vec2(p.x / 70.0, p.y / 9.0));
-	float cut = smoothstep(0.35, 0.6, fbm(vec2(p.x / 16.0, p.y / 46.0)));
+	float strata = FBM(vec2(p.x / 70.0, p.y / 9.0));
+	float cut = smoothstep(0.35, 0.6, FBM(vec2(p.x / 16.0, p.y / 46.0)));
 	vec3 col = rock.rgb * (0.5 + 0.7 * strata) * mix(0.6, 1.0, cut);
 	col *= COLOR.rgb;
 	col *= 1.0 + 0.5 * smoothstep(0.06, 0.0, UV.y);

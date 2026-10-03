@@ -124,7 +124,9 @@ func _drop(c: Vector2, r: float, w: float) -> void:
 func _sun(c: Vector2, r: float, w: float) -> void:
 	draw_arc(c, r * 0.46, 0.0, TAU, 40, tint, w, true)
 	## Eclipse: the moon's limb crossing the disc.
-	draw_arc(c + Vector2(0.2, -0.08) * r, r * 0.4, PI * 0.62, PI * 1.5, 24, Color(tint, 0.75), w, true)
+	draw_arc(
+		c + Vector2(0.2, -0.08) * r, r * 0.4, PI * 0.62, PI * 1.5, 24, Color(tint, 0.75), w, true
+	)
 	for i: int in 12:
 		var a := TAU * float(i) / 12.0
 		var d := Vector2(cos(a), sin(a))

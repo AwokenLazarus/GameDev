@@ -34,7 +34,7 @@ func setup(pos: Vector2, r: float, seconds: float, tint: Color) -> MWBoonField:
 
 
 func _ready() -> void:
-	z_index = -4
+	IsoView.lay(self)
 	add_to_group("boon_field")
 	if smoke:
 		add_to_group("smoke_cloud")
@@ -45,7 +45,7 @@ func _ready() -> void:
 	else:
 		for i: int in 24:
 			var a := TAU * float(i) / 24.0
-			pts.append(Vector2(cos(a), sin(a) * 0.6) * radius)
+			pts.append(Vector2(cos(a), sin(a)) * radius)
 	_fill = Polygon2D.new()
 	_fill.polygon = pts
 	_fill.color = Color(color, 0.55 if marker else 0.18)
@@ -100,10 +100,7 @@ func contains(pos: Vector2, pad: float = 0.0) -> bool:
 
 
 func _inside(pos: Vector2, pad: float) -> bool:
-	var off := pos - global_position
-	if not marker:
-		off.y /= 0.6
-	return off.length() <= radius + pad
+	return pos.distance_to(global_position) <= radius + pad
 
 
 func _finish() -> void:

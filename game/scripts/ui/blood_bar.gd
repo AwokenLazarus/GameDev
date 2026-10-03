@@ -52,7 +52,9 @@ func _draw() -> void:
 	var body := _span(value / max_value)
 	draw_rect(body, fill)
 	## Lit upper edge so the fill reads as liquid, not a flat strip.
-	draw_rect(Rect2(body.position, Vector2(body.size.x, maxf(1.0, size.y * 0.3))), fill.lightened(0.3))
+	draw_rect(
+		Rect2(body.position, Vector2(body.size.x, maxf(1.0, size.y * 0.3))), fill.lightened(0.3)
+	)
 	draw_rect(Rect2(-1.0, -1.0, size.x + 2.0, size.y + 2.0), frame, false, 1.0)
 	## End ticks.
 	draw_line(Vector2(-1.0, -4.0), Vector2(-1.0, size.y + 4.0), frame, 1.0)

@@ -53,9 +53,7 @@ func _quad(p0: Vector2, p1: Vector2, lift: Vector2, tint: Color, u0: float, u1: 
 	draw_polygon(
 		PackedVector2Array([p0, p1, p1 + lift, p0 + lift]),
 		PackedColorArray([tint, tint, tint, tint]),
-		PackedVector2Array(
-			[Vector2(u0, 0.0), Vector2(u1, 0.0), Vector2(u1, 1.0), Vector2(u0, 1.0)]
-		)
+		PackedVector2Array([Vector2(u0, 0.0), Vector2(u1, 0.0), Vector2(u1, 1.0), Vector2(u0, 1.0)])
 	)
 
 

@@ -1,0 +1,26 @@
+[gd_scene load_steps=6 format=3 uid="uid://mw_greed_shrine"]
+
+[ext_resource type="Script" path="res://scripts/systems/greed_shrine.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/visuals/set_piece.gd" id="2"]
+[ext_resource type="PackedScene" uid="uid://mw_votive_light" path="res://scenes/visuals/votive_light.tscn" id="3"]
+[ext_resource type="PackedScene" uid="uid://mw_world_label" path="res://scenes/ui/world_label.tscn" id="4"]
+
+[sub_resource type="CircleShape2D" id="Shape_shrine"]
+radius = 46.0
+
+[node name="GreedShrine" type="Area2D"]
+collision_layer = 0
+collision_mask = 2
+monitorable = false
+script = ExtResource("1")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("Shape_shrine")
+
+[node name="Body" type="Node2D" parent="."]
+script = ExtResource("2")
+kind = "chest"
+
+[node name="Light" parent="." instance=ExtResource("3")]
+
+[node name="Caption" parent="." instance=ExtResource("4")]

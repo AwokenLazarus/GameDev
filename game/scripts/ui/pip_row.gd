@@ -44,7 +44,12 @@ func _draw() -> void:
 		var c := Vector2(pip * 0.5 + float(i) * (pip + gap), cy)
 		var h := pip * 0.72
 		var pts := PackedVector2Array(
-			[c + Vector2(0, -h), c + Vector2(pip * 0.5, 0), c + Vector2(0, h), c + Vector2(-pip * 0.5, 0)]
+			[
+				c + Vector2(0, -h),
+				c + Vector2(pip * 0.5, 0),
+				c + Vector2(0, h),
+				c + Vector2(-pip * 0.5, 0)
+			]
 		)
 		if i < lit:
 			draw_colored_polygon(pts, color)

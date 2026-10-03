@@ -245,7 +245,11 @@ func _on_pact_formed(patron: String) -> void:
 	var kit: String = p.kit_type if p else ""
 	var transforms: Dictionary = MWPactKit.TRANSFORMS.get(patron, {})
 	var change: String = transforms.get(kit, RunState.patron_display(patron))
-	_show_card(MWPactKit.PACT_NAMES.get(patron, patron), "Deep Pact  ·  %s" % change, MWPalette.patron(patron))
+	_show_card(
+		MWPactKit.PACT_NAMES.get(patron, patron),
+		"Deep Pact  ·  %s" % change,
+		MWPalette.patron(patron)
+	)
 
 
 func _on_boons() -> void:

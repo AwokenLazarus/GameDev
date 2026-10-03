@@ -1,4 +1,4 @@
-[gd_scene load_steps=20 format=3 uid="uid://mw_biome"]
+[gd_scene load_steps=21 format=3 uid="uid://mw_biome"]
 
 [ext_resource type="Script" path="res://scripts/visuals/biome_presenter.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/visuals/stage_walls.gd" id="2"]
@@ -9,9 +9,11 @@
 [ext_resource type="Shader" path="res://assets/shaders/grade.gdshader" id="7"]
 [ext_resource type="Texture2D" uid="uid://mw_soft_blob" path="res://assets/visuals/soft_blob.tres" id="8"]
 [ext_resource type="Texture2D" uid="uid://mw_light_pool" path="res://assets/visuals/light_pool.tres" id="9"]
+[ext_resource type="Texture2D" uid="uid://mw_grain_noise" path="res://assets/visuals/grain_noise.tres" id="10"]
 
 [sub_resource type="ShaderMaterial" id="Mat_vista"]
 shader = ExtResource("3")
+shader_parameter/grain = ExtResource("10")
 
 [sub_resource type="Environment" id="Env_stage"]
 background_mode = 3
@@ -26,12 +28,15 @@ glow_hdr_scale = 1.6
 
 [sub_resource type="ShaderMaterial" id="Mat_floor"]
 shader = ExtResource("4")
+shader_parameter/grain = ExtResource("10")
 
 [sub_resource type="ShaderMaterial" id="Mat_slab"]
 shader = ExtResource("5")
+shader_parameter/grain = ExtResource("10")
 
 [sub_resource type="ShaderMaterial" id="Mat_wall"]
 shader = ExtResource("6")
+shader_parameter/grain = ExtResource("10")
 
 [sub_resource type="ShaderMaterial" id="Mat_grade"]
 shader = ExtResource("7")

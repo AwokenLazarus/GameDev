@@ -5,13 +5,18 @@ extends Area2D
 var item: Dictionary = {}
 
 @onready var visual: CanvasItem = $Visual
-@onready var label: Label = $Label
+@onready var label: WorldLabel = $Caption
 
 
 func _ready() -> void:
 	body_entered.connect(_on_body)
 	collision_layer = 16
 	collision_mask = 2
+	## The relic hovers upright over its spot on the iso floor.
+	var art := visual as Node2D
+	art.position = IsoView.up(26.0)
+	IsoView.stand(art, Vector2(0.34, 0.34))
+	label.position = IsoView.up(64.0)
 
 
 func setup(data: Dictionary) -> void:
@@ -32,7 +37,8 @@ func setup(data: Dictionary) -> void:
 		if ResourceLoader.exists(path):
 			(visual as Sprite2D).texture = load(path)
 	if label:
-		label.text = str(data.get("name", "Relic"))
+		label.text = str(data.get("name", "Relic")).to_upper()
+		label.tint = col.lightened(0.4)
 
 
 func _on_body(body: Node) -> void:

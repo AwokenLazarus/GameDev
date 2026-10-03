@@ -4,6 +4,7 @@ class_name MWBoonStatus
 ## Warrant, Collateral. Created on demand by `of()`; foes read it for movement and AI.
 ## Bleed ticks route through the player who applied it, so kills and hooks credit them.
 
+const WORLD_LABEL := preload("res://scenes/ui/world_label.tscn")
 const BLEED_MAX := 5
 const BLEED_DPS := 3.0  ## per stack
 const BLEED_TIME := 4.0
@@ -23,7 +24,7 @@ var collateral: bool = false
 var fused: bool = false
 
 var _tick_acc: float = 0.0
-var _label: Label
+var _label: WorldLabel
 
 
 static func of(foe: Node) -> MWBoonStatus:
@@ -55,14 +56,8 @@ static func is_elite(foe: Node) -> bool:
 func _ready() -> void:
 	var host := get_parent()
 	if host is Node2D:
-		_label = Label.new()
-		_label.position = Vector2(-50, -66)
-		_label.size = Vector2(100, 14)
-		_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		_label.add_theme_font_size_override("font_size", 10)
-		_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
-		_label.add_theme_constant_override("outline_size", 4)
-		_label.z_index = 40
+		_label = WORLD_LABEL.instantiate()
+		_label.position = IsoView.up(98.0)
 		host.add_child.call_deferred(_label)
 
 
@@ -210,4 +205,4 @@ func _refresh_label() -> void:
 	if warrant_t > 0.0:
 		tags.append("WARRANT")
 	_label.text = " · ".join(tags)
-	_label.modulate = Color(1.0, 0.55, 0.45) if bleed > 0 else Color(1.0, 0.95, 0.8)
+	_label.tint = Color(1.0, 0.55, 0.45) if bleed > 0 else Color(1.0, 0.95, 0.8)

@@ -1,5 +1,7 @@
 extends CharacterBody2D
 class_name MWEnemy
+
+const WORLD_LABEL := preload("res://scenes/ui/world_label.tscn")
 const _VFX = preload("res://scripts/visuals/vfx.gd")
 const _AFFIX = preload("res://scripts/combat/elite_affixes.gd")
 ## Base foe. Archetypes override `_ai_tick`. Human flag still gates feeding.
@@ -47,7 +49,7 @@ var _haste_mult: float = 1.0
 var _affix_wind: float = 0.0
 var _void_cd: float = 2.4
 var _aura: Polygon2D
-var _affix_label: Label
+var _affix_label: WorldLabel
 var _tether: Line2D
 var _family_sprite: String = ""
 var _wander_dir: Vector2 = Vector2.RIGHT
@@ -257,17 +259,11 @@ func _build_affix_aura() -> void:
 		add_child(_aura)
 	_aura.color = Color(affix_color.r, affix_color.g, affix_color.b, 0.38)
 	if _affix_label == null:
-		_affix_label = Label.new()
-		_affix_label.position = Vector2(-46, -52)
-		_affix_label.size = Vector2(92, 16)
-		_affix_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		_affix_label.add_theme_font_size_override("font_size", 11)
-		_affix_label.add_theme_color_override("font_color", Color(1, 1, 1, 0.95))
-		_affix_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
-		_affix_label.add_theme_constant_override("outline_size", 4)
+		_affix_label = WORLD_LABEL.instantiate()
+		_affix_label.position = IsoView.up(112.0)
 		add_child(_affix_label)
-	_affix_label.text = "ELITE · %s" % (affix_name if affix_name != "" else "Elite")
-	_affix_label.modulate = affix_color.lightened(0.25)
+	_affix_label.text = (affix_name if affix_name != "" else "Elite").to_upper()
+	_affix_label.tint = affix_color.lightened(0.25)
 	if affix_id == "blood_linked" and _tether == null:
 		_tether = Line2D.new()
 		_tether.width = 2.0

@@ -31,7 +31,7 @@ void fragment() {
 	float luma = dot(col, vec3(0.299, 0.587, 0.114));
 	col = mix(vec3(luma), col, 0.82) * dim;
 	// Mist pools below the horizon and drifts.
-	float drift = fbm(vec2(UV.x * 3.0 + TIME * 0.012, UV.y * 5.0 - TIME * 0.006));
+	float drift = FBM(vec2(UV.x * 3.0 + TIME * 0.012, UV.y * 5.0 - TIME * 0.006));
 	float low = smoothstep(horizon - 0.12, 1.0, UV.y + (drift - 0.5) * 0.22);
 	col = mix(col, haze.rgb, clamp(low * 1.08, 0.0, 0.96));
 	col += haze.rgb * 0.5 * smoothstep(0.55, 0.9, drift) * (1.0 - low) * 0.35;

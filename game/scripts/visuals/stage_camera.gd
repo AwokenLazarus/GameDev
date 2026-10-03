@@ -102,5 +102,7 @@ func _sort(focus_depth: float) -> void:
 			## Laid / lifted items (z_as_relative off) keep their band.
 			if item == null or not item.z_as_relative:
 				continue
-			var z := roundi((IsoView.depth(item.global_position) - focus_depth) * IsoView.Z_PER_DEPTH)
+			var z := roundi(
+				(IsoView.depth(item.global_position) - focus_depth) * IsoView.Z_PER_DEPTH
+			)
 			item.z_index = clampi(z, -IsoView.Z_SORT_RANGE, IsoView.Z_SORT_RANGE)

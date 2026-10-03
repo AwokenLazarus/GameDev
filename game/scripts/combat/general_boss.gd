@@ -366,7 +366,7 @@ func _tele_node(
 	if parent == null:
 		return
 	var root := Node2D.new()
-	root.z_index = -3
+	IsoView.lay(root)
 	parent.add_child(root)
 	root.global_position = pos
 	root.rotation = rot

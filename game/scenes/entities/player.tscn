@@ -1,8 +1,9 @@
-[gd_scene load_steps=5 format=3 uid="uid://player_severin"]
+[gd_scene load_steps=6 format=3 uid="uid://player_severin"]
 
 [ext_resource type="Script" path="res://scripts/combat/player.gd" id="1_player"]
 [ext_resource type="Script" path="res://scripts/combat/health.gd" id="2_health"]
 [ext_resource type="Script" path="res://scripts/visuals/actor_visual.gd" id="3_vis"]
+[ext_resource type="Texture2D" uid="uid://mw_light_pool" path="res://assets/visuals/light_pool.tres" id="4_pool"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
 size = Vector2(22, 28)
@@ -28,6 +29,19 @@ script = ExtResource("3_vis")
 sprite_folder = "characters"
 sprite_name = "severin"
 
+[node name="Lantern" type="PointLight2D" parent="."]
+color = Color(1, 0.88, 0.74, 1)
+energy = 0.7
+range_z_min = -4096
+range_z_max = 4096
+shadow_enabled = true
+shadow_color = Color(0, 0, 0, 0.55)
+shadow_filter = 1
+shadow_filter_smooth = 3.0
+texture = ExtResource("4_pool")
+texture_scale = 2.6
+height = 50.0
+
 [node name="BodyVisual" type="Polygon2D" parent="."]
 visible = false
 color = Color(0.18, 0.16, 0.2, 1)
@@ -40,14 +54,14 @@ polygon = PackedVector2Array(-6, -10, 6, -10, 4, -2, -4, -2)
 
 [node name="BladeVisual" type="Sprite2D" parent="."]
 visible = false
-position = Vector2(28, -8)
-texture_filter = 0
+position = Vector2(28, 0)
+texture_filter = 2
 
 [node name="SpiritVisual" type="Sprite2D" parent="."]
 visible = false
 modulate = Color(0.75, 0.85, 1, 0.65)
 z_index = 2
-texture_filter = 0
+texture_filter = 2
 
 [node name="AttackHitbox" type="Area2D" parent="."]
 collision_layer = 8

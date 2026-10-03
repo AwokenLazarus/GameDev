@@ -146,7 +146,6 @@ func refresh_fx() -> void:
 		_aura.points = _VFX.ellipse(20.0, 20, true)
 		_aura.width = 2.0
 		_aura.z_index = -1
-		_aura.position = Vector2(0, 14)
 		p.add_child(_aura)
 	_aura.default_color = Color(color(), 0.75)
 
@@ -184,7 +183,7 @@ func _puff(pos: Vector2, r: float, tint: Color, life: float) -> void:
 	var puff := Polygon2D.new()
 	puff.polygon = _VFX.ellipse(r, 10)
 	puff.color = Color(tint, 0.45)
-	puff.z_index = -3
+	IsoView.lay(puff)
 	p.get_parent().add_child(puff)
 	puff.global_position = pos
 	var tw := puff.create_tween()
@@ -241,7 +240,7 @@ func _sparks(pos: Vector2) -> void:
 			[Vector2(-3, -1), Vector2(3, -1), Vector2(3, 1), Vector2(-3, 1)]
 		)
 		bit.color = MWBoonKit.C_PETITION if i % 2 == 0 else Color(0.62, 0.62, 0.66)
-		bit.z_index = 22
+		IsoView.lift(bit)
 		p.get_parent().add_child(bit)
 		bit.global_position = pos
 		var to := pos + Vector2(26.0, 0.0).rotated(TAU * float(i) / 6.0 + randf() * 0.4)
@@ -659,7 +658,7 @@ func _tether_nearest() -> void:
 		var line := Line2D.new()
 		line.width = 2.0
 		line.default_color = Color(MWBoonKit.C_VEYRA, 0.85)
-		line.z_index = 12
+		IsoView.lift(line)
 		p.get_parent().add_child(line)
 		_tethers.append({"foe": e, "t": 2.5, "line": line})
 		_count("veyra_tether")
@@ -831,7 +830,7 @@ func _sun_ray(origin: Vector2, aim: Vector2, dmg: float) -> void:
 	beam.points = PackedVector2Array([origin, to])
 	beam.width = 7.0
 	beam.default_color = Color(MWBoonKit.C_CHURCH, 0.85)
-	beam.z_index = 19
+	IsoView.lift(beam)
 	p.get_parent().add_child(beam)
 	var tw := beam.create_tween()
 	tw.tween_property(beam, "modulate:a", 0.0, 0.2)
@@ -856,8 +855,9 @@ func _attach_charge(foe: Node) -> void:
 		[Vector2(-4, -4), Vector2(4, -4), Vector2(4, 4), Vector2(-4, 4)]
 	)
 	icon.color = MWBoonKit.C_PETITION
-	icon.position = Vector2(8, -30)
-	icon.z_index = 30
+	icon.position = IsoView.up(92.0) + IsoView.to_world(Vector2(12.0, 0.0))
+	IsoView.stand(icon)
+	IsoView.lift(icon)
 	foe.add_child(icon)
 	foe.set_meta(CHARGE_META, icon)
 	_count("petition_charge_stuck")
@@ -927,7 +927,7 @@ func _expanding_ring(
 	line.points = _VFX.ellipse(1.0, 28, true)
 	line.width = 4.0 / r0
 	line.default_color = Color(color(), 0.9)
-	line.z_index = 18
+	IsoView.lay(line)
 	p.get_parent().add_child(line)
 	var hit: Dictionary = {}
 	var t := 0.0
@@ -945,7 +945,6 @@ func _expanding_ring(
 			if not is_instance_valid(e) or hit.has(e.get_instance_id()):
 				continue
 			var off: Vector2 = e.global_position - c
-			off.y /= 0.6
 			var d := off.length()
 			## Crossed by the ring front this frame (either direction).
 			if (r1 >= r0 and d <= r + 12.0) or (r1 < r0 and d >= r - 12.0 and d <= r0 + 12.0):

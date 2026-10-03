@@ -43,11 +43,11 @@ func setup(
 
 
 func _ready() -> void:
-	z_index = 5
+	IsoView.lay(self)
 	var pts := PackedVector2Array()
 	for i: int in 24:
 		var a := TAU * float(i) / 24.0
-		pts.append(Vector2(cos(a), sin(a) * 0.6) * radius)
+		pts.append(Vector2(cos(a), sin(a)) * radius)
 	_fill = Polygon2D.new()
 	_fill.polygon = pts
 	_fill.color = Color(color, 0.12)
@@ -87,6 +87,5 @@ func _tick() -> void:
 		if not is_instance_valid(e):
 			continue
 		var off: Vector2 = e.global_position - global_position
-		off.y /= 0.6
 		if off.length() <= radius + 10.0:
 			owner_player.land_slot_hit(e, damage, slot, false, knock)

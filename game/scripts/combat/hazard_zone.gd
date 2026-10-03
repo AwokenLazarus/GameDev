@@ -17,7 +17,7 @@ func setup(pos: Vector2, zone_kind: String, seconds: float = 2.4, dmg: float = 8
 	life = seconds
 	damage = dmg
 	_vis = Polygon2D.new()
-	_vis.z_index = -4
+	IsoView.lay(_vis)
 	var pts: PackedVector2Array = PackedVector2Array()
 	for i: int in 14:
 		var a := TAU * float(i) / 14.0

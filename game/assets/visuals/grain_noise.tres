@@ -1,0 +1,14 @@
+[gd_resource type="NoiseTexture2D" load_steps=2 format=3 uid="uid://mw_grain_noise"]
+
+[sub_resource type="FastNoiseLite" id="Noise_grain"]
+noise_type = 3
+seed = 7
+frequency = 0.012
+fractal_octaves = 5
+
+[resource]
+width = 512
+height = 512
+generate_mipmaps = true
+seamless = true
+noise = SubResource("Noise_grain")

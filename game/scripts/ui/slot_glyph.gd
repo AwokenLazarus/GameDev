@@ -40,6 +40,8 @@ func _draw() -> void:
 	var ink := Color(color, 1.0 if ready else 0.45)
 	if mark == "cast":
 		draw_line(c + Vector2(0, -r * 0.5), c + Vector2(0, r * 0.5), ink, 1.6, true)
-		draw_line(c + Vector2(-r * 0.24, -r * 0.14), c + Vector2(r * 0.24, -r * 0.14), ink, 1.6, true)
+		draw_line(
+			c + Vector2(-r * 0.24, -r * 0.14), c + Vector2(r * 0.24, -r * 0.14), ink, 1.6, true
+		)
 	else:
 		draw_arc(c + Vector2(r * 0.12, 0), r * 0.42, PI * 0.55, PI * 1.45, 14, ink, 1.8, true)

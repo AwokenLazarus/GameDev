@@ -32,7 +32,7 @@ void fragment() {
 	col = mix(col + shadow_tint.rgb * (1.0 - luma) * 0.5, col * light_tint.rgb, smoothstep(0.0, 0.7, luma));
 	// Wide screens keep the same corner falloff: measure in the short axis.
 	vec2 res = 1.0 / SCREEN_PIXEL_SIZE;
-	vec2 q = c * vec2(min(res.x / res.y, 2.0) * 0.62, 1.0);
+	vec2 q = c * vec2(min(res.x / res.y, 2.0) * 0.52, 1.0);
 	col *= 1.0 - vignette * smoothstep(0.22, 0.95, dot(q, q) * 2.0);
 	col += (rnd(uv * res + fract(TIME) * 61.0) - 0.5) * grain;
 	COLOR = vec4(pow(max(col, vec3(0.0)), vec3(2.2)), 1.0);

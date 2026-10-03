@@ -4,24 +4,28 @@ class_name ExitDoor
 
 signal chosen(door: ExitDoor)
 
+## Light through the doorway says what is behind it: gilt pact, steel cache, red wild.
+const PACT := Color(1.0, 0.72, 0.3)
+const CACHE := Color(0.5, 0.74, 0.98)
+const WILD := Color(0.95, 0.26, 0.2)
+
 var reward: String = "boon"
 var label_text: String = "Pact"
 var next_room: String = ""
 var claimed: bool = false
 
-var _label: Label
 var _player_inside: bool = false
+
+@onready var arch: SetPiece = $Arch
+@onready var light: VotiveLight = $Light
+@onready var caption: WorldLabel = $Caption
 
 
 func _ready() -> void:
 	add_to_group("exit_door")
-	collision_layer = 0
-	collision_mask = 2
-	monitoring = true
-	monitorable = false
 	body_entered.connect(_on_body_entered)
 	body_exited.connect(_on_body_exited)
-	_build_visual()
+	_dress()
 
 
 func setup(reward_id: String, text: String, next_id: String, pos: Vector2) -> void:
@@ -29,8 +33,8 @@ func setup(reward_id: String, text: String, next_id: String, pos: Vector2) -> vo
 	label_text = text
 	next_room = next_id
 	position = pos
-	if _label:
-		_label.text = text
+	if is_node_ready():
+		_dress()
 
 
 func choose() -> void:
@@ -59,50 +63,23 @@ func _on_body_exited(body: Node) -> void:
 		_player_inside = false
 
 
-func _build_visual() -> void:
-	var shape := CollisionShape2D.new()
-	var rect := RectangleShape2D.new()
-	rect.size = Vector2(56, 80)
-	shape.shape = rect
-	add_child(shape)
-
-	var arch := Polygon2D.new()
-	arch.color = (
-		Color(0.42, 0.22, 0.2, 0.92)
-		if reward.begins_with("wild")
-		else Color(0.28, 0.18, 0.14, 0.95)
-	)
-	arch.polygon = PackedVector2Array(
-		[
-			Vector2(-26, 38),
-			Vector2(-26, -18),
-			Vector2(-12, -36),
-			Vector2(12, -36),
-			Vector2(26, -18),
-			Vector2(26, 38),
-		]
-	)
-	add_child(arch)
-
-	var slit := Polygon2D.new()
-	slit.color = Color(0.85, 0.62, 0.28, 0.85) if reward == "boon" else Color(0.55, 0.72, 0.85, 0.8)
+func _tint() -> Color:
 	if reward.begins_with("wild"):
-		slit.color = Color(0.75, 0.35, 0.28, 0.9)
-	slit.polygon = PackedVector2Array(
-		[
-			Vector2(-8, 22),
-			Vector2(-8, -10),
-			Vector2(8, -10),
-			Vector2(8, 22),
-		]
-	)
-	add_child(slit)
+		return WILD
+	return PACT if reward == "boon" else CACHE
 
-	_label = Label.new()
-	_label.text = label_text
-	_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_label.position = Vector2(-48, -62)
-	_label.size = Vector2(96, 22)
-	_label.add_theme_font_size_override("font_size", 14)
-	_label.modulate = Color(0.95, 0.88, 0.75)
-	add_child(_label)
+
+func _dress() -> void:
+	var tint := _tint()
+	arch.tint = tint
+	light.setup(tint, 1.1, 300.0)
+	caption.text = label_text.to_upper()
+	caption.tint = tint.lightened(0.35)
+	caption.position = IsoView.up(118.0)
+	queue_redraw()
+
+
+## Threshold glow, flat on the floor.
+func _draw() -> void:
+	draw_circle(Vector2.ZERO, 40.0, Color(_tint(), 0.14))
+	draw_arc(Vector2.ZERO, 40.0, 0.0, TAU, 40, Color(_tint(), 0.55), 1.5, true)
