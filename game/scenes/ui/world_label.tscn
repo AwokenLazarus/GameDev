@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3 uid="uid://mw_world_label"]
+[gd_scene load_steps=3 format=3 uid="uid://mw_world_label"]
 
 [ext_resource type="Script" path="res://scripts/ui/world_label.gd" id="1"]
+[ext_resource type="Theme" uid="uid://mw_theme" path="res://assets/ui/moonwake_theme.tres" id="2"]
 
 [node name="WorldLabel" type="Node2D"]
 script = ExtResource("1")
@@ -11,6 +12,7 @@ offset_top = -22.0
 offset_right = 160.0
 grow_horizontal = 2
 grow_vertical = 0
+theme = ExtResource("2")
 theme_type_variation = &"Caps"
 theme_override_constants/line_spacing = -2
 horizontal_alignment = 1

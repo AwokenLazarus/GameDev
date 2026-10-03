@@ -4,7 +4,37 @@ Playable implementation of the [Concept Bible](../docs/MOONWAKE_CONCEPT_BIBLE.md
 
 ## Requirements
 
-- Godot **4.3+**
+- Godot **4.7.1** (standard build, not .NET). Forward Plus. A discrete GPU is required: `rendering/rendering_device/fallback_to_opengl3` is false, so machines without Vulkan, D3D12 or Metal get Godot's unsupported-GPU error instead of an untested OpenGL picture.
+
+## Verify
+
+One script runs the import, every smoke scene (`--fixed-fps 60`), the type-gate count (must be 0), `gdformat --check`, and autoplay `mode=kill sectors=all seed=1`. It exits non-zero on any failure, including a smoke that exits 0 without its `*_PASS` line or that prints `SCRIPT ERROR`.
+
+From the repo root:
+
+```bash
+lazvault heavy --project moonwake -- game/tools/verify.sh
+```
+
+## Playtest build
+
+Export presets `Linux x86_64` and `Windows x86_64` live in `game/export_presets.cfg` (PCK beside the executable, not embedded). Install the official 4.7.1 export templates into `~/.local/share/godot/export_templates/4.7.1.stable/` first. Builds stay outside the repo:
+
+```bash
+SHORT="$(git rev-parse --short HEAD)"
+OUT="$HOME/work/builds/moonwake-$SHORT"
+mkdir -p "$OUT"
+godot --headless --path game --export-release "Linux x86_64" "$OUT/Moonwake.x86_64"
+godot --headless --path game --export-release "Windows x86_64" "$OUT/Moonwake.exe"
+```
+
+Double-click `Moonwake.exe` on Windows, or run `./Moonwake.x86_64` on Linux. Both need the `Moonwake.pck` that sits next to them (one pack; the Linux and Windows exports write the same bytes). Local co-op (keyboard player 2 and gamepads, up to 4) is the same binary. Official templates refuse a scene path in front of the binary, so the headless check passes the scene after `--`:
+
+```bash
+"$OUT/Moonwake.x86_64" --headless -- res://scenes/tests/boot_smoke.tscn
+```
+
+That prints `BOOT_SMOKE_PASS`. Only `res://scenes/tests/` and `res://tests/` scenes are accepted.
 
 ## Run
 
@@ -15,9 +45,11 @@ godot --path game
 **First play:** click **PLAY RAID — Dust Meridian** on the title screen (skips the town hub).  
 You should see Severin (red ring under feet) and enemies spawning around you.
 
-- Move WASD · Attack J / Click · Special K / Right-click · Cast L / Q · Dodge Space · Feed F  
+- Move WASD · Attack J / Click · Special K / Right-click · Cast L / Q · Dodge Space · Feed F · Pause Esc  
 - After a burst clears, a **PICK A BOON** panel pauses combat — click one choice to continue.  
-- **Ashwick Town Hub** is optional prep (roster / meta), not the fight.
+- **Esc** or pad **Start** pauses: Resume, Restart raid, Return to Ashwick, Quit.  
+- **Ashwick Town Hub** is optional prep (roster / meta), not the fight.  
+- **PLAYTEST** on the title screen (or `godot --path game -- --playtest`) unlocks all 5 siblings, their alt kits and all 8 sectors in memory only. It does not write the save. The HUD shows PLAYTEST. Turn it off to restore the real roster.
 
 ## Contents
 
@@ -67,8 +99,9 @@ Runtime sheets: `assets/textures/`
 | Cast | Q / L | `.` |
 | Dodge | Space | Shift |
 | Feed | F | F |
+| Pause | Esc | Esc |
 
-Gamepad: left stick move, right stick aim, X attack, B special, RB cast, A dodge, Y feed.
+Gamepad: left stick move, right stick aim, X attack, B special, RB cast, A dodge, Y feed, Start pause.
 
 ### Kits (attack · special · cast · dash)
 
@@ -125,7 +158,8 @@ Target ~30 min per sector (charter L3/L4), ~8 boons.
 - **Kill gate** counts **wild-stage kills only** (`RunState.wild_kills`). `kill_gate_base` 1150 (Pale Spire 1500) × (1 + 0.35 per extra player) × difficulty/heat; Killgate Scanner −5 %/rank.
 - **Difficulty clock** = run time + Moon Altar debt. Ramp reaches 1.0 at 25 min (`RunState.CLOCK_FULL`) and creeps on after. Director intensity `0.2 + 1.6·ramp` (× difficulty, × 1 + 0.3 per extra player): spawn every 1.6→0.5 s, 1→3 per spawn, alive cap 14 + 20·intensity (max 64). Enemy HP ×(1 + 0.6·ramp), damage ×(1 + 0.35·ramp); elite chance 2 % → 32 % over the clock. Labels: →Blood 5 min, →Eclipse 12 min, →Pale 20 min.
 - **Bursts**: 6 + 2·index enemies (+3 nightmare) in waves of 5; the next wave lands when ≤ 1 remain.
-- **Wild greed** (`GreedShrine`, stand to channel): 3 strongboxes (Blood/Ash/Tech haul, 35 % gear; haul banked at run end, half on death) · Moon Altar (boon, director clock +90 s) · Blood Well (boon, costs your feed stacks if ≥ 2, else 25 % max HP).
+- **Wild greed** (`GreedShrine`, stand to channel): 3 strongboxes (Blood/Ash/Tech haul, 35 % gear; haul banked at run end, half on death) · Moon Altar (boon, director clock +90 s) · Blood Well (boon, costs your feed stacks if ≥ 2, else 25 % max HP). At **Hated** those prices rise (×1.5, or ×2 if Church-aligned): longer channel, larger altar debt and well bleed, smaller chest haul.
+- **Feeding reputation** (run-scoped, party-wide): each feed −1 (−2 if already Church-aligned). Taking a Church boon does not subtract again. Never in Ashwick. **Wary** (−1…−2): humans keep their distance. **Feared** (−3…−5): humans sometimes flee, then rout. **Hated** (≤ −6): militia elites can spawn, shrines cost more. Church alignment makes those harsher. The HUD reputation line and a one-line toast show the tier.
 - **Boon offers**: burst 1 clear · Pact doors · wild entry (these stop at the soft target of 8) · Moon Altar · Blood Well · the general (always offer).
 - Measured (seed 1, Severin, Dust Meridian): `mode=human` 1562 s (26 min: bursts 99 s, wild 1468 s, boss 24 s), 8 boons; `mode=kill` 879 s, 6–8 boons.
 

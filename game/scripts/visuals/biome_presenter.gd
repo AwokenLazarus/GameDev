@@ -1,5 +1,5 @@
-extends Node2D
 class_name BiomePresenter
+extends Node2D
 ## Dresses the iso stage for a sector or the hub: painted vista behind, shaded floor slab,
 ## masonry on the far edges, set pieces, votive lights, motes and the screen grade.
 ## The tree lives in scenes/visuals/biome.tscn; this script only configures it.
@@ -19,6 +19,9 @@ const ASHWICK_HALF := Vector2(620.0, 420.0)
 const PROP_FOOT := {"chapel": 0.78, "ruin": 0.8, "crate": 0.72, "rail": 0.5}
 const FLAT_PROPS: PackedStringArray = ["rail"]
 
+var _look: BiomeLook
+var _block_material: ShaderMaterial
+
 @onready var vista: ColorRect = $Backdrop/Vista
 @onready var ambient: CanvasModulate = $Ambient
 @onready var floor_poly: Polygon2D = $Floor
@@ -30,9 +33,6 @@ const FLAT_PROPS: PackedStringArray = ["rail"]
 @onready var sorted: Node2D = $Sorted
 @onready var motes: GPUParticles2D = $Finish/Motes
 @onready var grade: ColorRect = $Finish/Grade
-
-var _look: BiomeLook
-var _block_material: ShaderMaterial
 
 
 func _ready() -> void:

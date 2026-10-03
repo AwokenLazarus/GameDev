@@ -1,8 +1,11 @@
-[gd_scene load_steps=2 format=3 uid="uid://death_screen"]
+[gd_scene load_steps=3 format=3 uid="uid://death_screen"]
 
 [ext_resource type="Script" path="res://scripts/ui/death_screen.gd" id="1_death"]
+[ext_resource type="Theme" uid="uid://mw_theme" path="res://assets/ui/moonwake_theme.tres" id="9_theme"]
 
 [node name="DeathScreen" type="Control"]
+theme = ExtResource("9_theme")
+process_mode = 3
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0

@@ -1,8 +1,10 @@
-[gd_scene load_steps=2 format=3 uid="uid://main_boot"]
+[gd_scene load_steps=3 format=3 uid="uid://main_boot"]
 
 [ext_resource type="Script" path="res://scripts/ui/main_menu.gd" id="1_menu"]
+[ext_resource type="Theme" uid="uid://mw_theme" path="res://assets/ui/moonwake_theme.tres" id="9_theme"]
 
 [node name="Main" type="Control"]
+theme = ExtResource("9_theme")
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -73,6 +75,34 @@ horizontal_alignment = 1
 custom_minimum_size = Vector2(360, 56)
 layout_mode = 2
 text = "PLAY RAID — Dust Meridian"
+
+[node name="Playtest" type="Button" parent="Center/VBox"]
+custom_minimum_size = Vector2(360, 36)
+layout_mode = 2
+text = "PLAYTEST: OFF"
+
+[node name="Picker" type="VBoxContainer" parent="Center/VBox"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Note" type="Label" parent="Center/VBox/Picker"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.72, 0.28, 1)
+text = "In memory only. The save file is not changed."
+horizontal_alignment = 1
+
+[node name="Sibling" type="OptionButton" parent="Center/VBox/Picker"]
+custom_minimum_size = Vector2(360, 36)
+layout_mode = 2
+
+[node name="Alt" type="OptionButton" parent="Center/VBox/Picker"]
+custom_minimum_size = Vector2(360, 36)
+layout_mode = 2
+
+[node name="Sector" type="OptionButton" parent="Center/VBox/Picker"]
+custom_minimum_size = Vector2(360, 36)
+layout_mode = 2
 
 [node name="Quit" type="Button" parent="Center/VBox"]
 custom_minimum_size = Vector2(280, 40)

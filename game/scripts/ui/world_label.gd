@@ -3,8 +3,6 @@ extends Node2D
 ## A caption standing in the world (doors, shrines, elite names): upright on the iso
 ## stage and never hidden behind an actor. Place it with `position = IsoView.up(pixels)`.
 
-@onready var label: Label = $Text
-
 @export var text: String = "":
 	set(value):
 		text = value
@@ -15,6 +13,8 @@ extends Node2D
 		tint = value
 		if is_node_ready():
 			label.modulate = value
+
+@onready var label: Label = $Text
 
 
 func _ready() -> void:

@@ -1,5 +1,5 @@
-extends Area2D
 class_name ExitDoor
+extends Area2D
 ## Walk-in (or E) reward door after a burst clear.
 
 signal chosen(door: ExitDoor)

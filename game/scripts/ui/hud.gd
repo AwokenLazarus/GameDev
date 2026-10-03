@@ -17,47 +17,47 @@ const HINTS := {
 }
 const NUMERALS: PackedStringArray = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"]
 
-@onready var root: Control = $Root
-@onready var safe: Control = $Root/Safe
-@onready var danger: ColorRect = $Root/Danger
-@onready var hp_bar: BloodBar = $Root/Safe/Vitals/HpBar
-@onready var hp_label: Label = $Root/Safe/Vitals/HpRow/HpLabel
-@onready var hp_max: Label = $Root/Safe/Vitals/HpRow/HpMax
-@onready var feed_pips: PipRow = $Root/Safe/Vitals/Feed/FeedPips
-@onready var feed_label: Label = $Root/Safe/Vitals/Feed/FeedLabel
-@onready var rep_label: Label = $Root/Safe/Vitals/Feed/RepLabel
-@onready var special_glyph: SlotGlyph = $Root/Safe/Vitals/Kit/Special
-@onready var special_name: Label = $Root/Safe/Vitals/Kit/SpecialName
-@onready var cast_glyph: SlotGlyph = $Root/Safe/Vitals/Kit/Cast
-@onready var cast_name: Label = $Root/Safe/Vitals/Kit/CastName
-@onready var cast_pips: PipRow = $Root/Safe/Vitals/Kit/CastPips
-@onready var kit_label: Label = $Root/Safe/Vitals/KitLabel
-@onready var moon_disc: TextureRect = $Root/Safe/Moon/MoonDisc
-@onready var timer_label: Label = $Root/Safe/Moon/TimerLabel
-@onready var diff_label: Label = $Root/Safe/Moon/DiffLabel
-@onready var gate: VBoxContainer = $Root/Safe/Gate
-@onready var phase_label: Label = $Root/Safe/Gate/PhaseLabel
-@onready var burst_pips: PipRow = $Root/Safe/Gate/BurstPips
-@onready var hunt_bar: BloodBar = $Root/Safe/Gate/HuntBar
-@onready var kills_label: Label = $Root/Safe/Gate/KillsLabel
-@onready var boss_panel: VBoxContainer = $Root/Safe/BossPanel
-@onready var boss_name: Label = $Root/Safe/BossPanel/BossName
-@onready var boss_bar: BloodBar = $Root/Safe/BossPanel/BossBar
-@onready var boss_phase: Label = $Root/Safe/BossPanel/BossPhase
-@onready var boon_label: Label = $Root/Safe/Boons/BoonLabel
-@onready var boon_row: HBoxContainer = $Root/Safe/Boons/BoonRow
-@onready var banner: Label = $Root/Safe/Banner
-@onready var title_card: VBoxContainer = $Root/Safe/TitleCard
-@onready var card_title: Label = $Root/Safe/TitleCard/CardTitle
-@onready var card_sub: Label = $Root/Safe/TitleCard/CardSub
-@onready var hint_label: Label = $Root/Safe/HintLabel
-
 var _boss: Boss
 var _boss_phase_seen: int = -1
 var _hinted: Dictionary[String, bool] = {}
 var _toast: Tween
 var _card: Tween
 var _hint: Tween
+
+@onready var root: Control = $Root
+@onready var danger: ColorRect = $Danger
+@onready var hp_bar: BloodBar = $Root/Vitals/HpBar
+@onready var hp_label: Label = $Root/Vitals/HpRow/HpLabel
+@onready var hp_max: Label = $Root/Vitals/HpRow/HpMax
+@onready var feed_pips: PipRow = $Root/Vitals/Feed/FeedPips
+@onready var feed_label: Label = $Root/Vitals/Feed/FeedLabel
+@onready var rep_label: Label = $Root/RepLabel
+@onready var playtest_label: Label = $Root/PlaytestLabel
+@onready var special_glyph: SlotGlyph = $Root/Vitals/Kit/Special
+@onready var special_name: Label = $Root/Vitals/Kit/SpecialName
+@onready var cast_glyph: SlotGlyph = $Root/Vitals/Kit/Cast
+@onready var cast_name: Label = $Root/Vitals/Kit/CastName
+@onready var cast_pips: PipRow = $Root/Vitals/Kit/CastPips
+@onready var kit_label: Label = $Root/Vitals/KitLabel
+@onready var moon_disc: TextureRect = $Root/Moon/MoonDisc
+@onready var timer_label: Label = $Root/Moon/TimerLabel
+@onready var diff_label: Label = $Root/Moon/DiffLabel
+@onready var gate: VBoxContainer = $Root/Gate
+@onready var phase_label: Label = $Root/Gate/PhaseLabel
+@onready var burst_pips: PipRow = $Root/Gate/BurstPips
+@onready var hunt_bar: BloodBar = $Root/Gate/HuntBar
+@onready var kills_label: Label = $Root/Gate/KillsLabel
+@onready var boss_panel: VBoxContainer = $Root/BossPanel
+@onready var boss_name: Label = $Root/BossPanel/BossName
+@onready var boss_bar: BloodBar = $Root/BossPanel/BossBar
+@onready var boss_phase: Label = $Root/BossPanel/BossPhase
+@onready var boon_label: Label = $Root/Boons/BoonLabel
+@onready var boon_row: HBoxContainer = $Root/Boons/BoonRow
+@onready var toast_label: Label = $Root/ToastLabel
+@onready var title_card: VBoxContainer = $Root/TitleCard
+@onready var card_title: Label = $Root/TitleCard/CardTitle
+@onready var card_sub: Label = $Root/TitleCard/CardSub
+@onready var hint_label: Label = $Root/HintLabel
 
 
 func _ready() -> void:
@@ -69,27 +69,30 @@ func _ready() -> void:
 	RunState.feed_buff_changed.connect(_on_feed)
 	RunState.pact_formed.connect(_on_pact_formed)
 	RunState.room_started.connect(_on_room)
-	root.resized.connect(_fit_safe)
+	RunState.reputation_tier_changed.connect(_on_tier)
+	get_viewport().size_changed.connect(_fit_safe)
 	_fit_safe()
 	_refresh()
 
 
 ## A line that fades in over the lower third and leaves by itself.
-func announce(text: String, seconds: float = 2.6) -> void:
-	banner.text = text
+func announce(text: String, seconds: float = 2.6, tint: Color = MWPalette.BONE) -> void:
+	toast_label.text = text
+	toast_label.add_theme_color_override("font_color", tint)
 	if _toast:
 		_toast.kill()
 	_toast = create_tween()
-	_toast.tween_property(banner, "modulate:a", 1.0, 0.2)
+	_toast.tween_property(toast_label, "modulate:a", 1.0, 0.2)
 	_toast.tween_interval(seconds)
-	_toast.tween_property(banner, "modulate:a", 0.0, 0.7)
+	_toast.tween_property(toast_label, "modulate:a", 0.0, 0.7)
 
 
+## `Root` is the HUD frame: the full view, capped at SAFE_ASPECT and centred.
 func _fit_safe() -> void:
-	var view := root.size
+	var view := get_viewport().get_visible_rect().size
 	var w := minf(view.x, view.y * SAFE_ASPECT)
-	safe.position = Vector2((view.x - w) * 0.5, 0.0)
-	safe.size = Vector2(w, view.y)
+	root.position = Vector2((view.x - w) * 0.5, 0.0)
+	root.size = Vector2(w, view.y)
 
 
 func _show_card(title: String, sub: String = "", tint: Color = MWPalette.BONE) -> void:
@@ -144,6 +147,7 @@ func _tick_boss() -> void:
 
 
 func _process(_delta: float) -> void:
+	playtest_label.visible = GameState.playtest_mode
 	if RunState.phase == RunState.Phase.HUB:
 		visible = false
 		return
@@ -269,9 +273,29 @@ func _on_boons() -> void:
 	boon_label.add_theme_color_override("font_color", Color(MWPalette.patron(who), 0.85))
 
 
-## Run-scoped social cost of feeding (L7): only shown once Ashwick has noticed.
+## Run-scoped social cost of feeding (L7, MW-028): the line appears once Ashwick has
+## noticed, in the tier's colour.
 func _on_rep(value: int) -> void:
-	rep_label.text = "ASHWICK  ·  %s" % RunState.reputation_label().to_upper() if value < 0 else ""
+	var label := RunState.reputation_label()
+	rep_label.text = "Reputation: %s" % label
+	rep_label.visible = value < 0
+	rep_label.add_theme_color_override("font_color", _rep_color(label))
+
+
+func _on_tier(label: String) -> void:
+	announce("Ashwick turns %s." % label, 2.4, _rep_color(label))
+
+
+func _rep_color(label: String) -> Color:
+	match label:
+		"Wary":
+			return Color(0.86, 0.78, 0.45)
+		"Feared":
+			return Color(0.9, 0.55, 0.28)
+		"Hated":
+			return Color(0.82, 0.22, 0.24)
+		_:
+			return MWPalette.ASH
 
 
 func _on_feed(stacks: int) -> void:

@@ -7,18 +7,19 @@ signal chosen(boon: Dictionary)
 const CARD := preload("res://scenes/ui/boon_card.tscn")
 const PICK_KEYS: Array[Key] = [KEY_1, KEY_2, KEY_3, KEY_4]
 
+var _choices: Array[Dictionary] = []
+
 @onready var dim: ColorRect = $Dim
 @onready var title: Label = $Center/VBox/Title
 @onready var subtitle: Label = $Center/VBox/Subtitle
 @onready var cards: HBoxContainer = $Center/VBox/Cards
 @onready var body: VBoxContainer = $Center/VBox
 
-var _choices: Array[Dictionary] = []
-
 
 func _ready() -> void:
 	visible = false
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	add_to_group("boon_select")
 
 
 func open_choices() -> void:

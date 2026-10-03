@@ -1,5 +1,5 @@
-extends Node2D
 class_name ActorVisual
+extends Node2D
 ## 2.5D actor with real anim states: idle / walk / run / attack / dodge / talk.
 ## Stands upright on the iso floor: the sprite hangs from an upright rig with its feet on
 ## this node's origin, and the ground ring, contact shadow and moon shadow are drawn flat.

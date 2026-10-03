@@ -1,11 +1,11 @@
-extends Node
 class_name MWVFX
+extends Node
 ## Static helpers to spawn combat / moon VFX.
-
-static var _hitstopping: bool = false
 
 ## How a spawned sprite sits on the iso stage.
 enum Pose { SWEEP, PUFF, MARK }
+
+static var _hitstopping: bool = false
 
 
 ## Arc in the ground plane at the attacker's feet, drawn over actors.

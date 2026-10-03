@@ -54,6 +54,11 @@ var _tether: Line2D
 var _family_sprite: String = ""
 var _wander_dir: Vector2 = Vector2.RIGHT
 var _wander_t: float = 0.0
+var _flee_cd: float = 0.0
+var _flee_left: float = 0.0
+## Smoke forces the next flee roll. Negative means use randf().
+var _social_roll: float = -1.0
+var routed: bool = false
 
 
 func _ready() -> void:
@@ -312,9 +317,87 @@ func _physics_process(delta: float) -> void:
 		_wander(delta)
 		return
 	_ensure_target()
+	if _social_pressure(delta):
+		return
 	if _tick_affix(delta):
 		return
 	_ai_tick(delta)
+
+
+## Feared/Hated humans sometimes flee, then leave the raid. Wary humans keep distance.
+## Returns true when this tick was spent on that pressure (archetypes do not also chase).
+func _social_pressure(delta: float) -> bool:
+	if not is_human or _player == null or not is_instance_valid(_player):
+		return false
+	if _flee_left > 0.0:
+		_tick_flee(delta)
+		return true
+	if _inside_standoff():
+		_run_from_player(0.85)
+		return true
+	return _maybe_start_flee(delta)
+
+
+func _tick_flee(delta: float) -> void:
+	_flee_left -= delta
+	_run_from_player(1.2)
+	if _flee_left <= 0.0:
+		_rout()
+
+
+func _inside_standoff() -> bool:
+	var standoff := RunState.human_standoff()
+	if standoff <= 0.0:
+		return false
+	return global_position.distance_to(_player.global_position) < standoff
+
+
+func _maybe_start_flee(delta: float) -> bool:
+	var chance := RunState.human_flee_chance()
+	if chance <= 0.0:
+		return false
+	if _flee_cd > 0.0 and _social_roll < 0.0:
+		_flee_cd -= delta
+		return false
+	_flee_cd = RunState.FLEE_CHECK_S
+	if _take_social_roll() >= chance:
+		return false
+	_flee_left = RunState.FLEE_DURATION
+	_run_from_player(1.2)
+	return true
+
+
+func _run_from_player(speed_mult: float) -> void:
+	var away := global_position - _player.global_position
+	if away.length_squared() < 1.0:
+		away = Vector2.RIGHT
+	_chase(away, current_move_speed() * speed_mult)
+
+
+func is_fleeing() -> bool:
+	return _flee_left > 0.0
+
+
+func force_social_roll(roll: float) -> void:
+	_social_roll = roll
+
+
+func _take_social_roll() -> float:
+	if _social_roll >= 0.0:
+		var roll := _social_roll
+		_social_roll = -1.0
+		return roll
+	return randf()
+
+
+## Leaves the fight with no kill credit. A rout is not a corpse and cannot be fed on.
+func _rout() -> void:
+	routed = true
+	_alive = false
+	velocity = Vector2.ZERO
+	set_physics_process(false)
+	remove_from_group("enemy")
+	queue_free()
 
 
 func _ensure_target() -> void:

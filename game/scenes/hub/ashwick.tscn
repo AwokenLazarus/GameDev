@@ -1,8 +1,10 @@
-[gd_scene load_steps=4 format=3 uid="uid://ashwick_hub"]
+[gd_scene load_steps=6 format=3 uid="uid://ashwick_hub"]
 
 [ext_resource type="Script" path="res://scripts/hub/ashwick.gd" id="1_ashwick"]
 [ext_resource type="PackedScene" uid="uid://mw_biome" path="res://scenes/visuals/biome.tscn" id="2_biome"]
 [ext_resource type="Script" path="res://scripts/visuals/stage_camera.gd" id="3_camera"]
+[ext_resource type="PackedScene" uid="uid://pause_menu" path="res://scenes/ui/pause_menu.tscn" id="4_pause"]
+[ext_resource type="Theme" uid="uid://mw_theme" path="res://assets/ui/moonwake_theme.tres" id="9_theme"]
 
 [node name="Ashwick" type="Node2D"]
 script = ExtResource("1_ashwick")
@@ -18,6 +20,7 @@ zoom = 0.8
 [node name="UI" type="CanvasLayer" parent="."]
 
 [node name="Root" type="Control" parent="UI"]
+theme = ExtResource("9_theme")
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -160,3 +163,5 @@ theme_override_colors/font_color = Color(0.8, 0.75, 0.7, 1)
 theme_override_font_sizes/font_size = 15
 text = "Dust wind through broken rails."
 autowrap_mode = 2
+
+[node name="PauseMenu" parent="." instance=ExtResource("4_pause")]

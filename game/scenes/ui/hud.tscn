@@ -23,34 +23,24 @@ width = 256
 layer = 10
 script = ExtResource("1_hud")
 
+[node name="Danger" type="ColorRect" parent="."]
+material = SubResource("Mat_danger")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
 [node name="Root" type="Control" parent="."]
 layout_mode = 3
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-theme = ExtResource("7_theme")
-
-[node name="Danger" type="ColorRect" parent="Root"]
-material = SubResource("Mat_danger")
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-
-[node name="Safe" type="Control" parent="Root"]
-layout_mode = 1
 anchors_preset = 0
 offset_right = 1280.0
 offset_bottom = 720.0
 mouse_filter = 2
+theme = ExtResource("7_theme")
 
-[node name="Vitals" type="VBoxContainer" parent="Root/Safe"]
+[node name="Vitals" type="VBoxContainer" parent="Root"]
 layout_mode = 1
 anchors_preset = 2
 anchor_top = 1.0
@@ -64,40 +54,40 @@ mouse_filter = 2
 theme_override_constants/separation = 7
 alignment = 2
 
-[node name="Kit" type="HBoxContainer" parent="Root/Safe/Vitals"]
+[node name="Kit" type="HBoxContainer" parent="Root/Vitals"]
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 9
 
-[node name="Special" type="Control" parent="Root/Safe/Vitals/Kit"]
+[node name="Special" type="Control" parent="Root/Vitals/Kit"]
 custom_minimum_size = Vector2(26, 26)
 layout_mode = 2
 mouse_filter = 2
 script = ExtResource("4_slot")
 
-[node name="SpecialName" type="Label" parent="Root/Safe/Vitals/Kit"]
+[node name="SpecialName" type="Label" parent="Root/Vitals/Kit"]
 layout_mode = 2
 theme_type_variation = &"Caps"
 text = "SPECIAL"
 
-[node name="Gap" type="Control" parent="Root/Safe/Vitals/Kit"]
+[node name="Gap" type="Control" parent="Root/Vitals/Kit"]
 custom_minimum_size = Vector2(8, 0)
 layout_mode = 2
 mouse_filter = 2
 
-[node name="Cast" type="Control" parent="Root/Safe/Vitals/Kit"]
+[node name="Cast" type="Control" parent="Root/Vitals/Kit"]
 custom_minimum_size = Vector2(26, 26)
 layout_mode = 2
 mouse_filter = 2
 script = ExtResource("4_slot")
 mark = "cast"
 
-[node name="CastName" type="Label" parent="Root/Safe/Vitals/Kit"]
+[node name="CastName" type="Label" parent="Root/Vitals/Kit"]
 layout_mode = 2
 theme_type_variation = &"Caps"
 text = "CAST"
 
-[node name="CastPips" type="Control" parent="Root/Safe/Vitals/Kit"]
+[node name="CastPips" type="Control" parent="Root/Vitals/Kit"]
 layout_mode = 2
 size_flags_vertical = 4
 mouse_filter = 2
@@ -107,41 +97,41 @@ color = Color(0.9, 0.84, 0.76, 1)
 pip = 7.0
 gap = 5.0
 
-[node name="KitLabel" type="Label" parent="Root/Safe/Vitals"]
+[node name="KitLabel" type="Label" parent="Root/Vitals"]
 layout_mode = 2
 theme_type_variation = &"Caps"
 theme_override_colors/font_color = Color(0.88, 0.72, 0.44, 1)
 
-[node name="HpRow" type="HBoxContainer" parent="Root/Safe/Vitals"]
+[node name="HpRow" type="HBoxContainer" parent="Root/Vitals"]
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 6
 
-[node name="HpLabel" type="Label" parent="Root/Safe/Vitals/HpRow"]
+[node name="HpLabel" type="Label" parent="Root/Vitals/HpRow"]
 layout_mode = 2
 theme_type_variation = &"Title"
 theme_override_font_sizes/font_size = 22
 text = "100"
 
-[node name="HpMax" type="Label" parent="Root/Safe/Vitals/HpRow"]
+[node name="HpMax" type="Label" parent="Root/Vitals/HpRow"]
 layout_mode = 2
 size_flags_vertical = 8
 theme_type_variation = &"Caps"
 text = "/ 100"
 
-[node name="HpBar" type="Control" parent="Root/Safe/Vitals"]
+[node name="HpBar" type="Control" parent="Root/Vitals"]
 custom_minimum_size = Vector2(300, 7)
 layout_mode = 2
 size_flags_horizontal = 0
 mouse_filter = 2
 script = ExtResource("2_bar")
 
-[node name="Feed" type="HBoxContainer" parent="Root/Safe/Vitals"]
+[node name="Feed" type="HBoxContainer" parent="Root/Vitals"]
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 10
 
-[node name="FeedPips" type="Control" parent="Root/Safe/Vitals/Feed"]
+[node name="FeedPips" type="Control" parent="Root/Vitals/Feed"]
 layout_mode = 2
 size_flags_vertical = 4
 mouse_filter = 2
@@ -149,17 +139,12 @@ script = ExtResource("3_pips")
 pip = 8.0
 gap = 6.0
 
-[node name="FeedLabel" type="Label" parent="Root/Safe/Vitals/Feed"]
+[node name="FeedLabel" type="Label" parent="Root/Vitals/Feed"]
 layout_mode = 2
 theme_type_variation = &"Caps"
 theme_override_colors/font_color = Color(0.9, 0.16, 0.2, 1)
 
-[node name="RepLabel" type="Label" parent="Root/Safe/Vitals/Feed"]
-layout_mode = 2
-theme_type_variation = &"Caps"
-theme_override_colors/font_color = Color(0.62, 0.57, 0.54, 1)
-
-[node name="Moon" type="Control" parent="Root/Safe"]
+[node name="Moon" type="Control" parent="Root"]
 layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
@@ -171,7 +156,7 @@ offset_bottom = 100.0
 grow_horizontal = 0
 mouse_filter = 2
 
-[node name="MoonDisc" type="TextureRect" parent="Root/Safe/Moon"]
+[node name="MoonDisc" type="TextureRect" parent="Root/Moon"]
 texture_filter = 2
 layout_mode = 1
 anchors_preset = 1
@@ -186,7 +171,7 @@ texture = ExtResource("6_moon")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="TimerLabel" type="Label" parent="Root/Safe/Moon"]
+[node name="TimerLabel" type="Label" parent="Root/Moon"]
 layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
@@ -201,7 +186,7 @@ theme_override_font_sizes/font_size = 24
 text = "00:00"
 horizontal_alignment = 2
 
-[node name="DiffLabel" type="Label" parent="Root/Safe/Moon"]
+[node name="DiffLabel" type="Label" parent="Root/Moon"]
 layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
@@ -216,7 +201,7 @@ theme_override_colors/font_color = Color(0.9, 0.16, 0.2, 1)
 text = "DUST"
 horizontal_alignment = 2
 
-[node name="Gate" type="VBoxContainer" parent="Root/Safe"]
+[node name="Gate" type="VBoxContainer" parent="Root"]
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
@@ -229,13 +214,13 @@ grow_horizontal = 2
 mouse_filter = 2
 theme_override_constants/separation = 8
 
-[node name="PhaseLabel" type="Label" parent="Root/Safe/Gate"]
+[node name="PhaseLabel" type="Label" parent="Root/Gate"]
 layout_mode = 2
 theme_type_variation = &"Caps"
 text = "DUST MERIDIAN"
 horizontal_alignment = 1
 
-[node name="BurstPips" type="Control" parent="Root/Safe/Gate"]
+[node name="BurstPips" type="Control" parent="Root/Gate"]
 layout_mode = 2
 size_flags_horizontal = 4
 mouse_filter = 2
@@ -244,7 +229,7 @@ color = Color(0.9, 0.84, 0.76, 1)
 pip = 9.0
 gap = 12.0
 
-[node name="HuntBar" type="Control" parent="Root/Safe/Gate"]
+[node name="HuntBar" type="Control" parent="Root/Gate"]
 visible = false
 custom_minimum_size = Vector2(420, 4)
 layout_mode = 2
@@ -254,14 +239,14 @@ script = ExtResource("2_bar")
 value = 0.0
 centred = true
 
-[node name="KillsLabel" type="Label" parent="Root/Safe/Gate"]
+[node name="KillsLabel" type="Label" parent="Root/Gate"]
 visible = false
 layout_mode = 2
 theme_type_variation = &"Caps"
 text = "0 / 1150"
 horizontal_alignment = 1
 
-[node name="BossPanel" type="VBoxContainer" parent="Root/Safe"]
+[node name="BossPanel" type="VBoxContainer" parent="Root"]
 visible = false
 layout_mode = 1
 anchors_preset = 5
@@ -275,14 +260,14 @@ grow_horizontal = 2
 mouse_filter = 2
 theme_override_constants/separation = 7
 
-[node name="BossName" type="Label" parent="Root/Safe/BossPanel"]
+[node name="BossName" type="Label" parent="Root/BossPanel"]
 layout_mode = 2
 theme_type_variation = &"Title"
 theme_override_font_sizes/font_size = 22
 text = "GENERAL"
 horizontal_alignment = 1
 
-[node name="BossBar" type="Control" parent="Root/Safe/BossPanel"]
+[node name="BossBar" type="Control" parent="Root/BossPanel"]
 custom_minimum_size = Vector2(620, 7)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -290,13 +275,13 @@ mouse_filter = 2
 script = ExtResource("2_bar")
 centred = true
 
-[node name="BossPhase" type="Label" parent="Root/Safe/BossPanel"]
+[node name="BossPhase" type="Label" parent="Root/BossPanel"]
 layout_mode = 2
 theme_type_variation = &"Caps"
 theme_override_colors/font_color = Color(0.9, 0.16, 0.2, 1)
 horizontal_alignment = 1
 
-[node name="Boons" type="HBoxContainer" parent="Root/Safe"]
+[node name="Boons" type="HBoxContainer" parent="Root"]
 layout_mode = 1
 anchors_preset = 3
 anchor_left = 1.0
@@ -313,17 +298,17 @@ mouse_filter = 2
 theme_override_constants/separation = 14
 alignment = 2
 
-[node name="BoonLabel" type="Label" parent="Root/Safe/Boons"]
+[node name="BoonLabel" type="Label" parent="Root/Boons"]
 layout_mode = 2
 theme_type_variation = &"Caps"
 text = "UNALIGNED"
 
-[node name="BoonRow" type="HBoxContainer" parent="Root/Safe/Boons"]
+[node name="BoonRow" type="HBoxContainer" parent="Root/Boons"]
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 7
 
-[node name="Banner" type="Label" parent="Root/Safe"]
+[node name="ToastLabel" type="Label" parent="Root"]
 modulate = Color(1, 1, 1, 0)
 layout_mode = 1
 anchors_preset = 7
@@ -340,7 +325,7 @@ grow_vertical = 0
 theme_override_font_sizes/font_size = 22
 horizontal_alignment = 1
 
-[node name="TitleCard" type="VBoxContainer" parent="Root/Safe"]
+[node name="TitleCard" type="VBoxContainer" parent="Root"]
 modulate = Color(1, 1, 1, 0)
 layout_mode = 1
 anchors_preset = 5
@@ -354,7 +339,7 @@ grow_horizontal = 2
 mouse_filter = 2
 theme_override_constants/separation = 8
 
-[node name="RuleTop" type="TextureRect" parent="Root/Safe/TitleCard"]
+[node name="RuleTop" type="TextureRect" parent="Root/TitleCard"]
 custom_minimum_size = Vector2(420, 1)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -362,20 +347,20 @@ mouse_filter = 2
 texture = SubResource("Tex_rule")
 expand_mode = 1
 
-[node name="CardTitle" type="Label" parent="Root/Safe/TitleCard"]
+[node name="CardTitle" type="Label" parent="Root/TitleCard"]
 layout_mode = 2
 theme_type_variation = &"Title"
 theme_override_font_sizes/font_size = 38
 text = "MOONWAKE"
 horizontal_alignment = 1
 
-[node name="CardSub" type="Label" parent="Root/Safe/TitleCard"]
+[node name="CardSub" type="Label" parent="Root/TitleCard"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.78, 0.72, 0.66, 1)
 theme_override_font_sizes/font_size = 20
 horizontal_alignment = 1
 
-[node name="RuleBottom" type="TextureRect" parent="Root/Safe/TitleCard"]
+[node name="RuleBottom" type="TextureRect" parent="Root/TitleCard"]
 custom_minimum_size = Vector2(420, 1)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -383,7 +368,7 @@ mouse_filter = 2
 texture = SubResource("Tex_rule")
 expand_mode = 1
 
-[node name="HintLabel" type="Label" parent="Root/Safe"]
+[node name="HintLabel" type="Label" parent="Root"]
 modulate = Color(1, 1, 1, 0)
 layout_mode = 1
 anchors_preset = 5
@@ -396,3 +381,33 @@ offset_bottom = 126.0
 grow_horizontal = 2
 theme_type_variation = &"Caps"
 horizontal_alignment = 1
+
+[node name="RepLabel" type="Label" parent="Root"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 190.0
+offset_top = -58.0
+offset_right = 520.0
+offset_bottom = -36.0
+grow_vertical = 0
+theme_type_variation = &"Caps"
+text = "Reputation: Neutral"
+vertical_alignment = 1
+
+[node name="PlaytestLabel" type="Label" parent="Root"]
+visible = false
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -260.0
+offset_top = 96.0
+offset_right = -40.0
+offset_bottom = 116.0
+grow_horizontal = 0
+theme_type_variation = &"Caps"
+theme_override_colors/font_color = Color(0.88, 0.72, 0.44, 1)
+text = "PLAYTEST"
+horizontal_alignment = 2

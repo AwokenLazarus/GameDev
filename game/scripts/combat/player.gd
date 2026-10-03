@@ -1305,6 +1305,8 @@ func on_deal_damage(amount: float) -> void:
 
 
 func _try_feed() -> void:
+	if not RunState.feeding_allowed():
+		return
 	for body: Node2D in feed_area.get_overlapping_bodies():
 		if body.is_in_group("feedable_corpse"):
 			_feed(body)

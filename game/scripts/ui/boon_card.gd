@@ -6,6 +6,11 @@ const SLOT_WORD := {
 	"attack": "ATTACK", "special": "SPECIAL", "cast": "CAST", "dash": "DASH", "trigger": "OATH"
 }
 
+var boon: Dictionary = {}
+var _tint := MWPalette.ASH
+var _box: StyleBoxFlat
+var _lift: Tween
+
 @onready var frame: Panel = $Frame
 @onready var wash: ColorRect = $Frame/Wash
 @onready var sigil: PatronSigil = $Frame/Body/Sigil
@@ -17,11 +22,6 @@ const SLOT_WORD := {
 @onready var note_label: Label = $Frame/Body/Note
 @onready var rarity_label: Label = $Frame/Body/Foot/Rarity
 @onready var key_label: Label = $Frame/Body/Foot/Key
-
-var boon: Dictionary = {}
-var _tint := MWPalette.ASH
-var _box: StyleBoxFlat
-var _lift: Tween
 
 
 func _ready() -> void:

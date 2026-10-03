@@ -3,10 +3,10 @@ extends Node2D
 ## One free-standing block of masonry inside the arena (cover, pillar, tomb). Sits at its
 ## footprint's centre so the stage camera can depth-sort it against actors.
 
-@onready var occluder: LightOccluder2D = $Occluder
-
 var _half := Vector2(20.0, 20.0)
 var _height := 58.0
+
+@onready var occluder: LightOccluder2D = $Occluder
 
 
 func setup(size: Vector2, height: float, masonry: Material) -> void:
