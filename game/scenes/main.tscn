@@ -74,6 +74,34 @@ custom_minimum_size = Vector2(360, 56)
 layout_mode = 2
 text = "PLAY RAID — Dust Meridian"
 
+[node name="Playtest" type="Button" parent="Center/VBox"]
+custom_minimum_size = Vector2(360, 36)
+layout_mode = 2
+text = "PLAYTEST: OFF"
+
+[node name="Picker" type="VBoxContainer" parent="Center/VBox"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Note" type="Label" parent="Center/VBox/Picker"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.72, 0.28, 1)
+text = "In memory only. The save file is not changed."
+horizontal_alignment = 1
+
+[node name="Sibling" type="OptionButton" parent="Center/VBox/Picker"]
+custom_minimum_size = Vector2(360, 36)
+layout_mode = 2
+
+[node name="Alt" type="OptionButton" parent="Center/VBox/Picker"]
+custom_minimum_size = Vector2(360, 36)
+layout_mode = 2
+
+[node name="Sector" type="OptionButton" parent="Center/VBox/Picker"]
+custom_minimum_size = Vector2(360, 36)
+layout_mode = 2
+
 [node name="Quit" type="Button" parent="Center/VBox"]
 custom_minimum_size = Vector2(280, 40)
 layout_mode = 2

@@ -2,18 +2,19 @@ extends CanvasLayer
 
 signal chosen(boon: Dictionary)
 
+var _choices: Array[Dictionary] = []
+var _subtitle: Label
+
 @onready var panel: PanelContainer = $Center/Panel
 @onready var title: Label = $Center/Panel/VBox/Title
 @onready var buttons: VBoxContainer = $Center/Panel/VBox/Buttons
 @onready var dim: ColorRect = $Dim
 
-var _choices: Array[Dictionary] = []
-var _subtitle: Label
-
 
 func _ready() -> void:
 	visible = false
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	add_to_group("boon_select")
 	if dim:
 		dim.color = Color(0.04, 0.03, 0.05, 0.38)
 	_subtitle = Label.new()

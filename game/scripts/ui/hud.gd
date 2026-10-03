@@ -1,5 +1,14 @@
 extends CanvasLayer
 
+var kit_label: Label
+var boss_panel: VBoxContainer
+var boss_name: Label
+var boss_bar: ProgressBar
+var boss_phase: Label
+var title_card: Label
+var _boss: Node
+var _boss_phase_seen: int = -1
+
 @onready var hp_bar: ProgressBar = $Root/HpBar
 @onready var hp_label: Label = $Root/HpLabel
 @onready var timer_label: Label = $Root/TimerLabel
@@ -10,14 +19,7 @@ extends CanvasLayer
 @onready var rep_label: Label = $Root/RepLabel
 @onready var feed_label: Label = $Root/FeedLabel
 @onready var hint_label: Label = $Root/HintLabel
-var kit_label: Label
-var boss_panel: VBoxContainer
-var boss_name: Label
-var boss_bar: ProgressBar
-var boss_phase: Label
-var title_card: Label
-var _boss: Node
-var _boss_phase_seen: int = -1
+@onready var playtest_label: Label = $Root/PlaytestLabel
 
 
 func _ready() -> void:
@@ -114,6 +116,7 @@ func _show_card(text: String) -> void:
 
 
 func _process(_delta: float) -> void:
+	playtest_label.visible = GameState.playtest_mode
 	if RunState.phase == RunState.Phase.HUB:
 		visible = false
 		return

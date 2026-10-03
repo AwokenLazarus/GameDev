@@ -423,11 +423,34 @@ func is_unlocked(id: String) -> bool:
 	var data: Dictionary = _characters.get(id, {})
 	if data.is_empty():
 		return false
+	if GameState != null and GameState.playtest_mode:
+		return true
 	if bool(data.get("unlocked_by_default", false)):
 		return true
 	if GameState == null:
 		return false
 	return id in GameState.unlocked_characters
+
+
+func has_alt(alt_id: String) -> bool:
+	for key: Variant in _alts.keys():
+		var list: Array = _alts[key]
+		for entry: Variant in list:
+			if typeof(entry) != TYPE_DICTIONARY:
+				continue
+			if str((entry as Dictionary).get("id", "")) == alt_id:
+				return true
+	return false
+
+
+func is_alt_unlocked(alt_id: String) -> bool:
+	if alt_id == "" or not has_alt(alt_id):
+		return false
+	if GameState != null and GameState.playtest_mode:
+		return true
+	if GameState == null:
+		return false
+	return alt_id in GameState.unlocked_alts
 
 
 func get_alts(id: String) -> Array[Dictionary]:

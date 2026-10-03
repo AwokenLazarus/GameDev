@@ -15,9 +15,11 @@ godot --path game
 **First play:** click **PLAY RAID — Dust Meridian** on the title screen (skips the town hub).  
 You should see Severin (red ring under feet) and enemies spawning around you.
 
-- Move WASD · Attack J / Click · Special K / Right-click · Cast L / Q · Dodge Space · Feed F  
+- Move WASD · Attack J / Click · Special K / Right-click · Cast L / Q · Dodge Space · Feed F · Pause Esc  
 - After a burst clears, a **PICK A BOON** panel pauses combat — click one choice to continue.  
-- **Ashwick Town Hub** is optional prep (roster / meta), not the fight.
+- **Esc** or pad **Start** pauses: Resume, Restart raid, Return to Ashwick, Quit.  
+- **Ashwick Town Hub** is optional prep (roster / meta), not the fight.  
+- **PLAYTEST** on the title screen (or `godot --path game -- --playtest`) unlocks all 5 siblings, their alt kits and all 8 sectors in memory only. It does not write the save. The HUD shows PLAYTEST. Turn it off to restore the real roster.
 
 ## Contents
 
@@ -67,8 +69,9 @@ Runtime sheets: `assets/textures/`
 | Cast | Q / L | `.` |
 | Dodge | Space | Shift |
 | Feed | F | F |
+| Pause | Esc | Esc |
 
-Gamepad: left stick move, right stick aim, X attack, B special, RB cast, A dodge, Y feed.
+Gamepad: left stick move, right stick aim, X attack, B special, RB cast, A dodge, Y feed, Start pause.
 
 ### Kits (attack · special · cast · dash)
 

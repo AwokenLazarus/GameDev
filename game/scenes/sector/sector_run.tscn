@@ -1,9 +1,10 @@
-[gd_scene load_steps=5 format=3 uid="uid://sector_run"]
+[gd_scene load_steps=6 format=3 uid="uid://sector_run"]
 
 [ext_resource type="Script" path="res://scripts/systems/sector_controller.gd" id="1_sector"]
 [ext_resource type="Script" path="res://scripts/systems/director.gd" id="2_director"]
 [ext_resource type="PackedScene" uid="uid://moonwake_hud" path="res://scenes/ui/hud.tscn" id="3_hud"]
 [ext_resource type="PackedScene" uid="uid://boon_select" path="res://scenes/ui/boon_select.tscn" id="4_boon"]
+[ext_resource type="PackedScene" uid="uid://pause_menu" path="res://scenes/ui/pause_menu.tscn" id="5_pause"]
 
 [node name="SectorRun" type="Node2D"]
 script = ExtResource("1_sector")
@@ -33,3 +34,5 @@ script = ExtResource("2_director")
 [node name="HUD" parent="." instance=ExtResource("3_hud")]
 
 [node name="BoonSelect" parent="." instance=ExtResource("4_boon")]
+
+[node name="PauseMenu" parent="." instance=ExtResource("5_pause")]

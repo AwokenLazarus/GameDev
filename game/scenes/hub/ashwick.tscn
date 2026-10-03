@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3 uid="uid://ashwick_hub"]
+[gd_scene load_steps=3 format=3 uid="uid://ashwick_hub"]
 
 [ext_resource type="Script" path="res://scripts/hub/ashwick.gd" id="1_ashwick"]
+[ext_resource type="PackedScene" uid="uid://pause_menu" path="res://scenes/ui/pause_menu.tscn" id="2_pause"]
 
 [node name="Ashwick" type="Node2D"]
 script = ExtResource("1_ashwick")
@@ -183,3 +184,5 @@ theme_override_colors/font_color = Color(0.8, 0.75, 0.7, 1)
 theme_override_font_sizes/font_size = 15
 text = "Dust wind through broken rails."
 autowrap_mode = 2
+
+[node name="PauseMenu" parent="." instance=ExtResource("2_pause")]
