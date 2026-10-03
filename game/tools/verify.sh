@@ -36,6 +36,8 @@ smokes=(
 	boss_phases_smoke:BOSS_PHASES_PASS
 	boons_smoke:BOONS_SMOKE_PASS
 	pacts_smoke:PACTS_SMOKE_PASS
+	pause_playtest_smoke:PAUSE_PLAYTEST_PASS
+	feeding_smoke:FEEDING_PASS
 )
 
 for spec in "${smokes[@]}"; do
