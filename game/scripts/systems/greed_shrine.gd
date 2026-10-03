@@ -49,7 +49,7 @@ func setup(kind_id: String, pos: Vector2) -> void:
 
 
 func channel_seconds() -> float:
-	return float(CHANNEL_S.get(kind, 1.2))
+	return float(CHANNEL_S.get(kind, 1.2)) * RunState.shrine_cost_mult()
 
 
 func _physics_process(delta: float) -> void:

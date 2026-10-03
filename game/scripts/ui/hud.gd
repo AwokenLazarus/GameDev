@@ -10,6 +10,8 @@ extends CanvasLayer
 @onready var rep_label: Label = $Root/RepLabel
 @onready var feed_label: Label = $Root/FeedLabel
 @onready var hint_label: Label = $Root/HintLabel
+@onready var toast_label: Label = $Root/ToastLabel
+var _toast_left: float = 0.0
 var kit_label: Label
 var boss_panel: VBoxContainer
 var boss_name: Label
@@ -26,6 +28,7 @@ func _ready() -> void:
 	RunState.phase_changed.connect(_on_phase)
 	RunState.boons_changed.connect(_on_boons)
 	RunState.reputation_changed.connect(_on_rep)
+	RunState.reputation_tier_changed.connect(_on_tier)
 	RunState.feed_buff_changed.connect(_on_feed)
 	RunState.pact_formed.connect(_on_pact_formed)
 	kit_label = Label.new()
@@ -113,7 +116,11 @@ func _show_card(text: String) -> void:
 	tw.tween_property(title_card, "modulate:a", 0.0, 0.6)
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
+	if _toast_left > 0.0:
+		_toast_left = maxf(0.0, _toast_left - delta)
+		if _toast_left <= 0.0 and toast_label:
+			toast_label.text = ""
 	if RunState.phase == RunState.Phase.HUB:
 		visible = false
 		return
@@ -205,7 +212,29 @@ func _on_boons() -> void:
 
 
 func _on_rep(value: int) -> void:
-	rep_label.text = "Ashwick: %s (%d)" % [RunState.reputation_label(), value]
+	var label := RunState.reputation_label()
+	rep_label.text = "Reputation: %s (%d)" % [label, value]
+	rep_label.add_theme_color_override("font_color", _rep_color(label))
+
+
+func _on_tier(label: String) -> void:
+	if toast_label == null:
+		return
+	toast_label.text = "Ashwick turns %s." % label
+	toast_label.add_theme_color_override("font_color", _rep_color(label))
+	_toast_left = 2.4
+
+
+func _rep_color(label: String) -> Color:
+	match label:
+		"Wary":
+			return Color(0.86, 0.78, 0.45)
+		"Feared":
+			return Color(0.9, 0.55, 0.28)
+		"Hated":
+			return Color(0.82, 0.22, 0.24)
+		_:
+			return Color(0.6, 0.55, 0.5)
 
 
 func _on_feed(stacks: int) -> void:
