@@ -57,4 +57,4 @@ func _process(delta: float) -> void:
 	global_position += step
 	if _visual:
 		_visual.set_moving(true)
-		_visual.set_facing_x(step.x)
+		_visual.face(step)

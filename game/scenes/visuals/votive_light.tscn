@@ -1,0 +1,17 @@
+[gd_scene load_steps=3 format=3 uid="uid://mw_votive_light"]
+
+[ext_resource type="Script" path="res://scripts/visuals/votive_light.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://mw_light_pool" path="res://assets/visuals/light_pool.tres" id="2"]
+
+[node name="VotiveLight" type="PointLight2D"]
+color = Color(1, 0.58, 0.24, 1)
+energy = 1.0
+range_z_min = -4096
+range_z_max = 4096
+shadow_enabled = true
+shadow_color = Color(0, 0, 0, 0.7)
+shadow_filter = 1
+shadow_filter_smooth = 2.0
+texture = ExtResource("2")
+height = 40.0
+script = ExtResource("1")

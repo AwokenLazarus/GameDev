@@ -1,317 +1,237 @@
 extends Node2D
 class_name BiomePresenter
-## Builds 2.5D biome ground, props, particles, lighting for a sector/hub.
+## Dresses the iso stage for a sector or the hub: painted vista behind, shaded floor slab,
+## masonry on the far edges, set pieces, votive lights, motes and the screen grade.
+## The tree lives in scenes/visuals/biome.tscn; this script only configures it.
 
-var _ground: Sprite2D
-var _tiles: Node2D
-var _props: Node2D
-var _fx: Node2D
-var _modulate: CanvasModulate
-var _light: PointLight2D
-var _particles: GPUParticles2D
+const BLOCK_SCENE := preload("res://scenes/visuals/wall_block.tscn")
+const PROP_SCENE := preload("res://scenes/visuals/stage_prop.tscn")
+const LIGHT_SCENE := preload("res://scenes/visuals/votive_light.tscn")
+const WALL_SHADER := preload("res://assets/shaders/wall.gdshader")
+## Niche spacing along the far walls; every second niche carries a real light.
+const BAY := 150.0
+const BLOCK_HEIGHT := 60.0
+const BLOCK_SPAN := 44.0
+const SLAB_DROP := 150.0
+const ASHWICK_HALF := Vector2(620.0, 420.0)
+## Footprint centre as a fraction of image height, per painted prop.
+const PROP_FOOT := {"chapel": 0.78, "ruin": 0.8, "crate": 0.72, "rail": 0.5}
+const FLAT_PROPS: PackedStringArray = ["rail"]
+
+@onready var vista: ColorRect = $Backdrop/Vista
+@onready var ambient: CanvasModulate = $Ambient
+@onready var floor_poly: Polygon2D = $Floor
+@onready var slab: StageWalls = $Slab
+@onready var behind: Node2D = $Behind
+@onready var walls: StageWalls = $Walls
+@onready var decals: Node2D = $Decals
+@onready var moon_wash: PointLight2D = $MoonWash
+@onready var sorted: Node2D = $Sorted
+@onready var motes: GPUParticles2D = $Finish/Motes
+@onready var grade: ColorRect = $Finish/Grade
+
+var _look: BiomeLook
+var _block_material: ShaderMaterial
 
 
-func clear() -> void:
-	for c: Node in get_children():
-		c.queue_free()
+func _ready() -> void:
+	get_viewport().size_changed.connect(_fit_motes)
+	_fit_motes()
 
 
-func present_sector(sector: Dictionary, half_size: Vector2, mode: String = "room") -> void:
-	clear()
+## Parent whose children the stage camera depth-sorts (blocks, props).
+func sorted_root() -> Node2D:
+	return sorted
+
+
+func present_sector(
+	sector: Dictionary, half_size: Vector2, mode: String = "room", inner_walls: Array = []
+) -> void:
 	var sid := str(sector.get("id", "dust_meridian"))
-	_build_vista(sid)
-	_build_ground(sid, half_size)
-	if mode == "wild":
-		_build_props_wild(sid, half_size)
+	_apply_look(sid)
+	_clear()
+	_lay_floor(half_size)
+	var walled := mode != "wild"
+	(floor_poly.material as ShaderMaterial).set_shader_parameter("walled", 1.0 if walled else 0.0)
+	walls.build(half_size, _look.wall_height, walled)
+	slab.build(half_size, SLAB_DROP)
+	if walled:
+		_light_niches(half_size)
+		_raise_blocks(inner_walls)
+		_dress_room(half_size)
 	else:
-		_build_props(sid, half_size)
-	_build_atmosphere(sid, sector)
-	_build_particles(sid, half_size)
+		place_landmarks(StageLayout.wild_landmarks(sid, half_size))
 
 
 func present_ashwick() -> void:
-	clear()
-	_build_vista("ashwick")
-	_build_ground("ashwick", Vector2(700, 420))
-	_spawn_prop("chapel", Vector2(0, -180), 1.2)
-	_spawn_prop("ruin", Vector2(-260, -40), 1.0)
-	_spawn_prop("ruin", Vector2(240, -20), 0.9)
-	_spawn_prop("rail", Vector2(0, 80), 2.5)
-	_spawn_prop("crate", Vector2(-120, 40), 1.0)
-	_spawn_prop("crate", Vector2(140, 60), 1.0)
-	_build_atmosphere("ashwick", {"accent": Color(0.55, 0.25, 0.28)})
-	_build_particles("ashwick")
+	var half := ASHWICK_HALF
+	_apply_look("ashwick")
+	_clear()
+	_lay_floor(half)
+	(floor_poly.material as ShaderMaterial).set_shader_parameter("walled", 0.0)
+	walls.build(half, _look.wall_height, false)
+	slab.build(half, SLAB_DROP)
+	_prop("chapel", Vector2(-420.0, -320.0), 1.3, sorted)
+	_prop("ruin", Vector2(-540.0, 60.0), 1.1, sorted)
+	_prop("ruin", Vector2(120.0, -360.0), 1.0, sorted)
+	_prop("rail", Vector2(160.0, 200.0), 1.4, decals)
+	_prop("crate", Vector2(-250.0, -160.0), 0.5, sorted)
+	_prop("crate", Vector2(380.0, -240.0), 0.5, sorted)
+	for at: Vector2 in [Vector2(-300.0, -200.0), Vector2(200.0, -260.0), Vector2(-60.0, 120.0)]:
+		_votive(at, 1.0, 420.0)
 
 
-func _load_tex(path: String) -> Texture2D:
-	if ResourceLoader.exists(path):
-		var t: Texture2D = load(path) as Texture2D
-		if t:
-			return t
-	var img := Image.load_from_file(ProjectSettings.globalize_path(path))
-	if img:
-		return ImageTexture.create_from_image(img)
-	return null
-
-
-func _build_vista(sid: String) -> void:
-	## Full-bleed cinematic Bloodlust-inspired backdrop
-	var path := "res://assets/textures/tiles/%s_vista.png" % sid
-	if not ResourceLoader.exists(path):
-		path = "res://assets/textures/tiles/%s_ground.png" % sid
-	var tex := _load_tex(path)
-	if tex == null:
-		return
-	var vista := Sprite2D.new()
-	vista.texture = tex
-	vista.z_index = -30
-	vista.centered = true
-	vista.position = Vector2(0, -80)
-	var tex_size := tex.get_size()
-	vista.scale = Vector2(1600.0 / tex_size.x, 900.0 / tex_size.y)
-	vista.modulate = Color(0.92, 0.88, 0.9, 1.0)
-	add_child(vista)
-
-
-func _build_ground(sid: String, half_size: Vector2) -> void:
-	var path := "res://assets/textures/tiles/%s_ground.png" % sid
-	if not ResourceLoader.exists(path):
-		path = "res://assets/textures/tiles/dust_meridian_ground.png"
-	_ground = Sprite2D.new()
-	var tex: Texture2D = _load_tex(path)
-	if tex == null:
-		return
-	_ground.texture = tex
-	_ground.z_index = -20
-	_ground.centered = true
-	## Playable floor plane — darkened for readability over vista
-	_ground.modulate = Color(0.55, 0.5, 0.52, 0.92)
-	var tex_size := _ground.texture.get_size()
-	_ground.scale = Vector2(half_size.x * 2.0 / tex_size.x, half_size.y * 2.0 / tex_size.y) * 1.05
-	add_child(_ground)
-	## Iso diamond overlays
-	_tiles = Node2D.new()
-	_tiles.z_index = -19
-	add_child(_tiles)
-	var tile_path := "res://assets/textures/tiles/%s.png" % sid
-	if not ResourceLoader.exists(tile_path):
-		return
-	var tile_tex: Texture2D = load(tile_path)
-	var ny := mini(18, maxi(3, int(half_size.y / 70.0)))
-	var nx := mini(22, maxi(4, int(half_size.x / 90.0)))
-	for iy: int in range(-ny, ny + 1):
-		for ix: int in range(-nx, nx + 1):
-			var s := Sprite2D.new()
-			s.texture = tile_tex
-			s.modulate = Color(1, 1, 1, 0.18)
-			s.position = Vector2(ix * 90 + (iy % 2) * 45, iy * 50)
-			s.scale = Vector2(0.7, 0.45)  ## flatten into faux-iso
-			s.z_index = -19
-			_tiles.add_child(s)
-
-
-func _build_props(sid: String, _half_size: Vector2) -> void:
-	_props = Node2D.new()
-	_props.z_index = -5
-	_props.y_sort_enabled = true
-	add_child(_props)
-	match sid:
-		"dust_meridian":
-			_spawn_prop("rail", Vector2(-200, 120), 2.0)
-			_spawn_prop("rail", Vector2(180, -80), 1.6)
-			_spawn_prop("ruin", Vector2(-320, -100), 1.0)
-			_spawn_prop("crate", Vector2(260, 140), 1.0)
-			_spawn_prop("crate", Vector2(-80, -160), 0.9)
-		"cinder_barrens":
-			_spawn_prop("ruin", Vector2(-280, 0), 1.1)
-			_spawn_prop("ruin", Vector2(300, -120), 0.95)
-			_spawn_prop("crate", Vector2(40, 160), 1.2)
-		"gloampine":
-			for i: int in 6:
-				_spawn_prop(
-					"ruin", Vector2(-300 + i * 110, -150 + (i % 2) * 80), 0.7 + (i % 3) * 0.15
-				)
-		"salt_choir":
-			_spawn_prop("chapel", Vector2(0, -200), 1.0)
-			_spawn_prop("ruin", Vector2(-260, 40), 0.9)
-		"iron_orchard":
-			_spawn_prop("crate", Vector2(-200, -40), 1.3)
-			_spawn_prop("crate", Vector2(220, 80), 1.1)
-			_spawn_prop("rail", Vector2(0, 160), 2.2)
-		"noir_cathedral":
-			_spawn_prop("chapel", Vector2(-40, -220), 1.4)
-			_spawn_prop("ruin", Vector2(280, 20), 1.1)
-		"umbral_marches":
-			_spawn_prop("rail", Vector2(-100, -40), 2.0)
-			_spawn_prop("crate", Vector2(200, -120), 1.0)
-		"pale_spire":
-			_spawn_prop("chapel", Vector2(0, -240), 1.6)
-			_spawn_prop("ruin", Vector2(-320, 60), 1.2)
-			_spawn_prop("ruin", Vector2(320, 40), 1.2)
-		_:
-			_spawn_prop("ruin", Vector2(-200, -80), 1.0)
-
-
-func _build_props_wild(sid: String, half_size: Vector2) -> void:
-	_props = Node2D.new()
-	_props.z_index = -5
-	_props.y_sort_enabled = true
-	add_child(_props)
-	for spec: Variant in StageLayout.wild_landmarks(sid, half_size):
-		if typeof(spec) != TYPE_DICTIONARY:
-			continue
-		_spawn_prop(
-			str(spec.get("kind", "ruin")),
-			spec.get("pos", Vector2.ZERO),
-			float(spec.get("scale", 1.0))
-		)
-
-
+## Set pieces at fixed world points (wild-stage landmarks).
 func place_landmarks(landmarks: Array) -> void:
-	if _props == null:
-		_props = Node2D.new()
-		_props.z_index = -5
-		_props.y_sort_enabled = true
-		add_child(_props)
 	for spec: Variant in landmarks:
 		if typeof(spec) != TYPE_DICTIONARY:
 			continue
-		_spawn_prop(
-			str(spec.get("kind", "ruin")),
-			spec.get("pos", Vector2.ZERO),
-			float(spec.get("scale", 1.0))
-		)
+		var kind := str(spec.get("kind", "ruin"))
+		var at: Vector2 = spec.get("pos", Vector2.ZERO)
+		var flat := FLAT_PROPS.has(kind)
+		_prop(kind, at, float(spec.get("scale", 1.0)) * 1.15, decals if flat else sorted)
+		if not flat:
+			_votive(at + Vector2(46.0, 46.0), 0.9, 380.0)
 
 
-func _spawn_prop(kind: String, pos: Vector2, scl: float) -> void:
-	if _props == null:
-		_props = Node2D.new()
-		add_child(_props)
+func _apply_look(sid: String) -> void:
+	_look = BiomeLook.for_sector(sid)
+	var path := "res://assets/textures/tiles/%s_vista.png" % sid
+	var vm := vista.material as ShaderMaterial
+	if ResourceLoader.exists(path):
+		var tex: Texture2D = load(path)
+		vm.set_shader_parameter("vista", tex)
+		vm.set_shader_parameter("vista_aspect", float(tex.get_width()) / float(tex.get_height()))
+	vm.set_shader_parameter("haze", _look.haze)
+	vm.set_shader_parameter("dim", _look.vista_dim)
+	var fm := floor_poly.material as ShaderMaterial
+	fm.set_shader_parameter("paving", _look.paving)
+	fm.set_shader_parameter("tile", _look.tile)
+	fm.set_shader_parameter("stone_a", _look.stone_a)
+	fm.set_shader_parameter("stone_b", _look.stone_b)
+	fm.set_shader_parameter("earth_a", _look.earth_a)
+	fm.set_shader_parameter("earth_b", _look.earth_b)
+	fm.set_shader_parameter("stain_amount", _look.stain)
+	var sm := slab.material as ShaderMaterial
+	sm.set_shader_parameter("rock", _look.stone_b)
+	sm.set_shader_parameter("mist", _look.haze)
+	var wm := walls.material as ShaderMaterial
+	wm.set_shader_parameter("stone", _look.wall_stone)
+	wm.set_shader_parameter("glow", _look.flame)
+	wm.set_shader_parameter("height", _look.wall_height)
+	wm.set_shader_parameter("bay", BAY)
+	_block_material = ShaderMaterial.new()
+	_block_material.shader = WALL_SHADER
+	_block_material.set_shader_parameter("stone", _look.wall_stone.lightened(0.06))
+	_block_material.set_shader_parameter("height", BLOCK_HEIGHT)
+	_block_material.set_shader_parameter("bay", 0.0)
+	ambient.color = _look.ambient
+	moon_wash.color = _look.moon
+	motes.modulate = _look.mote
+	var gm := grade.material as ShaderMaterial
+	gm.set_shader_parameter("shadow_tint", _look.shadow_tint)
+	gm.set_shader_parameter("light_tint", _look.light_tint)
+
+
+func _clear() -> void:
+	for group: Node in [behind, decals, sorted]:
+		for c: Node in group.get_children():
+			c.queue_free()
+
+
+func _lay_floor(half: Vector2) -> void:
+	floor_poly.polygon = PackedVector2Array(
+		[
+			Vector2(-half.x, -half.y),
+			Vector2(half.x, -half.y),
+			Vector2(half.x, half.y),
+			Vector2(-half.x, half.y)
+		]
+	)
+	(floor_poly.material as ShaderMaterial).set_shader_parameter("half_size", half)
+	moon_wash.texture_scale = maxf(half.x, half.y) * 2.6 / 128.0
+	moon_wash.energy = 0.5 if half.x < 1000.0 else 0.3
+
+
+## A real light at the foot of every second niche on both far walls.
+func _light_niches(half: Vector2) -> void:
+	var step := BAY * 2.0
+	var x := -floorf((half.x - 60.0) / step) * step
+	while x <= half.x - 60.0:
+		_votive(Vector2(x, -half.y + 26.0), 1.15, 400.0)
+		x += step
+	var y := -floorf((half.y - 60.0) / step) * step
+	while y <= half.y - 60.0:
+		_votive(Vector2(-half.x + 26.0, y), 1.15, 400.0)
+		y += step
+
+
+func _votive(at: Vector2, strength: float, reach: float) -> void:
+	var light: VotiveLight = LIGHT_SCENE.instantiate()
+	light.position = at
+	## Lights are not depth-sorted; they live with the decals so `_clear` takes them.
+	decals.add_child(light)
+	light.setup(_look.flame, strength, reach)
+
+
+## Inner walls become runs of short blocks so each sorts against actors by itself.
+func _raise_blocks(inner_walls: Array) -> void:
+	for w: Variant in inner_walls:
+		if typeof(w) != TYPE_DICTIONARY:
+			continue
+		var at: Vector2 = w.get("pos", Vector2.ZERO)
+		var size: Vector2 = w.get("size", Vector2(40.0, 40.0))
+		var nx := maxi(1, ceili(size.x / BLOCK_SPAN))
+		var ny := maxi(1, ceili(size.y / BLOCK_SPAN))
+		var piece := Vector2(size.x / float(nx), size.y / float(ny))
+		for iy: int in ny:
+			for ix: int in nx:
+				var block: WallBlock = BLOCK_SCENE.instantiate()
+				block.position = (
+					at - size * 0.5 + Vector2((ix + 0.5) * piece.x, (iy + 0.5) * piece.y)
+				)
+				sorted.add_child(block)
+				block.setup(piece, BLOCK_HEIGHT, _block_material)
+
+
+## Skyline pieces stand outside the far walls; clutter hugs the far corners of the floor.
+func _dress_room(half: Vector2) -> void:
+	var n := _look.skyline.size()
+	for i: int in n:
+		var t := (float(i) + 0.5) / float(n)
+		var along := lerpf(-0.8, 0.8, t)
+		var kind := _look.skyline[i]
+		if i % 2 == 0:
+			_prop(kind, Vector2(along * half.x, -half.y - 120.0), 1.25, behind)
+		else:
+			_prop(kind, Vector2(-half.x - 120.0, along * half.y), 1.25, behind)
+	var spots: Array[Vector2] = [
+		Vector2(-half.x + 74.0, -half.y + 70.0),
+		Vector2(half.x * 0.42, -half.y + 64.0),
+		Vector2(-half.x + 66.0, half.y * 0.46),
+	]
+	for i: int in mini(_look.clutter.size(), spots.size()):
+		var kind := _look.clutter[i]
+		if FLAT_PROPS.has(kind):
+			_prop(kind, Vector2(half.x * 0.2, half.y * 0.25), 1.3, decals)
+		else:
+			_prop(kind, spots[i], 0.5, sorted)
+
+
+func _prop(kind: String, at: Vector2, scl: float, into: Node2D) -> void:
 	var path := "res://assets/textures/props/%s.png" % kind
 	if not ResourceLoader.exists(path):
+		push_warning("BiomePresenter: no prop art for '%s'" % kind)
 		return
-	var s := Sprite2D.new()
-	s.texture = load(path)
-	s.position = pos
-	s.scale = Vector2(scl, scl)
-	s.centered = true
-	s.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	## Fake depth: lower on screen = higher z
-	s.z_index = int(pos.y / 10.0)
-	_props.add_child(s)
+	var prop: StageProp = PROP_SCENE.instantiate()
+	prop.position = at
+	into.add_child(prop)
+	var tex: Texture2D = load(path)
+	prop.setup(tex, scl, PROP_FOOT.get(kind, 0.8), into != sorted)
 
 
-func _build_atmosphere(sid: String, sector: Dictionary) -> void:
-	_modulate = CanvasModulate.new()
-	## Bloodlust-adjacent grade: dusty desat, cold moon, dried crimson
-	## Keep grade light enough that dark coats stay readable
-	match sid:
-		"dust_meridian", "ashwick":
-			_modulate.color = Color(1.05, 0.95, 0.88)
-		"cinder_barrens":
-			_modulate.color = Color(1.05, 0.82, 0.72)
-		"gloampine":
-			_modulate.color = Color(0.85, 0.95, 0.88)
-		"salt_choir":
-			_modulate.color = Color(1.0, 0.98, 0.95)
-		"iron_orchard":
-			_modulate.color = Color(0.92, 0.96, 0.8)
-		"noir_cathedral":
-			_modulate.color = Color(0.82, 0.75, 0.95)
-		"umbral_marches":
-			_modulate.color = Color(0.82, 0.88, 1.0)
-		"pale_spire":
-			_modulate.color = Color(1.0, 0.7, 0.72)
-		_:
-			_modulate.color = Color(1.0, 0.94, 0.9)
-	add_child(_modulate)
-
-	_light = PointLight2D.new()
-	_light.color = sector.get("accent", Color(1.0, 0.85, 0.7))
-	_light.energy = 0.55
-	_light.texture_scale = 2.5
-	## Soft circular light via gradient texture
-	var img := Image.create(128, 128, false, Image.FORMAT_RGBA8)
-	for y: int in 128:
-		for x: int in 128:
-			var d := Vector2(x - 64, y - 64).length() / 64.0
-			var a := clampf(1.0 - d, 0.0, 1.0)
-			a = a * a
-			img.set_pixel(x, y, Color(1, 1, 1, a))
-	var tex := ImageTexture.create_from_image(img)
-	_light.texture = tex
-	_light.position = Vector2(0, -40)
-	add_child(_light)
-
-	## Vignette overlay
-	var vig := ColorRect.new()
-	vig.z_index = 50
-	vig.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	## Use a Sprite covering view instead — ColorRect needs canvas layer
-	var layer := CanvasLayer.new()
-	layer.layer = 5
-	add_child(layer)
-	var rect := ColorRect.new()
-	rect.set_anchors_preset(Control.PRESET_FULL_RECT)
-	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	rect.color = Color(0.05, 0.03, 0.04, 0.0)
-	layer.add_child(rect)
-	## Gradient vignette via polygon corners
-	var corners := ColorRect.new()
-	corners.set_anchors_preset(Control.PRESET_FULL_RECT)
-	corners.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	corners.color = Color(0, 0, 0, 0.25)
-	## Use shader-less edge: four dark edge rects
-	for data: Array in [
-		[0, 0, 1, 0.12],
-		[0, 0.88, 1, 0.12],
-		[0, 0, 0.08, 1],
-		[0.92, 0, 0.08, 1],
-	]:
-		var e := ColorRect.new()
-		e.anchor_left = data[0]
-		e.anchor_top = data[1]
-		e.anchor_right = data[0] + data[2]
-		e.anchor_bottom = data[1] + data[3]
-		e.offset_left = 0
-		e.offset_top = 0
-		e.offset_right = 0
-		e.offset_bottom = 0
-		e.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		e.color = Color(0.02, 0.01, 0.02, 0.55)
-		layer.add_child(e)
-
-
-func _build_particles(sid: String, half_size: Vector2 = Vector2(600, 400)) -> void:
-	_particles = GPUParticles2D.new()
-	_particles.z_index = 8
-	_particles.amount = 48 if half_size.x < 800.0 else 80
-	_particles.lifetime = 3.5
-	_particles.preprocess = 1.0
-	_particles.emitting = true
-	var mat := ParticleProcessMaterial.new()
-	mat.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
-	mat.emission_box_extents = Vector3(half_size.x, half_size.y, 1)
-	mat.direction = Vector3(0.2, -0.1, 0)
-	mat.spread = 40.0
-	mat.initial_velocity_min = 8.0
-	mat.initial_velocity_max = 28.0
-	mat.gravity = Vector3(0, 4, 0)
-	mat.scale_min = 0.3
-	mat.scale_max = 1.1
-	match sid:
-		"cinder_barrens", "pale_spire":
-			mat.color = Color(1.0, 0.45, 0.25, 0.7)
-		"gloampine":
-			mat.color = Color(0.6, 0.8, 0.5, 0.45)
-		"noir_cathedral", "umbral_marches":
-			mat.color = Color(0.6, 0.55, 0.8, 0.4)
-		"salt_choir":
-			mat.color = Color(0.95, 0.95, 0.9, 0.5)
-		_:
-			mat.color = Color(0.85, 0.75, 0.55, 0.45)
-	_particles.process_material = mat
-	var dust := "res://assets/textures/vfx/dust.png"
-	if ResourceLoader.exists(dust):
-		_particles.texture = load(dust)
-	add_child(_particles)
+func _fit_motes() -> void:
+	var view := get_viewport().get_visible_rect().size
+	motes.position = view * 0.5
+	var proc := motes.process_material as ParticleProcessMaterial
+	proc.emission_box_extents = Vector3(view.x * 0.55, view.y * 0.55, 1.0)

@@ -443,7 +443,7 @@ func _face_move(dir: Vector2) -> void:
 	if actor_visual:
 		actor_visual.set_running(velocity.length() > current_move_speed() * 0.85)
 		actor_visual.set_moving(velocity.length() > 4.0)
-		actor_visual.set_facing_x(dir.x)
+		actor_visual.face(dir)
 
 
 func _start_windup(
@@ -504,8 +504,7 @@ func _become_corpse() -> void:
 	if _tether:
 		_tether.visible = false
 	if actor_visual:
-		actor_visual.modulate = Color(0.45, 0.15, 0.15, 0.85)
-		actor_visual.scale = Vector2(1.0, 0.55)
+		actor_visual.lay_dead()
 	if visual is Polygon2D:
 		(visual as Polygon2D).color = Color(0.35, 0.12, 0.14)
 		visual.scale = Vector2(1.0, 0.55)

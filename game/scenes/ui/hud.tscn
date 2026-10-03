@@ -1,8 +1,26 @@
-[gd_scene load_steps=2 format=3 uid="uid://moonwake_hud"]
+[gd_scene load_steps=10 format=3 uid="uid://moonwake_hud"]
 
 [ext_resource type="Script" path="res://scripts/ui/hud.gd" id="1_hud"]
+[ext_resource type="Script" path="res://scripts/ui/blood_bar.gd" id="2_bar"]
+[ext_resource type="Script" path="res://scripts/ui/pip_row.gd" id="3_pips"]
+[ext_resource type="Script" path="res://scripts/ui/slot_glyph.gd" id="4_slot"]
+[ext_resource type="Shader" path="res://assets/shaders/danger.gdshader" id="5_danger"]
+[ext_resource type="Texture2D" path="res://assets/textures/vfx/moon.png" id="6_moon"]
+[ext_resource type="Theme" uid="uid://mw_theme" path="res://assets/ui/moonwake_theme.tres" id="7_theme"]
+
+[sub_resource type="ShaderMaterial" id="Mat_danger"]
+shader = ExtResource("5_danger")
+
+[sub_resource type="Gradient" id="Grad_rule"]
+offsets = PackedFloat32Array(0, 0.5, 1)
+colors = PackedColorArray(0.9, 0.84, 0.76, 0, 0.9, 0.84, 0.76, 0.85, 0.9, 0.84, 0.76, 0)
+
+[sub_resource type="GradientTexture1D" id="Tex_rule"]
+gradient = SubResource("Grad_rule")
+width = 256
 
 [node name="HUD" type="CanvasLayer"]
+layer = 10
 script = ExtResource("1_hud")
 
 [node name="Root" type="Control" parent="."]
@@ -13,127 +31,368 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+theme = ExtResource("7_theme")
 
-[node name="HpBar" type="ProgressBar" parent="Root"]
-layout_mode = 0
-offset_left = 24.0
-offset_top = 20.0
-offset_right = 280.0
-offset_bottom = 40.0
-max_value = 100.0
-value = 100.0
-show_percentage = false
+[node name="Danger" type="ColorRect" parent="Root"]
+material = SubResource("Mat_danger")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
 
-[node name="HpLabel" type="Label" parent="Root"]
-layout_mode = 0
-offset_left = 24.0
-offset_top = 42.0
-offset_right = 280.0
-offset_bottom = 66.0
-theme_override_colors/font_color = Color(0.85, 0.8, 0.75, 1)
-text = "100 / 100"
+[node name="Safe" type="Control" parent="Root"]
+layout_mode = 1
+anchors_preset = 0
+offset_right = 1280.0
+offset_bottom = 720.0
+mouse_filter = 2
 
-[node name="TimerLabel" type="Label" parent="Root"]
+[node name="Vitals" type="VBoxContainer" parent="Root/Safe"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 40.0
+offset_top = -150.0
+offset_right = 420.0
+offset_bottom = -36.0
+grow_vertical = 0
+mouse_filter = 2
+theme_override_constants/separation = 7
+alignment = 2
+
+[node name="Kit" type="HBoxContainer" parent="Root/Safe/Vitals"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 9
+
+[node name="Special" type="Control" parent="Root/Safe/Vitals/Kit"]
+custom_minimum_size = Vector2(26, 26)
+layout_mode = 2
+mouse_filter = 2
+script = ExtResource("4_slot")
+
+[node name="SpecialName" type="Label" parent="Root/Safe/Vitals/Kit"]
+layout_mode = 2
+theme_type_variation = &"Caps"
+text = "SPECIAL"
+
+[node name="Gap" type="Control" parent="Root/Safe/Vitals/Kit"]
+custom_minimum_size = Vector2(8, 0)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Cast" type="Control" parent="Root/Safe/Vitals/Kit"]
+custom_minimum_size = Vector2(26, 26)
+layout_mode = 2
+mouse_filter = 2
+script = ExtResource("4_slot")
+mark = "cast"
+
+[node name="CastName" type="Label" parent="Root/Safe/Vitals/Kit"]
+layout_mode = 2
+theme_type_variation = &"Caps"
+text = "CAST"
+
+[node name="CastPips" type="Control" parent="Root/Safe/Vitals/Kit"]
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+script = ExtResource("3_pips")
+count = 2
+color = Color(0.9, 0.84, 0.76, 1)
+pip = 7.0
+gap = 5.0
+
+[node name="KitLabel" type="Label" parent="Root/Safe/Vitals"]
+layout_mode = 2
+theme_type_variation = &"Caps"
+theme_override_colors/font_color = Color(0.88, 0.72, 0.44, 1)
+
+[node name="HpRow" type="HBoxContainer" parent="Root/Safe/Vitals"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 6
+
+[node name="HpLabel" type="Label" parent="Root/Safe/Vitals/HpRow"]
+layout_mode = 2
+theme_type_variation = &"Title"
+theme_override_font_sizes/font_size = 22
+text = "100"
+
+[node name="HpMax" type="Label" parent="Root/Safe/Vitals/HpRow"]
+layout_mode = 2
+size_flags_vertical = 8
+theme_type_variation = &"Caps"
+text = "/ 100"
+
+[node name="HpBar" type="Control" parent="Root/Safe/Vitals"]
+custom_minimum_size = Vector2(300, 7)
+layout_mode = 2
+size_flags_horizontal = 0
+mouse_filter = 2
+script = ExtResource("2_bar")
+
+[node name="Feed" type="HBoxContainer" parent="Root/Safe/Vitals"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 10
+
+[node name="FeedPips" type="Control" parent="Root/Safe/Vitals/Feed"]
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+script = ExtResource("3_pips")
+pip = 8.0
+gap = 6.0
+
+[node name="FeedLabel" type="Label" parent="Root/Safe/Vitals/Feed"]
+layout_mode = 2
+theme_type_variation = &"Caps"
+theme_override_colors/font_color = Color(0.9, 0.16, 0.2, 1)
+
+[node name="RepLabel" type="Label" parent="Root/Safe/Vitals/Feed"]
+layout_mode = 2
+theme_type_variation = &"Caps"
+theme_override_colors/font_color = Color(0.62, 0.57, 0.54, 1)
+
+[node name="Moon" type="Control" parent="Root/Safe"]
 layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -160.0
-offset_top = 18.0
-offset_right = -24.0
-offset_bottom = 48.0
+offset_left = -260.0
+offset_top = 28.0
+offset_right = -40.0
+offset_bottom = 100.0
 grow_horizontal = 0
-theme_override_colors/font_color = Color(0.9, 0.85, 0.78, 1)
-theme_override_font_sizes/font_size = 22
+mouse_filter = 2
+
+[node name="MoonDisc" type="TextureRect" parent="Root/Safe/Moon"]
+texture_filter = 2
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -62.0
+offset_right = 0.0
+offset_bottom = 60.0
+grow_horizontal = 0
+mouse_filter = 2
+texture = ExtResource("6_moon")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="TimerLabel" type="Label" parent="Root/Safe/Moon"]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -220.0
+offset_top = 6.0
+offset_right = -74.0
+offset_bottom = 38.0
+grow_horizontal = 0
+theme_type_variation = &"Title"
+theme_override_font_sizes/font_size = 24
 text = "00:00"
 horizontal_alignment = 2
 
-[node name="DiffLabel" type="Label" parent="Root"]
+[node name="DiffLabel" type="Label" parent="Root/Safe/Moon"]
 layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -160.0
-offset_top = 48.0
-offset_right = -24.0
-offset_bottom = 72.0
+offset_left = -220.0
+offset_top = 38.0
+offset_right = -74.0
+offset_bottom = 56.0
 grow_horizontal = 0
-theme_override_colors/font_color = Color(0.7, 0.25, 0.28, 1)
-text = "Dust"
+theme_type_variation = &"Caps"
+theme_override_colors/font_color = Color(0.9, 0.16, 0.2, 1)
+text = "DUST"
 horizontal_alignment = 2
 
-[node name="KillsLabel" type="Label" parent="Root"]
-layout_mode = 0
-offset_left = 24.0
-offset_top = 72.0
-offset_right = 320.0
-offset_bottom = 96.0
-theme_override_colors/font_color = Color(0.75, 0.7, 0.65, 1)
-text = "Kills 0 / 40"
-
-[node name="PhaseLabel" type="Label" parent="Root"]
-layout_mode = 0
-offset_left = 24.0
-offset_top = 96.0
-offset_right = 320.0
-offset_bottom = 120.0
-theme_override_colors/font_color = Color(0.65, 0.6, 0.55, 1)
-text = "Dungeon"
-
-[node name="BoonLabel" type="Label" parent="Root"]
-layout_mode = 0
-offset_left = 24.0
-offset_top = 120.0
-offset_right = 520.0
-offset_bottom = 144.0
-theme_override_colors/font_color = Color(0.7, 0.62, 0.5, 1)
-text = "Boons 0/8"
-
-[node name="RepLabel" type="Label" parent="Root"]
-layout_mode = 0
-offset_left = 24.0
-offset_top = 144.0
-offset_right = 420.0
-offset_bottom = 168.0
-theme_override_colors/font_color = Color(0.6, 0.55, 0.5, 1)
-text = "Ashwick: Neutral"
-
-[node name="FeedLabel" type="Label" parent="Root"]
-layout_mode = 0
-offset_left = 24.0
-offset_top = 168.0
-offset_right = 200.0
-offset_bottom = 192.0
-theme_override_colors/font_color = Color(0.75, 0.2, 0.25, 1)
-text = ""
-
-[node name="Banner" type="Label" parent="Root"]
+[node name="Gate" type="VBoxContainer" parent="Root/Safe"]
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -280.0
-offset_top = 16.0
-offset_right = 280.0
-offset_bottom = 48.0
+offset_left = -300.0
+offset_top = 30.0
+offset_right = 300.0
+offset_bottom = 96.0
 grow_horizontal = 2
-theme_override_colors/font_color = Color(0.86, 0.78, 0.7, 1)
-theme_override_font_sizes/font_size = 20
-text = ""
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="PhaseLabel" type="Label" parent="Root/Safe/Gate"]
+layout_mode = 2
+theme_type_variation = &"Caps"
+text = "DUST MERIDIAN"
 horizontal_alignment = 1
 
-[node name="HintLabel" type="Label" parent="Root"]
+[node name="BurstPips" type="Control" parent="Root/Safe/Gate"]
+layout_mode = 2
+size_flags_horizontal = 4
+mouse_filter = 2
+script = ExtResource("3_pips")
+color = Color(0.9, 0.84, 0.76, 1)
+pip = 9.0
+gap = 12.0
+
+[node name="HuntBar" type="Control" parent="Root/Safe/Gate"]
+visible = false
+custom_minimum_size = Vector2(420, 4)
+layout_mode = 2
+size_flags_horizontal = 4
+mouse_filter = 2
+script = ExtResource("2_bar")
+value = 0.0
+centred = true
+
+[node name="KillsLabel" type="Label" parent="Root/Safe/Gate"]
+visible = false
+layout_mode = 2
+theme_type_variation = &"Caps"
+text = "0 / 1150"
+horizontal_alignment = 1
+
+[node name="BossPanel" type="VBoxContainer" parent="Root/Safe"]
+visible = false
 layout_mode = 1
-anchors_preset = 12
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -340.0
+offset_top = 26.0
+offset_right = 340.0
+offset_bottom = 100.0
+grow_horizontal = 2
+mouse_filter = 2
+theme_override_constants/separation = 7
+
+[node name="BossName" type="Label" parent="Root/Safe/BossPanel"]
+layout_mode = 2
+theme_type_variation = &"Title"
+theme_override_font_sizes/font_size = 22
+text = "GENERAL"
+horizontal_alignment = 1
+
+[node name="BossBar" type="Control" parent="Root/Safe/BossPanel"]
+custom_minimum_size = Vector2(620, 7)
+layout_mode = 2
+size_flags_horizontal = 4
+mouse_filter = 2
+script = ExtResource("2_bar")
+centred = true
+
+[node name="BossPhase" type="Label" parent="Root/Safe/BossPanel"]
+layout_mode = 2
+theme_type_variation = &"Caps"
+theme_override_colors/font_color = Color(0.9, 0.16, 0.2, 1)
+horizontal_alignment = 1
+
+[node name="Boons" type="HBoxContainer" parent="Root/Safe"]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 24.0
-offset_top = -48.0
-offset_right = -24.0
-offset_bottom = -16.0
+offset_left = -640.0
+offset_top = -66.0
+offset_right = -40.0
+offset_bottom = -36.0
+grow_horizontal = 0
+grow_vertical = 0
+mouse_filter = 2
+theme_override_constants/separation = 14
+alignment = 2
+
+[node name="BoonLabel" type="Label" parent="Root/Safe/Boons"]
+layout_mode = 2
+theme_type_variation = &"Caps"
+text = "UNALIGNED"
+
+[node name="BoonRow" type="HBoxContainer" parent="Root/Safe/Boons"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 7
+
+[node name="Banner" type="Label" parent="Root/Safe"]
+modulate = Color(1, 1, 1, 0)
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -420.0
+offset_top = -150.0
+offset_right = 420.0
+offset_bottom = -118.0
 grow_horizontal = 2
 grow_vertical = 0
-theme_override_colors/font_color = Color(0.55, 0.5, 0.48, 1)
-text = "WASD · Attack · Dodge · Feed"
+theme_override_font_sizes/font_size = 22
+horizontal_alignment = 1
+
+[node name="TitleCard" type="VBoxContainer" parent="Root/Safe"]
+modulate = Color(1, 1, 1, 0)
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -460.0
+offset_top = 150.0
+offset_right = 460.0
+offset_bottom = 270.0
+grow_horizontal = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="RuleTop" type="TextureRect" parent="Root/Safe/TitleCard"]
+custom_minimum_size = Vector2(420, 1)
+layout_mode = 2
+size_flags_horizontal = 4
+mouse_filter = 2
+texture = SubResource("Tex_rule")
+expand_mode = 1
+
+[node name="CardTitle" type="Label" parent="Root/Safe/TitleCard"]
+layout_mode = 2
+theme_type_variation = &"Title"
+theme_override_font_sizes/font_size = 38
+text = "MOONWAKE"
+horizontal_alignment = 1
+
+[node name="CardSub" type="Label" parent="Root/Safe/TitleCard"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.72, 0.66, 1)
+theme_override_font_sizes/font_size = 20
+horizontal_alignment = 1
+
+[node name="RuleBottom" type="TextureRect" parent="Root/Safe/TitleCard"]
+custom_minimum_size = Vector2(420, 1)
+layout_mode = 2
+size_flags_horizontal = 4
+mouse_filter = 2
+texture = SubResource("Tex_rule")
+expand_mode = 1
+
+[node name="HintLabel" type="Label" parent="Root/Safe"]
+modulate = Color(1, 1, 1, 0)
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -520.0
+offset_top = 104.0
+offset_right = 520.0
+offset_bottom = 126.0
+grow_horizontal = 2
+theme_type_variation = &"Caps"
 horizontal_alignment = 1

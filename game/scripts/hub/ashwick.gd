@@ -1,5 +1,4 @@
 extends Node2D
-const BiomePresenterScript = preload("res://scripts/visuals/biome_presenter.gd")
 const HubNpcScript = preload("res://scripts/hub/hub_npc.gd")
 ## Full Ashwick hub — factions, sector map, roster, meta, difficulty, co-op party.
 
@@ -22,20 +21,18 @@ var _cta_label: Label
 @onready var menu_btn: Button = $UI/Root/MenuBtn
 @onready var add_p2_btn: Button = $UI/Root/AddP2Btn
 @onready var ui_root: Control = $UI/Root
+@onready var biome: BiomePresenter = $Biome
+@onready var npcs: Node2D = $Npcs
+@onready var stage_camera: StageCamera = $StageCamera
 
 
 func _ready() -> void:
 	RunState.timer_active = false
 	get_tree().paused = false
 	RunState.set_phase(RunState.Phase.HUB)
-	var biome := BiomePresenterScript.new()
-	add_child(biome)
 	biome.present_ashwick()
-	## Hide old flat polygons if present
-	for n: String in ["BG", "Road", "Building1", "Building2", "Chapel", "Steeple"]:
-		var node := get_node_or_null(n)
-		if node:
-			node.visible = false
+	stage_camera.sort_roots = [npcs, biome.sorted_root()]
+	stage_camera.set_stage(BiomePresenter.ASHWICK_HALF, stage_camera.zoom)
 	_spawn_hub_npcs()
 	_build_faction_buttons()
 	_build_sectors()
@@ -410,7 +407,7 @@ func _spawn_hub_npcs() -> void:
 		npc.npc_id = str(d["id"])
 		npc.display_name = str(d["name"])
 		npc.position = d["pos"]
-		add_child(npc)
+		npcs.add_child(npc)
 		_npcs[str(d["id"])] = npc
 
 

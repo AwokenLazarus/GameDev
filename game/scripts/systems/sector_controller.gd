@@ -1,5 +1,4 @@
 extends Node2D
-const BiomePresenterScript = preload("res://scripts/visuals/biome_presenter.gd")
 const ExitDoorScript = preload("res://scripts/systems/exit_door.gd")
 const GreedShrineScript = preload("res://scripts/systems/greed_shrine.gd")
 ## Generic sector runner: burst rooms → wild expanse → kill-gated general → Ashwick.
@@ -16,20 +15,18 @@ const MOON_ALTAR_CLOCK := 90.0
 const BLOOD_WELL_BLEED := 0.25
 
 @onready var world: Node2D = $World
-@onready var ground: Polygon2D = $World/Ground
-@onready var accent_patch: Polygon2D = $World/DustPatch
+@onready var biome: BiomePresenter = $World/Biome
+@onready var stage_camera: StageCamera = $StageCamera
 @onready var walls: StaticBody2D = $World/Walls
 @onready var entities: Node2D = $World/Entities
 @onready var director: Node = $Director
 @onready var hud: CanvasLayer = $HUD
 @onready var boon_ui: CanvasLayer = $BoonSelect
-@onready var banner: Label = $HUD/Root/Banner
 
 var players: Array[CharacterBody2D] = []
 var _room_cleared: bool = false
 var _general_spawned: bool = false
 var _sector: Dictionary = {}
-var _biome: Node2D
 var _arena_half: Vector2 = Vector2(480, 320)
 var _pending_spawns: int = 0
 var _burst_left: int = 0
@@ -64,35 +61,13 @@ func _ready() -> void:
 	_sector = SectorDB.get_sector(sector_id)
 	director.enemy_scene = ENEMY_SCENE
 	boon_ui.chosen.connect(_on_boon_chosen)
-	world.y_sort_enabled = true
-	entities.y_sort_enabled = true
-	_biome = BiomePresenterScript.new()
-	_biome.z_index = -15
-	world.add_child(_biome)
-	_paint_biome()
-	_build_arena(Vector2(900, 600), [])
+	stage_camera.sort_roots = [entities, biome.sorted_root()]
 	_spawn_party(party)
 	_start_dungeon_burst()
-	banner.text = (
-		"FIGHT — %s · Burst 1/%d · red rings = you/enemies"
-		% [str(_sector.get("name", "Sector")), RunState.dungeons_total]
-	)
-
-
-func _paint_biome() -> void:
-	ground.visible = false
-	if accent_patch:
-		accent_patch.visible = false
-	if _biome:
-		_biome.present_sector(_sector, Vector2(900, 600), "room")
 
 
 func _build_arena(size: Vector2, inner_walls: Array = []) -> void:
 	_arena_half = size
-	ground.polygon = PackedVector2Array(
-		[-size.x, -size.y, size.x, -size.y, size.x, size.y, -size.x, size.y]
-	)
-	ground.visible = false
 	for c: Node in walls.get_children():
 		c.queue_free()
 	_add_wall(Vector2(0, -size.y), Vector2(size.x * 2, 24))
@@ -110,9 +85,8 @@ func _build_arena(size: Vector2, inner_walls: Array = []) -> void:
 	else:
 		director.spawn_radius_min = minf(size.x, size.y) * 0.55
 		director.spawn_radius_max = minf(size.x, size.y) * 0.9
-	if _biome:
-		var mode := "wild" if RunState.phase == RunState.Phase.WILD else "room"
-		_biome.present_sector(_sector, size, mode)
+	var mode := "wild" if RunState.phase == RunState.Phase.WILD else "room"
+	biome.present_sector(_sector, size, mode, inner_walls)
 	_apply_party_camera()
 
 
@@ -122,11 +96,15 @@ func _apply_party_camera() -> void:
 		if RunState.phase == RunState.Phase.WILD
 		else StageLayout.BURST_CAM_ZOOM
 	)
+	var followed: Array[Node2D] = []
 	for p: CharacterBody2D in players:
-		if is_instance_valid(p) and p.has_method("configure_stage_camera"):
-			p.configure_stage_camera(_arena_half, zoom)
+		if is_instance_valid(p):
+			followed.append(p)
+	stage_camera.targets = followed
+	stage_camera.set_stage(_arena_half, zoom)
 
 
+## Collision only; the biome draws the masonry.
 func _add_wall(pos: Vector2, size: Vector2) -> void:
 	var body := CollisionShape2D.new()
 	var shape := RectangleShape2D.new()
@@ -134,13 +112,6 @@ func _add_wall(pos: Vector2, size: Vector2) -> void:
 	body.shape = shape
 	body.position = pos
 	walls.add_child(body)
-	var vis := Polygon2D.new()
-	vis.color = Color(0.12, 0.1, 0.11)
-	var hx := size.x * 0.5
-	var hy := size.y * 0.5
-	vis.polygon = PackedVector2Array([-hx, -hy, hx, -hy, hx, hy, -hx, hy])
-	vis.position = pos
-	walls.add_child(vis)
 
 
 func _spawn_party(party: Array) -> void:
@@ -209,11 +180,6 @@ func _start_dungeon_burst() -> void:
 		else StageLayout.room_id_for_index(RunState.dungeon_index)
 	)
 	_room = StageLayout.room(rid)
-	var sname := str(_sector.get("name", "Sector"))
-	banner.text = (
-		"%s — Burst %d / %d · %s"
-		% [sname, RunState.dungeon_index + 1, RunState.dungeons_total, str(_room.get("id", "room"))]
-	)
 	_build_arena(_room.get("half", Vector2(480, 320)), _room.get("inner_walls", []))
 	_place_party(_room.get("entry", Vector2.ZERO))
 	_clear_enemies()
@@ -330,7 +296,7 @@ func _process(_delta: float) -> void:
 
 
 func _on_burst_cleared() -> void:
-	banner.text = "Burst cleared — choose a door"
+	hud.announce("The room falls silent. Choose a door.")
 	if randf() < 0.35:
 		_spawn_gear_drop(Vector2(randf_range(-80, 80), randf_range(-40, 40)))
 	if RunState.dungeon_index == 0:
@@ -398,7 +364,6 @@ func _apply_door_reward(reward: String, next_id: String) -> void:
 
 func _start_wild() -> void:
 	RunState.set_phase(RunState.Phase.WILD)
-	banner.text = "Wild Stage — %s" % str(_sector.get("name", ""))
 	var nightmare := bool(_sector.get("nightmare", false))
 	var wild_size := StageLayout.wild_half(nightmare)
 	_build_arena(wild_size, [])
@@ -466,12 +431,12 @@ func _on_greed_activated(shrine: GreedShrine, who: Node) -> void:
 					_:
 						RunState.add_cache(0, 0, maxi(3, amt / 2))
 						detail = "tech+%d" % maxi(3, amt / 2)
-			banner.text = "Strongbox pried — %s" % detail
+			hud.announce("Strongbox pried  ·  %s" % detail.replace("+", "  +").capitalize())
 		"moon_altar":
 			## Boon now; the director clock jumps ahead for the whole party.
 			RunState.clock_bonus += MOON_ALTAR_CLOCK
 			detail = "clock+%.0f" % MOON_ALTAR_CLOCK
-			banner.text = "The moon hurries — %s" % RunState.get_difficulty_label()
+			hud.announce("The moon hurries.")
 		"blood_well":
 			## Feed-for-power: pour hunger (feed stacks earned on humans in combat) or bleed.
 			if RunState.feed_buff_stacks >= 2:
@@ -487,7 +452,7 @@ func _on_greed_activated(shrine: GreedShrine, who: Node) -> void:
 					if players.size() and who == players[0]:
 						RunState.player_hp = h.hp
 					detail = "bleed-%.0f" % cost
-			banner.text = "The well drinks — %s" % detail
+			hud.announce("The well drinks.")
 	RunState.note_greed(kind)
 	print(
 		(
@@ -504,8 +469,6 @@ func _spawn_general() -> void:
 	director.stop()
 	RunState.set_phase(RunState.Phase.BOSS)
 	var gid := str(_sector.get("general_id", "marshal_hale"))
-	var gname := str(_sector.get("general_name", "General"))
-	banner.text = gname
 	var boss: Node = GENERAL_SCENE.instantiate()
 	var lead := _lead()
 	var at := Vector2(0, -180)
@@ -523,7 +486,7 @@ func _spawn_general() -> void:
 func _on_general_defeated() -> void:
 	RunState.general_defeated = true
 	RunState.set_phase(RunState.Phase.VICTORY)
-	banner.text = "Sector seized — returning to Ashwick"
+	hud.announce("The sector is yours. Ashwick waits.", 4.0)
 	director.stop()
 	print(
 		(
@@ -572,8 +535,8 @@ func _offer_boon_if_needed(force: bool = false) -> void:
 	await boon_ui.chosen
 
 
-func _on_boon_chosen(_boon: Dictionary) -> void:
-	banner.text = "Pact taken"
+func _on_boon_chosen(boon: Dictionary) -> void:
+	hud.announce(str(boon.get("name", "")))
 
 
 func _on_player_died(p: CharacterBody2D) -> void:
@@ -584,7 +547,7 @@ func _on_player_died(p: CharacterBody2D) -> void:
 			any_alive = true
 			break
 	if any_alive:
-		banner.text = "%s falls — the brood fights on" % str(p.character_id).capitalize()
+		hud.announce("%s falls. The brood fights on." % str(p.character_id).capitalize())
 		return
 	director.stop()
 	RunState.timer_active = false

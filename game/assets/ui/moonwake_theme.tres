@@ -1,0 +1,136 @@
+[gd_resource type="Theme" load_steps=14 format=3 uid="uid://mw_theme"]
+
+[ext_resource type="FontFile" path="res://assets/fonts/CormorantGaramond.ttf" id="1_body"]
+[ext_resource type="FontFile" path="res://assets/fonts/Cinzel.ttf" id="2_caps"]
+
+[sub_resource type="FontVariation" id="Font_body"]
+base_font = ExtResource("1_body")
+variation_opentype = {
+2003265652: 600
+}
+
+[sub_resource type="FontVariation" id="Font_title"]
+base_font = ExtResource("2_caps")
+variation_opentype = {
+2003265652: 500
+}
+spacing_glyph = 3
+
+[sub_resource type="FontVariation" id="Font_caps"]
+base_font = ExtResource("2_caps")
+variation_opentype = {
+2003265652: 600
+}
+spacing_glyph = 1
+
+[sub_resource type="StyleBoxFlat" id="Box_button"]
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+bg_color = Color(0.05, 0.04, 0.055, 0.82)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.9, 0.84, 0.76, 0.28)
+
+[sub_resource type="StyleBoxFlat" id="Box_button_hover"]
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+bg_color = Color(0.1, 0.06, 0.07, 0.9)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.9, 0.84, 0.76, 0.8)
+
+[sub_resource type="StyleBoxFlat" id="Box_button_pressed"]
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+bg_color = Color(0.3, 0.05, 0.08, 0.92)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.9, 0.16, 0.2, 1)
+
+[sub_resource type="StyleBoxFlat" id="Box_button_focus"]
+draw_center = false
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.9, 0.16, 0.2, 0.9)
+expand_margin_left = 2.0
+expand_margin_top = 2.0
+expand_margin_right = 2.0
+expand_margin_bottom = 2.0
+
+[sub_resource type="StyleBoxFlat" id="Box_button_disabled"]
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+bg_color = Color(0.04, 0.035, 0.045, 0.6)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.9, 0.84, 0.76, 0.1)
+
+[sub_resource type="StyleBoxFlat" id="Box_panel"]
+content_margin_left = 18.0
+content_margin_top = 14.0
+content_margin_right = 18.0
+content_margin_bottom = 14.0
+bg_color = Color(0.045, 0.035, 0.05, 0.88)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.9, 0.84, 0.76, 0.22)
+
+[sub_resource type="StyleBoxFlat" id="Box_bar_bg"]
+bg_color = Color(0, 0, 0, 0.55)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.9, 0.84, 0.76, 0.3)
+
+[sub_resource type="StyleBoxFlat" id="Box_bar_fill"]
+bg_color = Color(0.72, 0.1, 0.14, 1)
+
+[resource]
+default_font = SubResource("Font_body")
+default_font_size = 18
+Button/colors/font_color = Color(0.9, 0.84, 0.76, 1)
+Button/colors/font_hover_color = Color(1, 0.96, 0.9, 1)
+Button/colors/font_pressed_color = Color(1, 0.9, 0.86, 1)
+Button/colors/font_focus_color = Color(1, 0.96, 0.9, 1)
+Button/colors/font_disabled_color = Color(0.9, 0.84, 0.76, 0.35)
+Button/styles/normal = SubResource("Box_button")
+Button/styles/hover = SubResource("Box_button_hover")
+Button/styles/pressed = SubResource("Box_button_pressed")
+Button/styles/focus = SubResource("Box_button_focus")
+Button/styles/disabled = SubResource("Box_button_disabled")
+Label/colors/font_color = Color(0.9, 0.84, 0.76, 1)
+Label/colors/font_shadow_color = Color(0, 0, 0, 0.7)
+Label/constants/shadow_offset_x = 0
+Label/constants/shadow_offset_y = 1
+Label/constants/shadow_outline_size = 3
+PanelContainer/styles/panel = SubResource("Box_panel")
+ProgressBar/styles/background = SubResource("Box_bar_bg")
+ProgressBar/styles/fill = SubResource("Box_bar_fill")
+Title/base_type = &"Label"
+Title/fonts/font = SubResource("Font_title")
+Title/font_sizes/font_size = 30
+Caps/base_type = &"Label"
+Caps/fonts/font = SubResource("Font_caps")
+Caps/font_sizes/font_size = 13
+Caps/colors/font_color = Color(0.9, 0.84, 0.76, 0.78)

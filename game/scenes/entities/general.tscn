@@ -46,6 +46,7 @@ script = ExtResource("2_health")
 max_hp = 520.0
 
 [node name="Nameplate" type="Label" parent="."]
+visible = false
 offset_left = -80.0
 offset_top = -70.0
 offset_right = 80.0

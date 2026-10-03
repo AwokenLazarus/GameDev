@@ -1,0 +1,10 @@
+[gd_scene load_steps=2 format=3 uid="uid://mw_boon_icon"]
+
+[ext_resource type="Script" path="res://scripts/ui/patron_sigil.gd" id="1"]
+
+[node name="BoonIcon" type="Control"]
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 3
+anchors_preset = 0
+mouse_filter = 2
+script = ExtResource("1")

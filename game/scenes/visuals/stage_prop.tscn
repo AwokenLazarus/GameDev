@@ -1,0 +1,16 @@
+[gd_scene load_steps=3 format=3 uid="uid://mw_stage_prop"]
+
+[ext_resource type="Script" path="res://scripts/visuals/stage_prop.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://mw_soft_blob" path="res://assets/visuals/soft_blob.tres" id="2"]
+
+[node name="StageProp" type="Node2D"]
+script = ExtResource("1")
+
+[node name="Shadow" type="Sprite2D" parent="."]
+modulate = Color(0.02, 0.01, 0.03, 0.85)
+z_index = -1
+texture = ExtResource("2")
+
+[node name="Art" type="Sprite2D" parent="."]
+texture_filter = 2
+centered = false

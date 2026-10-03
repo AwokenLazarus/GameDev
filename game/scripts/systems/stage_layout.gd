@@ -4,7 +4,7 @@ class_name StageLayout
 ## Greed contents live in GreedShrine / SectorController (MW-025).
 
 const BURST_CAM_ZOOM := 0.82
-const WILD_CAM_ZOOM := 1.2
+const WILD_CAM_ZOOM := 0.92
 const WILD_HALF := Vector2(2200, 1400)
 const WILD_HALF_NIGHTMARE := Vector2(2400, 1600)
 

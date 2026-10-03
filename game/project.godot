@@ -27,6 +27,10 @@ window/size/viewport_height=720
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 
+[gui]
+
+theme/custom="res://assets/ui/moonwake_theme.tres"
+
 [input]
 
 move_up={
@@ -108,4 +112,6 @@ gdscript/warnings/untyped_declaration=2
 [rendering]
 
 textures/canvas_textures/default_texture_filter=0
+viewport/hdr_2d=true
+anti_aliasing/quality/msaa_2d=2
 environment/defaults/default_clear_color=Color(0.08, 0.07, 0.09, 1)

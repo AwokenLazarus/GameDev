@@ -1,6 +1,19 @@
-[gd_scene load_steps=2 format=3 uid="uid://boon_select"]
+[gd_scene load_steps=7 format=3 uid="uid://boon_select"]
 
 [ext_resource type="Script" path="res://scripts/ui/boon_select.gd" id="1_boon"]
+[ext_resource type="Shader" path="res://assets/shaders/veil.gdshader" id="2_veil"]
+[ext_resource type="Theme" uid="uid://mw_theme" path="res://assets/ui/moonwake_theme.tres" id="3_theme"]
+
+[sub_resource type="ShaderMaterial" id="Mat_veil"]
+shader = ExtResource("2_veil")
+
+[sub_resource type="Gradient" id="Grad_rule"]
+offsets = PackedFloat32Array(0, 0.5, 1)
+colors = PackedColorArray(0.9, 0.84, 0.76, 0, 0.9, 0.84, 0.76, 0.8, 0.9, 0.84, 0.76, 0)
+
+[sub_resource type="GradientTexture1D" id="Tex_rule"]
+gradient = SubResource("Grad_rule")
+width = 256
 
 [node name="BoonSelect" type="CanvasLayer"]
 process_mode = 3
@@ -8,12 +21,12 @@ layer = 20
 script = ExtResource("1_boon")
 
 [node name="Dim" type="ColorRect" parent="."]
+material = SubResource("Mat_veil")
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.02, 0.02, 0.03, 0.72)
 
 [node name="Center" type="CenterContainer" parent="."]
 anchors_preset = 15
@@ -21,21 +34,38 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme = ExtResource("3_theme")
 
-[node name="Panel" type="PanelContainer" parent="Center"]
-custom_minimum_size = Vector2(560, 320)
-layout_mode = 2
-
-[node name="VBox" type="VBoxContainer" parent="Center/Panel"]
+[node name="VBox" type="VBoxContainer" parent="Center"]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="Title" type="Label" parent="Center/Panel/VBox"]
+[node name="Title" type="Label" parent="Center/VBox"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 22
-text = "A pact answers"
+theme_type_variation = &"Title"
+theme_override_font_sizes/font_size = 28
+text = "A PATRON ANSWERS"
 horizontal_alignment = 1
 
-[node name="Buttons" type="VBoxContainer" parent="Center/Panel/VBox"]
+[node name="Rule" type="TextureRect" parent="Center/VBox"]
+custom_minimum_size = Vector2(360, 1)
 layout_mode = 2
-theme_override_constants/separation = 8
+size_flags_horizontal = 4
+texture = SubResource("Tex_rule")
+expand_mode = 1
+
+[node name="Subtitle" type="Label" parent="Center/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.72, 0.66, 1)
+theme_override_font_sizes/font_size = 19
+text = "Take one."
+horizontal_alignment = 1
+
+[node name="Gap" type="Control" parent="Center/VBox"]
+custom_minimum_size = Vector2(0, 14)
+layout_mode = 2
+
+[node name="Cards" type="HBoxContainer" parent="Center/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 28
+alignment = 1

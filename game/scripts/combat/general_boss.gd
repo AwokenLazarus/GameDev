@@ -106,6 +106,14 @@ func phase_count() -> int:
 	return phases.size()
 
 
+## HP fractions at which each later phase begins (HUD bar notches).
+func phase_thresholds() -> PackedFloat32Array:
+	var out := PackedFloat32Array()
+	for i: int in range(1, phases.size()):
+		out.append(float((phases[i] as Dictionary).get("at", 0.0)))
+	return out
+
+
 func hp_frac() -> float:
 	return health.hp / maxf(health.max_hp, 1.0)
 
@@ -132,7 +140,7 @@ func _physics_process(delta: float) -> void:
 	if actor_visual:
 		actor_visual.set_running(true)
 		actor_visual.set_moving(true)
-		actor_visual.set_facing_x(dir.x)
+		actor_visual.face(dir)
 	move_and_slide()
 	_tick_contact(delta)
 	_cd -= delta

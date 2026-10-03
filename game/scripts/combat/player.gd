@@ -38,7 +38,6 @@ const MARK_META := "blood_mark"
 @onready var hitbox: Area2D = $AttackHitbox
 @onready var feed_area: Area2D = $FeedArea
 @onready var health: Health = $Health
-@onready var camera: Camera2D = $Camera2D
 @onready var spirit_visual: CanvasItem = $SpiritVisual
 @onready var actor_visual: Node2D = $ActorVisual
 
@@ -117,10 +116,6 @@ func _ready() -> void:
 	pacts = _PACTS.new(self)
 	add_child(pacts)
 	_apply_character()
-	if player_index == 0:
-		camera.enabled = true
-	else:
-		camera.enabled = false
 
 
 func configure(index: int, char_id: String, alt: String = "", dev: int = -1) -> void:
@@ -130,23 +125,6 @@ func configure(index: int, char_id: String, alt: String = "", dev: int = -1) -> 
 	device = dev
 	if is_node_ready():
 		_apply_character()
-
-
-func configure_stage_camera(half: Vector2, zoom: float) -> void:
-	## P1 follow-cam; limits keep the view inside the current room / wild map.
-	if camera == null:
-		return
-	if player_index != 0:
-		camera.enabled = false
-		return
-	camera.enabled = true
-	camera.zoom = Vector2(zoom, zoom)
-	camera.limit_left = int(-half.x)
-	camera.limit_right = int(half.x)
-	camera.limit_top = int(-half.y)
-	camera.limit_bottom = int(half.y)
-	camera.limit_smoothed = true
-	camera.position_smoothing_enabled = true
 
 
 func _apply_character() -> void:
@@ -288,7 +266,7 @@ func _physics_process(delta: float) -> void:
 		var moving := input_dir.length() > 0.1
 		actor_visual.set_running(input_dir.length() > 0.75)
 		actor_visual.set_moving(moving)
-		actor_visual.set_facing_x(facing.x)
+		actor_visual.face(facing)
 
 	var wish := input_dir * move_speed * RunState.move_mult
 	if _kb_timer > 0.0:
@@ -340,7 +318,12 @@ func _tick_timers(delta: float) -> void:
 # --- Input -------------------------------------------------------------------
 
 
+## World-space move vector. Input is screen-relative; the stage is drawn in iso.
 func _move_vector() -> Vector2:
+	return IsoView.move_to_world(_move_input())
+
+
+func _move_input() -> Vector2:
 	if player_index == 0 and device == -1:
 		return Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	if device >= 0:
@@ -364,8 +347,6 @@ func _move_vector() -> Vector2:
 	return Vector2.ZERO
 
 
-## Edge-detects every action once per physics frame. P1 keyboard uses the InputMap;
-## pads and the P2 keyboard read raw state, so they need their own previous-frame copy.
 func _poll_input() -> void:
 	for a: String in ACTIONS:
 		if player_index == 0 and device == -1:
@@ -427,7 +408,7 @@ func _aim_dir() -> Vector2:
 			Input.get_joy_axis(device, JOY_AXIS_RIGHT_Y)
 		)
 		if r.length() > 0.35:
-			return r.normalized()
+			return IsoView.aim_to_world(r)
 	return facing
 
 
@@ -536,7 +517,22 @@ func use_slot(slot: String) -> bool:
 	return true
 
 
-## One-line HUD readout of the non-attack slots.
+## Typed state of the non-attack slots for the HUD.
+func kit_readout() -> KitReadout:
+	var out := KitReadout.new()
+	out.special_name = str(_slot("special").get("name", "Special"))
+	out.cast_name = str(_slot("cast").get("name", "Cast"))
+	var full := _cd("special", float(_slot("special").get("cooldown", 3.0)))
+	out.special_ready = 1.0 - clampf(special_cd / maxf(full, 0.01), 0.0, 1.0)
+	out.cast_charges = cast_charges
+	out.cast_max = cast_max
+	out.chambered = chambered
+	out.wards = wards
+	out.debt = int(ceilf(debt))
+	return out
+
+
+## One-line readout of the non-attack slots (tests, logs).
 func slot_status() -> String:
 	var sp: String = str(_slot("special").get("name", "Special"))
 	var ca: String = str(_slot("cast").get("name", "Cast"))
