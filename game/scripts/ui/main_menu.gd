@@ -11,6 +11,10 @@ var _hint: Label
 
 
 func _ready() -> void:
+	## Release templates compile out scene-path overrides, so a test scene
+	## after `--` is the headless check for an exported build.
+	if _open_cmdline_test_scene():
+		return
 	start_btn.text = "PLAY RAID — Dust Meridian"
 	start_btn.custom_minimum_size = Vector2(360, 56)
 	start_btn.pressed.connect(_on_play_raid)
@@ -61,6 +65,15 @@ func _ready() -> void:
 		var tw2 := create_tween().set_loops()
 		tw2.tween_property(hero, "position:y", hero.position.y - 4.0, 1.2)
 		tw2.tween_property(hero, "position:y", hero.position.y + 4.0, 1.2)
+
+
+func _open_cmdline_test_scene() -> bool:
+	for arg: String in OS.get_cmdline_user_args():
+		var allowed := arg.begins_with("res://scenes/tests/") or arg.begins_with("res://tests/")
+		if allowed and arg.ends_with(".tscn"):
+			get_tree().change_scene_to_file.call_deferred(arg)
+			return true
+	return false
 
 
 func _on_play_raid() -> void:

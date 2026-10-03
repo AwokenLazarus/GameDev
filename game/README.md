@@ -4,7 +4,37 @@ Playable implementation of the [Concept Bible](../docs/MOONWAKE_CONCEPT_BIBLE.md
 
 ## Requirements
 
-- Godot **4.3+**
+- Godot **4.7.1** (standard build, not .NET). Forward Plus. A discrete GPU is required: `rendering/rendering_device/fallback_to_opengl3` is false, so machines without Vulkan, D3D12 or Metal get Godot's unsupported-GPU error instead of an untested OpenGL picture.
+
+## Verify
+
+One script runs the import, every smoke scene (`--fixed-fps 60`), the type-gate count (must be 0), `gdformat --check`, and autoplay `mode=kill sectors=all seed=1`. It exits non-zero on any failure, including a smoke that exits 0 without its `*_PASS` line or that prints `SCRIPT ERROR`.
+
+From the repo root:
+
+```bash
+lazvault heavy --project moonwake -- game/tools/verify.sh
+```
+
+## Playtest build
+
+Export presets `Linux x86_64` and `Windows x86_64` live in `game/export_presets.cfg` (PCK beside the executable, not embedded). Install the official 4.7.1 export templates into `~/.local/share/godot/export_templates/4.7.1.stable/` first. Builds stay outside the repo:
+
+```bash
+SHORT="$(git rev-parse --short HEAD)"
+OUT="$HOME/work/builds/moonwake-$SHORT"
+mkdir -p "$OUT"
+godot --headless --path game --export-release "Linux x86_64" "$OUT/Moonwake.x86_64"
+godot --headless --path game --export-release "Windows x86_64" "$OUT/Moonwake.exe"
+```
+
+Double-click `Moonwake.exe` on Windows, or run `./Moonwake.x86_64` on Linux. Both need the `Moonwake.pck` that sits next to them (one pack; the Linux and Windows exports write the same bytes). Local co-op (keyboard player 2 and gamepads, up to 4) is the same binary. Official templates refuse a scene path in front of the binary, so the headless check passes the scene after `--`:
+
+```bash
+"$OUT/Moonwake.x86_64" --headless -- res://scenes/tests/boot_smoke.tscn
+```
+
+That prints `BOOT_SMOKE_PASS`. Only `res://scenes/tests/` and `res://tests/` scenes are accepted.
 
 ## Run
 
